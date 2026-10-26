@@ -50,7 +50,15 @@ export const addBill = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("recurring_bills")
-      .insert({ ...data, user_id: context.userId })
+      .insert({
+        user_id: context.userId,
+        name: data.name,
+        amount: data.amount,
+        frequency: data.frequency,
+        next_due_date: data.next_due_date,
+        category_id: data.category_id ?? null,
+        notes: data.notes ?? null,
+      })
       .select(`*, categories(${CATEGORY_SELECT})`)
       .single();
     if (error) throw new Error(error.message);
@@ -61,10 +69,17 @@ export const updateBill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).extend(billInput.shape).parse(input))
   .handler(async ({ data, context }) => {
-    const { id, ...values } = data;
+    const { id, ...rest } = data;
     const { data: row, error } = await context.supabase
       .from("recurring_bills")
-      .update(values)
+      .update({
+        name: rest.name,
+        amount: rest.amount,
+        frequency: rest.frequency,
+        next_due_date: rest.next_due_date,
+        category_id: rest.category_id ?? null,
+        notes: rest.notes ?? null,
+      })
       .eq("id", id)
       .eq("user_id", context.userId)
       .select(`*, categories(${CATEGORY_SELECT})`)

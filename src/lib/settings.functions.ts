@@ -88,9 +88,14 @@ export const updateSettings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const patch: { currency?: string; display_name?: string | null; updated_at: string } = {
+      updated_at: new Date().toISOString(),
+    };
+    if (data.currency) patch.currency = data.currency;
+    if (data.display_name !== undefined) patch.display_name = data.display_name;
     const { data: settings, error } = await context.supabase
       .from("user_settings")
-      .update({ ...data, updated_at: new Date().toISOString() })
+      .update(patch)
       .eq("user_id", context.userId)
       .select("id, user_id, currency, onboarding_completed, display_name")
       .single();
