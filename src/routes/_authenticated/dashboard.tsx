@@ -26,10 +26,9 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
   validateSearch: searchSchema,
-  loader: async ({ context, search }) => {
+  loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());
     if (!settings?.onboarding_completed) throw redirect({ to: "/onboarding" });
-    await context.queryClient.ensureQueryData(dashboardQuery(search.offset ?? 0));
   },
   component: DashboardPage,
 });

@@ -221,9 +221,10 @@ function ActivityPage() {
   const [search, setSearch] = useState("");
   const currency = settings?.currency ?? "USD";
 
-  const { data: transactions, isFetching } = useQuery(
-    transactionsQuery({ type: type === "all" ? undefined : type, search: search || undefined }),
-  );
+  const filters: { type?: TxType; search?: string } = {};
+  if (type !== "all") filters.type = type;
+  if (search) filters.search = search;
+  const { data: transactions, isFetching } = useQuery(transactionsQuery(filters));
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTransaction({ data: { id } }),
