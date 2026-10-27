@@ -41,6 +41,54 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          error_message: string | null
+          filename: string
+          fingerprint: string
+          id: string
+          mime_type: string
+          size_bytes: number
+          status: string
+          storage_path: string
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type?: string
+          error_message?: string | null
+          filename: string
+          fingerprint: string
+          id?: string
+          mime_type: string
+          size_bytes?: number
+          status?: string
+          storage_path: string
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          error_message?: string | null
+          filename?: string
+          fingerprint?: string
+          id?: string
+          mime_type?: string
+          size_bytes?: number
+          status?: string
+          storage_path?: string
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recurring_bills: {
         Row: {
           active: boolean
@@ -88,18 +136,94 @@ export type Database = {
           },
         ]
       }
+      transaction_drafts: {
+        Row: {
+          amount: number | null
+          category_hint: string | null
+          confidence: string
+          created_at: string
+          currency: string | null
+          description: string | null
+          document_id: string
+          duplicate_of: string | null
+          id: string
+          merchant: string | null
+          payment_method: string | null
+          reference: string | null
+          status: string
+          txn_date: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          category_hint?: string | null
+          confidence?: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          document_id: string
+          duplicate_of?: string | null
+          id?: string
+          merchant?: string | null
+          payment_method?: string | null
+          reference?: string | null
+          status?: string
+          txn_date?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          category_hint?: string | null
+          confidence?: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          document_id?: string
+          duplicate_of?: string | null
+          id?: string
+          merchant?: string | null
+          payment_method?: string | null
+          reference?: string | null
+          status?: string
+          txn_date?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_drafts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_drafts_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
           category_id: string | null
           created_at: string
+          currency: string | null
           description: string | null
           id: string
           merchant: string | null
           notes: string | null
           occurred_at: string
+          payment_method: string | null
           recurring_bill_id: string | null
+          reference: string | null
           source: string
+          source_document_id: string | null
           status: string
           type: string
           user_id: string
@@ -108,13 +232,17 @@ export type Database = {
           amount: number
           category_id?: string | null
           created_at?: string
+          currency?: string | null
           description?: string | null
           id?: string
           merchant?: string | null
           notes?: string | null
           occurred_at?: string
+          payment_method?: string | null
           recurring_bill_id?: string | null
+          reference?: string | null
           source?: string
+          source_document_id?: string | null
           status?: string
           type: string
           user_id: string
@@ -123,13 +251,17 @@ export type Database = {
           amount?: number
           category_id?: string | null
           created_at?: string
+          currency?: string | null
           description?: string | null
           id?: string
           merchant?: string | null
           notes?: string | null
           occurred_at?: string
+          payment_method?: string | null
           recurring_bill_id?: string | null
+          reference?: string | null
           source?: string
+          source_document_id?: string | null
           status?: string
           type?: string
           user_id?: string
@@ -140,6 +272,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
@@ -179,7 +318,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      import_document_drafts: {
+        Args: { p_document_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
