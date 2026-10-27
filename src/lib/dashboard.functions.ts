@@ -79,8 +79,10 @@ export const getDashboard = createServerFn({ method: "GET" })
       else bucket.income += Number(tx.amount);
     }
 
-    const selectedKey = months[months.length - 1].key;
-    const selectedMonth = { ...months[months.length - 1], label: selectedKey, offset: data.offset };
+    const lastMonth = months[months.length - 1];
+    if (!lastMonth) throw new Error("Failed to build month buckets");
+    const selectedKey = lastMonth.key;
+    const selectedMonth = { ...lastMonth, label: selectedKey, offset: data.offset };
 
     // Selected-month category breakdown (expenses).
     const catMap = new Map<string, { name: string; icon: string; total: number }>();
@@ -152,6 +154,8 @@ const txInput = z.object({
   recurring_bill_id: z.string().uuid().nullable().optional(),
 });
 
+export type DashboardTxInput = z.infer<typeof txInput>;
+
 export const listTransactions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -188,7 +192,19 @@ export const addTransaction = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("transactions")
-      .insert({ ...data, user_id: context.userId, source: "manual" })
+      .insert({
+        user_id: context.userId,
+        type: data.type,
+        amount: data.amount,
+        category_id: data.category_id ?? null,
+        description: data.description ?? null,
+        merchant: data.merchant ?? null,
+        occurred_at: data.occurred_at,
+        status: data.status,
+        notes: data.notes ?? null,
+        recurring_bill_id: data.recurring_bill_id ?? null,
+        source: "manual",
+      })
       .select(`*, categories(${CATEGORY_SELECT})`)
       .single();
     if (error) throw new Error(error.message);
@@ -200,9 +216,20 @@ export const updateTransaction = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).extend(txInput.shape).parse(input))
   .handler(async ({ data, context }) => {
     const { id, ...values } = data;
+    const patch = {
+      type: values.type,
+      amount: values.amount,
+      occurred_at: values.occurred_at,
+      status: values.status,
+      category_id: values.category_id ?? null,
+      description: values.description ?? null,
+      merchant: values.merchant ?? null,
+      notes: values.notes ?? null,
+      recurring_bill_id: values.recurring_bill_id ?? null,
+    };
     const { data: row, error } = await context.supabase
       .from("transactions")
-      .update(values)
+      .update(patch)
       .eq("id", id)
       .eq("user_id", context.userId)
       .select(`*, categories(${CATEGORY_SELECT})`)
