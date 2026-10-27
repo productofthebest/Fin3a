@@ -6,14 +6,14 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 ## Phase 1 — Foundation (current)
 - [x] Lovable Cloud connected; email/password + Google + Lovable sign-in enabled
 - [x] Schema: user_settings, categories, transactions, recurring_bills (RLS, user-scoped)
-- [ ] Dark premium design system (reference dashboard image)
-- [ ] Public landing page + auth page (sign in / sign up)
-- [ ] Onboarding (currency picker, starter categories)
-- [ ] Dashboard: cash flow chart, activity summary, net spending, month switcher
-- [ ] Manual income/expense entry, transaction history
-- [ ] Categories management
-- [ ] Recurring bills CRUD
-- [ ] Mobile + desktop responsive pass; E2E verification
+- [x] Dark premium design system (reference dashboard image)
+- [x] Public landing page + auth page (sign in / sign up)
+- [x] Onboarding (currency picker, starter categories)
+- [x] Dashboard: cash flow chart, activity summary, net spending, month switcher
+- [x] Manual income/expense entry, transaction history
+- [x] Categories management
+- [x] Recurring bills CRUD
+- [ ] Mobile + desktop responsive pass; E2E verification (core flows verified in preview; responsive polish pass pending)
 
 ## Phase 2 — Universal Financial Scanner
 - [ ] Scan/upload documents (statements, receipts, POS slips, teller receipts, cheques, transfers, invoices, bills)
