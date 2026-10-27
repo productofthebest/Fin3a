@@ -215,25 +215,26 @@ function AddTransactionDialog({ currency }: { currency: string }) {
 }
 
 function ActivityPage() {
+  const queryClient = useQueryClient();
   const { data: settings } = useSuspenseQuery(settingsQuery());
   const [type, setType] = useState<"all" | TxType>("all");
   const [search, setSearch] = useState("");
   const currency = settings?.currency ?? "USD";
 
-  const { data: transactions, isFetching } = useQuery(transactionsQuery({ type: type === "all" ? undefined : type, search: search || undefined }));
+  const { data: transactions, isFetching } = useQuery(
+    transactionsQuery({ type: type === "all" ? undefined : type, search: search || undefined }),
+  );
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTransaction({ data: { id } }),
     onSuccess: () => {
-      queryClientInvalidateAll();
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["bills"] });
       toast.success("Transaction deleted");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to delete"),
   });
-
-  function queryClientInvalidateAll() {
-    // placeholder replaced below
-  }
 
   return (
     <AppShell>

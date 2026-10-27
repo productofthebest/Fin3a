@@ -154,6 +154,8 @@ const txInput = z.object({
   recurring_bill_id: z.string().uuid().nullable().optional(),
 });
 
+export type DashboardTxInput = z.infer<typeof txInput>;
+
 export const listTransactions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
