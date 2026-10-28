@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight, ChartLine, ScanLine, Wallet } from "lucide-react";
+import { ArrowRight, ChartLine, ScanLine, Wallet, Zap } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
