@@ -27,6 +27,7 @@ function OnboardingPage() {
   const queryClient = useQueryClient();
   const { data: settings } = useSuspenseQuery(settingsQuery());
   const [currency, setCurrency] = useState(settings?.currency || "USD");
+  const [currencySearch, setCurrencySearch] = useState("");
   const [displayName, setDisplayName] = useState(settings?.display_name || "");
   const [busy, setBusy] = useState(false);
 
