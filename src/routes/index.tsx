@@ -47,7 +47,10 @@ function Landing() {
       </header>
 
       <section className="mx-auto max-w-6xl px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
-        <p className="text-sm font-medium uppercase tracking-widest text-primary">By Top Floor</p>
+        <p className="flex items-center gap-2 text-sm font-medium text-primary">
+          <Zap className="size-4 fill-primary" />
+          Powered by Top Floor
+        </p>
         <h1 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
           Know exactly how your money moves — and how long it will last.
         </h1>
