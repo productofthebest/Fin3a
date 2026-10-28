@@ -62,9 +62,20 @@ function OnboardingPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label>Preferred currency</Label>
+                <Label htmlFor="currency-search">Preferred currency</Label>
+                <Input
+                  id="currency-search"
+                  value={currencySearch}
+                  onChange={(e) => setCurrencySearch(e.target.value)}
+                  placeholder="Search currency or country…"
+                  autoComplete="off"
+                />
                 <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
-                  {CURRENCIES.map((option) => (
+                  {CURRENCIES.filter((option) => {
+                    const q = currencySearch.trim().toLowerCase();
+                    if (!q) return true;
+                    return option.code.toLowerCase().includes(q) || option.name.toLowerCase().includes(q);
+                  }).map((option) => (
                     <button
                       key={option.code}
                       type="button"
@@ -76,7 +87,9 @@ function OnboardingPage() {
                           : "border-border hover:bg-secondary",
                       )}
                     >
-                      <span className="block font-medium">{option.code}</span>
+                      <span className="block font-medium">
+                        {option.code} <span className="text-muted-foreground">{option.symbol}</span>
+                      </span>
                       <span className="text-xs text-muted-foreground">{option.name}</span>
                     </button>
                   ))}
