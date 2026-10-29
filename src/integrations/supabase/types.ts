@@ -89,6 +89,41 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_rules: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          merchant_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          merchant_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          merchant_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_bills: {
         Row: {
           active: boolean
@@ -97,6 +132,7 @@ export type Database = {
           created_at: string
           frequency: string
           id: string
+          kind: string
           name: string
           next_due_date: string
           notes: string | null
@@ -109,6 +145,7 @@ export type Database = {
           created_at?: string
           frequency: string
           id?: string
+          kind?: string
           name: string
           next_due_date: string
           notes?: string | null
@@ -121,6 +158,7 @@ export type Database = {
           created_at?: string
           frequency?: string
           id?: string
+          kind?: string
           name?: string
           next_due_date?: string
           notes?: string | null
@@ -212,9 +250,12 @@ export type Database = {
         Row: {
           amount: number
           category_id: string | null
+          classification: string
           created_at: string
           currency: string | null
           description: string | null
+          flag: string | null
+          flag_note: string | null
           id: string
           merchant: string | null
           notes: string | null
@@ -231,9 +272,12 @@ export type Database = {
         Insert: {
           amount: number
           category_id?: string | null
+          classification?: string
           created_at?: string
           currency?: string | null
           description?: string | null
+          flag?: string | null
+          flag_note?: string | null
           id?: string
           merchant?: string | null
           notes?: string | null
@@ -250,9 +294,12 @@ export type Database = {
         Update: {
           amount?: number
           category_id?: string | null
+          classification?: string
           created_at?: string
           currency?: string | null
           description?: string | null
+          flag?: string | null
+          flag_note?: string | null
           id?: string
           merchant?: string | null
           notes?: string | null
