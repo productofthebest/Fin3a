@@ -92,6 +92,16 @@ function Landing() {
         </div>
       </section>
 
+      <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
+        <p className="flex items-center gap-2 text-sm font-medium text-primary">
+          <Zap className="size-4 fill-primary" />
+          Powered by Top Floor
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Better decisions. A stronger tomorrow.
+        </p>
+      </div>
+
       <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
         Fin3a AI — a Top Floor product
       </footer>
