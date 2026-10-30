@@ -135,6 +135,7 @@ export const Route = createFileRoute("/api/chat")({
 
         return result.toUIMessageStreamResponse({
           originalMessages: history,
+          generateMessageId: () => crypto.randomUUID(),
           onError: (err) => {
             console.error("assistant stream error", err);
             const status = (err as { statusCode?: number })?.statusCode;
