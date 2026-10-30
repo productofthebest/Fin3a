@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: "/activity", label: "Activity" },
   { to: "/categories", label: "Categories" },
   { to: "/bills", label: "Bills" },
+  { to: "/assistant", label: "Assistant" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -44,7 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-sm transition-colors",
-                  pathname === item.to
+                  (item.to === "/assistant" ? pathname.startsWith("/assistant") : pathname === item.to)
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
@@ -74,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               to={item.to}
               className={cn(
                 "rounded-md px-3 py-1.5 text-sm transition-colors",
-                pathname === item.to
+                (item.to === "/assistant" ? pathname.startsWith("/assistant") : pathname === item.to)
                   ? "bg-secondary text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
