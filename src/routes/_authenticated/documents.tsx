@@ -132,14 +132,14 @@ function DocumentsPage() {
 }
 
 function DraftReview({ documentId, doc, currency, onDeleted }: {
-  documentId: string; doc?: Awaited<ReturnType<typeof listDocuments>>[number]; currency: string; onDeleted: () => void;
+  documentId: string; doc: Awaited<ReturnType<typeof listDocuments>>[number] | undefined; currency: string; onDeleted: () => void;
 }) {
   const qc = useQueryClient();
   const { data: drafts = [], isLoading } = useQuery(draftsQuery(documentId));
   const pending = drafts.filter((d) => d.status === "pending");
   const refresh = () => { qc.invalidateQueries({ queryKey: ["drafts", documentId] }); qc.invalidateQueries({ queryKey: ["documents"] }); };
 
-  const save = useMutation({ mutationFn: (p: Parameters<typeof updateDraft>[0]["data"]) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
+  const save = useMutation({ mutationFn: (p: { id: string; txn_date?: string | null; merchant?: string | null; amount?: number; type?: "income" | "expense" }) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
   const remove = useMutation({ mutationFn: (id: string) => deleteDraft({ data: { id } }), onSuccess: refresh });
   const imp = useMutation({
     mutationFn: () => importDrafts({ data: { documentId } }),
