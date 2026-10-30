@@ -58,7 +58,10 @@ function DocumentsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
-    if (file.size > 15 * 1024 * 1024) return toast.error("File is larger than 15 MB.");
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("File is larger than 15 MB.");
+      return;
+    }
     setBusy(true);
     try {
       const { data: auth } = await supabase.auth.getUser();
