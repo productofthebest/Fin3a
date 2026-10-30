@@ -297,7 +297,7 @@ async function extractWithAi(
   mimeType: string,
   filename: string,
 ): Promise<ParsedRow[]> {
-  const { streamText, Output, NoObjectGeneratedError } = await import("ai");
+  const { streamText, Output, NoObjectGeneratedError, jsonSchema } = await import("ai");
   const { createOpenAI } = await import("@ai-sdk/openai");
   const { LOVABLE_AI_GATEWAY_URL, createLovableAiGatewayRunIdFetch } = await import("./ai-gateway.server");
 
@@ -374,7 +374,7 @@ async function extractWithAi(
         ],
       },
     ],
-    output: Output.object({ schema: schema as never }),
+    output: Output.object({ schema: jsonSchema(schema as never) }),
     providerOptions: {
       openai: {
         store: false,
