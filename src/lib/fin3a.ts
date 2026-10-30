@@ -302,3 +302,6 @@ export function isoDate(d: Date): string {
 export function today(): string {
   return isoDate(new Date());
 }
+
+export type FinDocument = import("@/integrations/supabase/types").Database["public"]["Tables"]["documents"]["Row"];
+export type TransactionDraft = import("@/integrations/supabase/types").Database["public"]["Tables"]["transaction_drafts"]["Row"];
