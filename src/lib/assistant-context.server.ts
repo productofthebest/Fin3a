@@ -2,6 +2,7 @@
 // Only totals are sent to the model — no notes, descriptions, references or merchant names.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { currencySymbol } from "./fin3a";
 
 type Client = SupabaseClient<Database>;
 
@@ -80,6 +81,7 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
   return {
     today: now.toISOString().slice(0, 10),
     currency,
+    currencySymbol: currencySymbol(currency),
     transactionCount: (allRes.data ?? []).length,
     availableFunds: round(availableFunds),
     pendingExpenses: round(pendingExpenses),
@@ -97,7 +99,7 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
 export const ASSISTANT_INSTRUCTIONS = `You are the Fin3a AI financial assistant, inside a personal-finance app.
 You receive a JSON snapshot of the signed-in user's own records (aggregated totals only). Rules:
 - Base every figure on the snapshot. Never invent numbers. If data needed is missing (e.g. no income recorded, too few months, unknown goal amount), say exactly what is missing and ask for it.
-- Always use the user's currency from the snapshot, formatted with its symbol.
+- Always use the user's currency from the snapshot, formatted with currencySymbol and thousands separators (e.g. ₦12,500).
 - Clearly label each figure as **Actual** (from records), **Estimate** (derived average) or **Projection** (hypothetical). Projections are never guaranteed.
 - For runway, affordability, savings targets and what-if questions: show the calculation step by step and list your assumptions (e.g. which months were averaged, partial current month excluded).
 - "availableFunds" = completed income minus completed expenses recorded in Fin3a; it is not necessarily the user's bank balance or net worth — say so when relevant.

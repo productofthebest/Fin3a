@@ -192,7 +192,7 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
               </div>
             </div>
           ) : (
-            <div key={m.id} className="prose prose-sm prose-invert max-w-none text-sm text-foreground [&_table]:text-xs">
+            <div key={m.id} className="max-w-none space-y-2 text-sm leading-relaxed text-foreground [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_table]:w-full [&_table]:text-xs [&_th]:border-b [&_th]:border-border [&_th]:py-1 [&_th]:text-left [&_td]:border-b [&_td]:border-border/50 [&_td]:py-1 [&_code]:rounded [&_code]:bg-secondary [&_code]:px-1">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
             </div>
           );
