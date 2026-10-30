@@ -4,6 +4,7 @@ import { ArrowRight, ChartLine, ScanLine, Wallet, Zap } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { LandingAssistant } from "@/components/landing-assistant";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -91,6 +92,8 @@ function Landing() {
           ))}
         </div>
       </section>
+
+      <LandingAssistant />
 
       <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
         <p className="flex items-center gap-2 text-sm font-medium text-primary">
