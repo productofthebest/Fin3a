@@ -36,6 +36,13 @@
       "when": 1793390970873,
       "tag": "0004_documents_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793391193260,
+      "tag": "0005_allow_document_source",
+      "breakpoints": true
     }
   ]
 }

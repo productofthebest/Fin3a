@@ -1,0 +1,2 @@
+ALTER TABLE public.transactions DROP CONSTRAINT transactions_source_check;
+ALTER TABLE public.transactions ADD CONSTRAINT transactions_source_check CHECK (source = ANY (ARRAY['manual','receipt','statement','import','document']));
