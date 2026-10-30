@@ -140,7 +140,7 @@ async function parseSpreadsheet(buffer: ArrayBuffer, currencyFallback: string): 
   const XLSX = await import("xlsx");
   let rows: unknown[][];
   try {
-    const wb = XLSX.read(Buffer.from(buffer), { type: "buffer", cellDates: true });
+    const wb = XLSX.read(new Uint8Array(buffer), { type: "array", cellDates: true });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     if (!sheet) return [];
     rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: null }) as unknown[][];
@@ -304,11 +304,14 @@ async function extractWithAi(
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured for this workspace yet.");
 
-  const base64 = Buffer.from(buffer).toString("base64");
+  const bytes = new Uint8Array(buffer);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const base64 = btoa(bin);
   const mime = (mimeType || "application/octet-stream").toLowerCase();
   const mediaPart =
     mime.startsWith("image/")
-      ? { type: "image" as const, image: new URL(`data:${mime};base64,${base64}`) }
+      ? { type: "file" as const, data: base64, mediaType: mime }
       : { type: "file" as const, filename, data: base64, mediaType: "application/pdf" };
 
   const schema = {
@@ -361,12 +364,12 @@ async function extractWithAi(
 
   const result = streamText({
     model: provider.responses("openai/gpt-6-astra"),
-    instructions: EXTRACT_INSTRUCTIONS,
+    system: EXTRACT_INSTRUCTIONS,
     messages: [
       {
         role: "user",
         content: [
-          mediaPart as unknown as Parameters<typeof Object>[0],
+          mediaPart,
           { type: "text" as const, text: `Extract every transaction line from this document ("${filename}").` },
         ],
       },
