@@ -47,7 +47,7 @@ function Landing() {
         </Button>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 pb-24 pt-16 sm:px-6 sm:pt-24">
+      <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 sm:pt-14">
         <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
           Know exactly how your money moves — and how long it will last.
         </h1>
@@ -66,7 +66,12 @@ function Landing() {
           </Button>
         </div>
 
-        <div className="mt-20 grid gap-4 sm:grid-cols-3">
+      </section>
+
+      <LandingAssistant />
+
+      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+        <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
               icon: Wallet,
@@ -92,8 +97,6 @@ function Landing() {
           ))}
         </div>
       </section>
-
-      <LandingAssistant />
 
       <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
         <p className="flex items-center gap-2 text-sm font-medium text-primary">
