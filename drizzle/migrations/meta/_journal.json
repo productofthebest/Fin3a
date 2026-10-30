@@ -29,6 +29,13 @@
       "when": 1793390462969,
       "tag": "0003_assistant_chat_threads",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793390970873,
+      "tag": "0004_documents_storage_policies",
+      "breakpoints": true
     }
   ]
 }
