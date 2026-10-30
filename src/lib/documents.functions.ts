@@ -210,10 +210,12 @@ async function parseSpreadsheet(buffer: ArrayBuffer, currencyFallback: string): 
         else {
           const typeCell = cleanText(get(cols.type), 20)?.toLowerCase();
           if (typeCell && /credit|income|deposit|in\b/.test(typeCell)) type = "income";
+          else if (typeCell && /debit|expense|withdraw|out\b/.test(typeCell)) type = "expense";
           else {
-            // Positive amount without sign context — let the user confirm in review.
-            type = "expense";
-            confidence = "low";
+            // In a signed column (negatives = money out), positives are money in.
+            const signedColumn = rows.some((r) => (parseAmount(r?.[cols.amount]) ?? 0) < 0);
+            type = signedColumn ? "income" : "expense";
+            if (!signedColumn) confidence = "low";
           }
         }
       }
