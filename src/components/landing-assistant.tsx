@@ -33,7 +33,7 @@ export function LandingAssistant() {
     const content = text.trim();
     if (!content || loading) return;
     setError(null);
-    const history: Msg[] = [...messages, { role: "user", content }].slice(-12);
+    const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages([...history, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
