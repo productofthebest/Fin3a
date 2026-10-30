@@ -374,7 +374,24 @@ async function extractWithAi(
         ],
       },
     ],
-    output: Output.object({ schema: jsonSchema(schema as never) }),
+    output: Output.object({
+      schema: z.object({
+        transactions: z.array(
+          z.object({
+            txn_date: z.string().nullable().describe("YYYY-MM-DD or null"),
+            description: z.string().nullable(),
+            merchant: z.string().nullable(),
+            amount: z.number().nullable(),
+            currency: z.string().nullable().describe("3-letter currency code or null"),
+            type: z.enum(["income", "expense"]),
+            reference: z.string().nullable(),
+            payment_method: z.string().nullable(),
+            category_hint: z.string().nullable(),
+            confidence: z.enum(["high", "medium", "low"]),
+          }),
+        ),
+      }),
+    }),
     providerOptions: {
       openai: {
         store: false,
