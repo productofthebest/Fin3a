@@ -5,7 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowUp, Loader2, MessageSquarePlus, Square, Trash2, TrendingUp } from "lucide-react";
+import { ArrowUp, Loader2, MessageSquarePlus, Mic, Square, Trash2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
@@ -149,6 +149,52 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
     inputRef.current?.focus();
   }
 
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
+        if (!blob.size) return;
+        setTranscribing(true);
+        try {
+          const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
+          const fd = new FormData();
+          fd.append("file", blob, `recording.${ext}`);
+          const res = await fetch("/api/public/transcribe", { method: "POST", body: fd });
+          const j = (await res.json()) as { text?: string; error?: string };
+          if (!res.ok) throw new Error(j.error ?? "Transcription failed.");
+          if (!j.text) throw new Error("We didn't catch that. Try speaking a little louder.");
+          setInput((prev) => (prev ? `${prev} ${j.text}` : (j.text ?? "")));
+          inputRef.current?.focus();
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Transcription failed.");
+        } finally {
+          setTranscribing(false);
+        }
+      };
+      rec.start();
+      recorderRef.current = rec;
+      setRecording(true);
+    } catch {
+      toast.error("Microphone access was blocked. Allow it in your browser to use voice.");
+    }
+  }
+
+  function stopRecording() {
+    recorderRef.current?.stop();
+    recorderRef.current = null;
+    setRecording(false);
+  }
+
   return (
     <section className="flex h-[calc(100vh-13rem)] flex-col rounded-xl border border-border bg-card md:h-[calc(100vh-9rem)]">
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
@@ -225,12 +271,22 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
           placeholder="Ask about your spending, runway, a purchase…"
           className="max-h-40 min-h-10 flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
+        <Button
+          type="button"
+          size="icon"
+          variant={recording ? "destructive" : "secondary"}
+          onClick={recording ? stopRecording : startRecording}
+          disabled={transcribing || busy}
+          aria-label={recording ? "Stop recording" : "Record voice"}
+        >
+          {transcribing ? <Loader2 className="size-4 animate-spin" /> : recording ? <Square className="size-4" /> : <Mic className="size-4" />}
+        </Button>
         {busy ? (
           <Button type="button" size="icon" variant="secondary" onClick={() => stop()} aria-label="Stop">
             <Square className="size-4" />
           </Button>
         ) : (
-          <Button type="submit" size="icon" disabled={!input.trim()} aria-label="Send">
+          <Button type="submit" size="icon" disabled={!input.trim() || recording} aria-label="Send">
             <ArrowUp className="size-4" />
           </Button>
         )}
