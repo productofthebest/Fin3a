@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: "/bills", label: "Bills" },
   { to: "/documents", label: "Scan" },
   { to: "/assistant", label: "Assistant" },
+  { to: "/analysis", label: "Analysis" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -39,13 +40,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/dashboard" className="font-display text-lg font-semibold tracking-tight">
             Fin<span className="text-primary">3a</span>
           </Link>
-          <nav className="hidden flex-1 items-center gap-1 sm:flex">
+          <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-sm transition-colors",
+                  "shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors",
                   (item.to === "/assistant" ? pathname.startsWith("/assistant") : pathname === item.to)
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -70,13 +71,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </div>
-        <nav className="flex items-center gap-1 border-t border-border/60 px-4 py-2 sm:hidden">
+        <nav className="flex items-center gap-1 overflow-x-auto border-t border-border/60 px-4 py-2 lg:hidden">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm transition-colors",
+                "shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors",
                 (item.to === "/assistant" ? pathname.startsWith("/assistant") : pathname === item.to)
                   ? "bg-secondary text-foreground"
                   : "text-muted-foreground hover:text-foreground",

@@ -33,7 +33,10 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [x] Verify signed-in dashboard and live OpenAI balance-clarification answer; preview builds without errors
 - [ ] Verify numeric dashboard/assistant reconciliation against nonempty authorized financial records (requesting account has no transactions; no production dummy rows added)
 - [ ] Confirm currencies for legacy/imported rows without currency before including them in totals; unknown-currency records currently excluded, manual entries now save chosen currency
-- [ ] Next milestones: historical comparisons/reports, forecasting/simulator, affordability/goals, explainable insights, assistant extensions and scanner hardening
+- [x] Historical comparisons/reports implemented: period filters, previous-period/YoY, categories, transaction drill-down and CSV export; authenticated date/filter/reload/export/mobile checks passed on the owner's empty account
+- [x] Forecasting/simulator implemented: disclosed historical averages, required confirmed starting balance, baseline/scenario estimates and explicit insufficient-history state; arithmetic and input interaction tested
+- [ ] Verify historical totals/category drill-down and forecasting end-to-end against nonempty authorized saved records (owner has no records; no production dummy data added)
+- [ ] Remaining milestones: affordability/goals, explainable insights, assistant extensions and scanner hardening
 - [ ] Chat over the signed-in user's data; backend math + AI explanation
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
