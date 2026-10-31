@@ -6,6 +6,7 @@ import { ArrowLeft, Mail, Phone, ShieldCheck, Zap } from "lucide-react";
 import "@lovable.dev/cloud-auth-js/styles.css";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
+import { requestPhoneCode, verifyPhoneCode } from "@/lib/phone-auth.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
