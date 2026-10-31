@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
+import { Camera, Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,9 +23,11 @@ export function LandingAssistant() {
   const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | null>(null);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [photoScanning, setPhotoScanning] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -73,6 +75,28 @@ export function LandingAssistant() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleCameraPhoto(file: File) {
+    if (file.size > 15 * 1024 * 1024) {
+      setError("Image file is larger than 15 MB.");
+      return;
+    }
+    setError(null);
+    setPhotoScanning(true);
+
+    const userEntry: Msg = {
+      role: "user",
+      content: `📷 Captured document photo: ${file.name}`,
+    };
+    const assistantEntry: Msg = {
+      role: "assistant",
+      content: `I received your document photo (${file.name})! Fin3a AI automatically scans receipts, utility bills, POS slips, and bank statements, extracts merchants and amounts, and matches them to your custom categories.\n\nSign in or create a free account to securely store this scan in your personal ledger.`,
+    };
+
+    setMessages((prev) => [...prev, userEntry, assistantEntry]);
+    setAuthChoice("choose");
+    setPhotoScanning(false);
   }
 
   async function startRecording() {
@@ -140,13 +164,19 @@ export function LandingAssistant() {
               </div>
             </div>
           ))}
-          {authChoice && <div className="space-y-3 border-t border-border pt-4">
-            <p className="text-sm">Welcome back! How would you like to access your account?</p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button asChild variant={authChoice === "email" ? "secondary" : "default"}><Link to="/auth" search={{ method: "phone", mode: "signin" }}>Continue with phone number</Link></Button>
-              <Button asChild variant={authChoice === "phone" ? "secondary" : "default"} className="whitespace-normal"><Link to="/auth" search={{ method: "email", mode: "signin" }}>Continue with email and password</Link></Button>
+          {authChoice && (
+            <div className="space-y-3 border-t border-border pt-4">
+              <p className="text-sm">Welcome back! How would you like to access your account?</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button asChild variant={authChoice === "email" ? "secondary" : "default"}>
+                  <Link to="/auth" search={{ method: "phone", mode: "signin" }}>Continue with phone number</Link>
+                </Button>
+                <Button asChild variant={authChoice === "phone" ? "secondary" : "default"} className="whitespace-normal">
+                  <Link to="/auth" search={{ method: "email", mode: "signin" }}>Continue with email and password</Link>
+                </Button>
+              </div>
             </div>
-          </div>}
+          )}
           {messages.length === 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
               {SUGGESTIONS.map((s) => (
@@ -169,28 +199,78 @@ export function LandingAssistant() {
 
         <div className="border-t border-border p-3 sm:p-4">
           {error && <p className="mb-2 px-1 text-xs text-destructive">{error}</p>}
-          {(recording || transcribing) && (
+          {(recording || transcribing || photoScanning) && (
             <p className="mb-2 flex items-center gap-2 px-1 text-xs text-primary">
-              {recording ? <><span className="size-2 animate-pulse rounded-full bg-destructive" />Recording… tap stop when you're done</> : <><Loader2 className="size-3 animate-spin" />Turning your voice into text…</>}
+              {recording ? (
+                <><span className="size-2 animate-pulse rounded-full bg-destructive" />Recording… tap stop when you're done</>
+              ) : photoScanning ? (
+                <><Loader2 className="size-3 animate-spin" />Processing photo…</>
+              ) : (
+                <><Loader2 className="size-3 animate-spin" />Turning your voice into text…</>
+              )}
             </p>
           )}
           <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex items-end gap-2">
+            {/* Hidden Camera Input */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleCameraPhoto(f);
+                e.target.value = "";
+              }}
+            />
+
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-              placeholder="Ask about budgeting, saving, debt…"
+              placeholder="Ask about budgeting, saving, debt, or snap a bill…"
               rows={1}
               maxLength={2000}
               className="min-h-11 resize-none"
               aria-label="Your question"
             />
-            <Button type="button" size="icon" variant={recording ? "destructive" : "secondary"} className="size-11 shrink-0"
-              onClick={recording ? stopRecording : startRecording} disabled={transcribing || loading}
-              aria-label={recording ? "Stop recording" : "Record voice"}>
+
+            {/* Camera snap button */}
+            <Button
+              type="button"
+              size="icon"
+              variant="secondary"
+              className="size-11 shrink-0"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={loading || recording || photoScanning}
+              aria-label="Take photo of receipt or bill"
+              title="Snap receipt or bill with camera"
+            >
+              <Camera className="size-4" />
+            </Button>
+
+            {/* Voice record button */}
+            <Button
+              type="button"
+              size="icon"
+              variant={recording ? "destructive" : "secondary"}
+              className="size-11 shrink-0"
+              onClick={recording ? stopRecording : startRecording}
+              disabled={transcribing || loading || photoScanning}
+              aria-label={recording ? "Stop recording" : "Record voice"}
+            >
               {recording ? <Square className="size-4" /> : <Mic className="size-4" />}
             </Button>
-            <Button type="submit" size="icon" className="size-11 shrink-0" disabled={loading || !input.trim() || recording} aria-label="Send">
+
+            {/* Send button */}
+            <Button
+              type="submit"
+              size="icon"
+              className="size-11 shrink-0"
+              disabled={loading || !input.trim() || recording || photoScanning}
+              aria-label="Send"
+            >
               {loading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             </Button>
           </form>
