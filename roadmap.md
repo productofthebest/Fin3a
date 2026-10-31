@@ -36,7 +36,13 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [x] Historical comparisons/reports implemented: period filters, previous-period/YoY, categories, transaction drill-down and CSV export; authenticated date/filter/reload/export/mobile checks passed on the owner's empty account
 - [x] Forecasting/simulator implemented: disclosed historical averages, required confirmed starting balance, baseline/scenario estimates and explicit insufficient-history state; arithmetic and input interaction tested
 - [ ] Verify historical totals/category drill-down and forecasting end-to-end against nonempty authorized saved records (owner has no records; no production dummy data added)
-- [ ] Remaining milestones: affordability/goals, explainable insights, assistant extensions and scanner hardening
+- [ ] Affordability and saved goals with contribution/progress calculations
+- [ ] Explainable insights with evidence and actions
+- [ ] Backend-persisted confirmed balances and scenarios; server-calculated estimates
+- [ ] Assistant extensions with aggregate-only historical/category/goal context
+- [ ] Scanner hardening, duplicate-import safeguards and classification/currency review
+- [ ] Isolated synthetic accounts and end-to-end financial verification without production test data
+- [ ] Detailed test breakdown and final completion report; Phase 5 remains blocked until all Phase 4 checks pass
 - [ ] Chat over the signed-in user's data; backend math + AI explanation
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
