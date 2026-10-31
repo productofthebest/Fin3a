@@ -43,7 +43,7 @@ function Landing() {
           Fin<span className="text-primary">3a</span>
         </span>
         <Button asChild variant="ghost" size="sm">
-          <Link to="/auth">Sign in</Link>
+          <Link to="/auth" search={{ mode: "signin", method: "email" }}>Sign in</Link>
         </Button>
       </header>
 
@@ -57,7 +57,7 @@ function Landing() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
-            <Link to="/auth">
+            <Link to="/auth" search={{ mode: "signup", method: "email" }}>
               Get started <ArrowRight className="ml-1 size-4" />
             </Link>
           </Button>

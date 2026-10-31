@@ -18,12 +18,14 @@ import { dashboardQuery, settingsQuery } from "@/lib/queries";
 import { formatMoney, MONTH_NAMES } from "@/lib/fin3a";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { pageMeta } from "@/lib/page-meta";
 
 const searchSchema = z.object({
   offset: z.coerce.number().int().min(-24).max(0).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  head: () => pageMeta("Dashboard", "Your personal Fin3a cash flow, spending and financial overview."),
   ssr: false,
   validateSearch: searchSchema,
   loader: async ({ context }) => {
