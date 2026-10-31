@@ -4,6 +4,7 @@ Product: AI-first personal finance platform under Top Floor.
 Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 
 ## Phase 1 — Foundation (current)
+- [ ] Dual phone/email authentication screens, SMS verification, registration, recovery and responsive verification
 - [x] Lovable Cloud connected; email/password + Google + Lovable sign-in enabled
 - [x] Schema: user_settings, categories, transactions, recurring_bills (RLS, user-scoped)
 - [x] Dark premium design system (reference dashboard image)
