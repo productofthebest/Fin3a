@@ -9,5 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - AI assistant streams from `src/routes/api/chat.ts` (server route, bearer-verified) using the user's own OPENAI_API_KEY; the model only receives aggregate totals from `assistant-context.server.ts`, never descriptions/notes — keeps personal data minimal.
-- Authentication stays in Cloud Auth: phone OTP and email/password share `/auth` and the existing dashboard destination; never implement a second OTP system or merge unverified identities. Shared auth validation lives in `auth-options.ts` and field controls in `auth-fields.tsx` to keep both flows consistent.
+- Phone sign-in is a custom server OTP (`phone-otp.server.ts`, rules in `phone-otp.ts`) delivered by Termii because Cloud Auth's SMS can't use Termii; codes are HMAC-hashed in `phone_otps` (service-role only), phone→account mapping lives in `phone_identities`, and verified codes mint a Cloud Auth session via an admin magic-link token so email/Google/Lovable accounts stay untouched. Never link a phone without a verified code. Shared auth validation lives in `auth-options.ts` and field controls in `auth-fields.tsx`.
 - Shared content-route metadata uses `page-meta.ts` to give each financial page its own title and description without changing page functionality.

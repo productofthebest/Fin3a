@@ -186,6 +186,63 @@ export type Database = {
           },
         ]
       }
+      phone_identities: {
+        Row: {
+          phone: string
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          phone: string
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          phone?: string
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
+      phone_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          ip: string | null
+          phone: string
+          purpose: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip?: string | null
+          phone: string
+          purpose: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip?: string | null
+          phone?: string
+          purpose?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       recurring_bills: {
         Row: {
           active: boolean
