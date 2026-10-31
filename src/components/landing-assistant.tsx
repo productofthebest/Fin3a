@@ -4,6 +4,7 @@ import { Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { authenticationIntent, type AuthMethod } from "@/lib/auth-options";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -19,6 +20,7 @@ export function LandingAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | null>(null);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -32,6 +34,14 @@ export function LandingAssistant() {
   async function send(text: string) {
     const content = text.trim();
     if (!content || loading) return;
+    const intent = authenticationIntent(content);
+    if (intent) {
+      setAuthChoice(intent);
+      setInput("");
+      setError(null);
+      return;
+    }
+    setAuthChoice(null);
     setError(null);
     const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages([...history, { role: "assistant", content: "" }]);
@@ -130,6 +140,13 @@ export function LandingAssistant() {
               </div>
             </div>
           ))}
+          {authChoice && <div className="space-y-3 border-t border-border pt-4">
+            <p className="text-sm">Welcome back! How would you like to access your account?</p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild variant={authChoice === "email" ? "secondary" : "default"}><Link to="/auth" search={{ method: "phone", mode: "signin" }}>Continue with phone number</Link></Button>
+              <Button asChild variant={authChoice === "phone" ? "secondary" : "default"} className="whitespace-normal"><Link to="/auth" search={{ method: "email", mode: "signin" }}>Continue with email and password</Link></Button>
+            </div>
+          </div>}
           {messages.length === 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
               {SUGGESTIONS.map((s) => (
