@@ -108,7 +108,7 @@ function DashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="Available funds" value={formatMoney(data.availableFunds, currency)} />
+        <SummaryCard label="Recorded net cash flow" value={formatMoney(data.availableFunds, currency)} />
         <SummaryCard label="Pending" value={formatMoney(data.pendingAmount, currency)} />
         <SummaryCard
           label="Income this month"
@@ -117,6 +117,13 @@ function DashboardPage() {
         />
         <SummaryCard label="Spending this month" value={formatMoney(selected.spending, currency)} />
       </div>
+
+      <p className="mt-3 text-xs text-muted-foreground">
+        Actual completed records in {currency} · Not a bank balance · UTC dates
+        {Object.values(data.excludedRecords).reduce((sum, count) => sum + count, 0) > 0
+          ? ` · ${Object.values(data.excludedRecords).reduce((sum, count) => sum + count, 0)} records excluded (currency, classification, date or review status)`
+          : ""}
+      </p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
