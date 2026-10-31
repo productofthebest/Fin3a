@@ -43,6 +43,13 @@
       "when": 1793391193260,
       "tag": "0005_allow_document_source",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793442040099,
+      "tag": "0006_phone_otp_auth",
+      "breakpoints": true
     }
   ]
 }
