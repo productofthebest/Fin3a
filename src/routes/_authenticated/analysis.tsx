@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Download, ChevronRight } from "lucide-react";
@@ -31,6 +31,8 @@ function AnalysisPage() {
   const navigate = useNavigate();
   const { data } = useSuspenseQuery(analysisQuery(filters));
   const [category, setCategory] = useState<string | null | undefined>(undefined);
+  const [dates, setDates] = useState({ start: data.range.start, end: data.range.end });
+  useEffect(() => { setDates({ start: data.range.start, end: data.range.end }); }, [data.range.start, data.range.end]);
   const transactions = category === undefined ? data.transactions : data.transactions.filter(r => r.type === "expense" && r.category_id === category);
   const money = (v: number) => formatMoney(v, data.currency);
   const change = (v: number | null) => v === null ? "No percentage baseline" : `${v > 0 ? "+" : ""}${v}% vs comparison`;
@@ -41,8 +43,9 @@ function AnalysisPage() {
     <div className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="font-display text-3xl font-bold">Financial analysis</h1><p className="mt-2 text-sm text-muted-foreground">{data.range.start} — {data.range.end} · {data.currency} · Actual recorded figures</p></div><Button variant="outline" onClick={download}><Download className="size-4"/>Export CSV</Button></div>
     <div className="mt-6 flex flex-wrap items-end gap-3">
       <div><Label>Period</Label><Select value={filters.period} onValueChange={value => update({ period: value as AnalysisFilters["period"], start: value === "custom" ? data.range.start : undefined })}><SelectTrigger aria-label="Period" className="mt-2 w-40"><SelectValue/></SelectTrigger><SelectContent>{(["week","month","quarter","year","custom"] as const).map(p => <SelectItem key={p} value={p}>{({ week: "Weekly", month: "Monthly", quarter: "Quarterly", year: "Annual", custom: "Custom" })[p]}</SelectItem>)}</SelectContent></Select></div>
-      {filters.period === "custom" && <div><Label htmlFor="analysis-start">From</Label><Input id="analysis-start" className="mt-2 w-44" type="date" value={filters.start ?? data.range.start} max={filters.end ?? data.today} onChange={e => { if (e.target.value) update({ start: e.target.value }); }}/></div>}
-      <div><Label htmlFor="analysis-end">Through</Label><Input id="analysis-end" className="mt-2 w-44" type="date" value={filters.end ?? data.today} min={filters.period === "custom" ? filters.start : undefined} max={data.today} onChange={e => { if (e.target.value) update({ end: e.target.value }); }}/></div>
+      {filters.period === "custom" && <div><Label htmlFor="analysis-start">From</Label><Input id="analysis-start" className="mt-2 w-44" type="date" value={dates.start} max={dates.end} onChange={e => setDates(prev => ({ ...prev, start: e.target.value }))}/></div>}
+      <div><Label htmlFor="analysis-end">Through</Label><Input id="analysis-end" className="mt-2 w-44" type="date" value={dates.end} min={filters.period === "custom" ? dates.start : undefined} max={data.today} onChange={e => setDates(prev => ({ ...prev, end: e.target.value }))}/></div>
+      <Button variant="outline" disabled={!dates.end || dates.end > data.today || (filters.period === "custom" && (!dates.start || dates.start > dates.end))} onClick={() => update({ start: filters.period === "custom" ? dates.start : undefined, end: dates.end })}>Apply dates</Button>
       <div><Label>Compare with</Label><Select value={filters.comparison} onValueChange={value => update({ comparison: value as AnalysisFilters["comparison"] })}><SelectTrigger aria-label="Compare with" className="mt-2 w-56"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="previous">Previous equal-length period</SelectItem><SelectItem value="year">Same dates last year</SelectItem></SelectContent></Select></div>
     </div>
     <p className="mt-3 text-xs text-muted-foreground">Comparison: {data.range.comparisonStart} — {data.range.comparisonEnd} · UTC calendar dates · No currency conversion</p>
