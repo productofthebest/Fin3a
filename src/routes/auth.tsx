@@ -68,8 +68,7 @@ function AuthPage() {
     setBusy(true); setError(null);
     try {
       const number = resend && sentPhone ? sentPhone : normalizedPhone(phone, country);
-      const { error: sendError } = await supabase.auth.signInWithOtp({ phone: number, options: { shouldCreateUser: signup, ...(signup ? { data: { full_name: fullName.trim() } } : {}) } });
-      if (sendError) throw sendError;
+      await requestPhoneCode({ data: { phone: number, purpose: signup ? "signup" : "signin" } });
       setSentPhone(number); setOtp(""); setRetryAt(Date.now() + RESEND_COOLDOWN * 1000);
       setNotice(resend ? "A new verification code was sent." : null);
     } catch (e) { showError(e); } finally { setBusy(false); }
@@ -79,7 +78,8 @@ function AuthPage() {
     event.preventDefault(); if (!sentPhone || !validOtp(otp) || busy) return;
     setBusy(true); setError(null);
     try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({ phone: sentPhone, token: otp, type: "sms" });
+      const { tokenHash } = await verifyPhoneCode({ data: { phone: sentPhone, code: otp, purpose: signup ? "signup" : "signin" } });
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
       if (verifyError) throw verifyError;
       if (!data.session) throw new Error("Verification did not create a session. Please request a new code.");
       setOtp(""); await navigate({ to: AUTH_DESTINATION, replace: true });
