@@ -62,7 +62,6 @@ function Landing() {
             <Link to="/auth">I already have an account</Link>
           </Button>
         </div>
-
       </section>
 
       <LandingAssistant />
