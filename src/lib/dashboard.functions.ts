@@ -7,15 +7,12 @@ import {
   type Category,
   type RecurringBill,
   type Transaction,
-  type TxStatus,
-  type TxType,
 } from "./fin3a";
 import { calculateTotals, completedRecords, roundMoney, validFinancialDate } from "./financial-calculations";
 
 const CATEGORY_SELECT = "id, name, icon";
 
 function monthStart(offset: number): string {
-  const { year, month } = monthLabel(offset);
   return monthRange(offset).start;
 }
 

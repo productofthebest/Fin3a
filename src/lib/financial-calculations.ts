@@ -50,7 +50,7 @@ export function calculateTotals(records: FinancialRecord[], currency: string, to
     if (record.status === "pending") { if (record.type === "expense") pendingExpenses += amount; }
     else if (record.status === "cleared") clearedNet += record.type === "income" ? amount : -amount;
     else if (record.status === "completed") { if (record.type === "income") income += amount; else spending += amount; }
-    else excluded.unverified = (excluded.unverified ?? 0) + 1;
+    else excluded["unverified"] = (excluded["unverified"] ?? 0) + 1;
   }
   return {
     income: income / factor, spending: spending / factor, recordedNet: (income - spending) / factor,

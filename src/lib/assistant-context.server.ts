@@ -7,10 +7,6 @@ import { calculateTotals, completedRecords, historicalAverages, roundMoney } fro
 
 type Client = SupabaseClient<Database>;
 
-function round(n: number) {
-  return Math.round(n * 100) / 100;
-}
-
 export async function buildFinancialSnapshot(supabase: Client, userId: string) {
   const now = new Date();
   const fromDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1));
@@ -47,7 +43,7 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
     if (t.type === "income") m.income += amt;
     else {
       m.spending += amt;
-      const c = t.categories?.[0]?.name ?? "Uncategorized";
+      const c = t.categories?.name ?? "Uncategorized";
       m.byCategory[c] = (m.byCategory[c] ?? 0) + amt;
     }
   }
