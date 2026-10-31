@@ -41,7 +41,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Backend-persisted confirmed balances and scenarios; server-calculated estimates
 - [ ] Assistant extensions with aggregate-only historical/category/goal context
 - [ ] Scanner hardening, duplicate-import safeguards and classification/currency review
-- [ ] Isolated synthetic accounts and end-to-end financial verification without production test data
+- [ ] End-to-end financial verification with authorized real financial data deferred at the user's request; do not seed synthetic records into live accounts
 - [x] Add realistic test-runner-only synthetic history and reconcile recorded totals, category/chart totals, averages, confirmed-balance scenario and 1205-row pure calculations; 33 selected tests pass
 - [ ] Remaining feature implementation delegated to the separate Phase 4 draft; its saved-data changes require review/acceptance, and its live-connected database must not receive synthetic records
 - [ ] Detailed test breakdown and final completion report; Phase 5 remains blocked until all Phase 4 checks pass
