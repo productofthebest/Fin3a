@@ -48,10 +48,7 @@ function Landing() {
       </header>
 
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 sm:pt-14">
-        <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
-          Know exactly how your money moves — and how long it will last.
-        </h1>
-        <p className="mt-6 max-w-xl text-lg text-muted-foreground">
+        <p className="max-w-xl text-lg text-muted-foreground">
           Fin3a AI tracks what you earn, what you spend, and what's coming due — then turns it into
           clear, personal financial intelligence.
         </p>
@@ -75,23 +72,19 @@ function Landing() {
           {[
             {
               icon: Wallet,
-              title: "Track every naira and dollar",
               body: "Log income and expenses in your own currency, with categories and recurring bills handled for you.",
             },
             {
               icon: ChartLine,
-              title: "See the full picture",
               body: "Cash flow by month, spending by category, pending money and available funds — on one dashboard.",
             },
             {
               icon: ScanLine,
-              title: "Scan, don't type",
               body: "Soon: snap a receipt, teller slip or statement and Fin3a reads the numbers for you.",
             },
-          ].map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-2xl border border-border bg-card p-6">
+          ].map(({ icon: Icon, body }) => (
+            <div key={body} className="rounded-2xl border border-border bg-card p-6">
               <Icon className="size-5 text-primary" />
-              <h2 className="mt-4 font-display text-lg font-semibold">{title}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{body}</p>
             </div>
           ))}
