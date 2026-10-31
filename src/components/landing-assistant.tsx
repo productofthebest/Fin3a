@@ -160,7 +160,7 @@ export function LandingAssistant() {
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
               Want answers based on your real income and spending?
               <div className="mt-3 flex gap-2">
-                <Button asChild size="sm"><Link to="/auth">Sign up free</Link></Button>
+                <Button asChild size="sm"><Link to="/auth" search={{ mode: "signup", method: "email" }}>Sign up free</Link></Button>
                 <Button asChild size="sm" variant="ghost"><Link to="/auth">Log in</Link></Button>
               </div>
             </div>

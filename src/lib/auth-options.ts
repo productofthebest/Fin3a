@@ -6,8 +6,8 @@ export const RESEND_COOLDOWN = 60;
 export type AuthMethod = "phone" | "email";
 export type AuthMode = "signin" | "signup";
 
-export function authSearch(search: Record<string, unknown>): { method: AuthMethod; mode: AuthMode } {
-  return { method: search.method === "phone" ? "phone" : "email", mode: search.mode === "signup" ? "signup" : "signin" };
+export function authSearch(search: Record<string, unknown>): { method?: AuthMethod; mode?: AuthMode } {
+  return { method: search["method"] === "phone" ? "phone" : "email", mode: search["mode"] === "signup" ? "signup" : "signin" };
 }
 
 export function normalizedPhone(value: string, country: CountryCode) {
