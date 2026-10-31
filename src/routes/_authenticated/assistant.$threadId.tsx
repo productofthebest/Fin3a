@@ -5,12 +5,13 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowUp, Loader2, MessageSquarePlus, Mic, Square, Trash2, TrendingUp } from "lucide-react";
+import { ArrowUp, Camera, Loader2, MessageSquarePlus, Mic, Square, Trash2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { createThread, deleteThread, getThreadMessages, listThreads } from "@/lib/assistant.functions";
+import { analyzeDocument, createDocument } from "@/lib/documents.functions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -149,10 +150,61 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
     inputRef.current?.focus();
   }
 
+  // Voice recording state
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+
+  // Camera / photo scan state
+  const [scanningPhoto, setScanningPhoto] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleCameraCapture(file: File) {
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Image file is larger than 15 MB.");
+      return;
+    }
+    setScanningPhoto(true);
+    toast.info("Uploading & scanning receipt/bill…");
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) throw new Error("Please sign in again.");
+
+      const path = `${uid}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(path, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { document, duplicateOf } = await createDocument({
+        data: {
+          filename: file.name,
+          mime_type: file.type || "image/jpeg",
+          size_bytes: file.size,
+          storage_path: path,
+        },
+      });
+
+      if (duplicateOf) {
+        toast.warning(`This file looks similar to an earlier upload (${duplicateOf.filename}).`);
+      }
+
+      const res = await analyzeDocument({ data: { documentId: document.id } });
+      await qc.invalidateQueries({ queryKey: ["documents"] });
+      await qc.invalidateQueries({ queryKey: ["drafts"] });
+
+      toast.success(res.summary);
+
+      // Submit context message directly to the assistant to categorize and review
+      send(`I just took a photo of a receipt/bill (${file.name}). Scan result: ${res.summary}. Please break down the items, category, and date for my records.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to scan photo");
+    } finally {
+      setScanningPhoto(false);
+    }
+  }
 
   async function startRecording() {
     try {
@@ -212,7 +264,7 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
           <div className="mx-auto max-w-lg pt-6 text-center">
             <h2 className="font-display text-xl font-semibold">Ask about your money</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Spending, runway, affordability and what-if scenarios — calculated from what you've recorded in Fin3a.
+              Spending, runway, affordability, and receipts — calculated from what you've recorded in Fin3a.
             </p>
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               {SUGGESTIONS.map((s) => (
@@ -259,6 +311,20 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
         onSubmit={(e) => { e.preventDefault(); send(input); }}
         className="flex items-end gap-2 border-t border-border p-3"
       >
+        {/* Hidden Camera Input for direct photo capture / file selection */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleCameraCapture(f);
+            e.target.value = "";
+          }}
+        />
+
         <textarea
           ref={inputRef}
           value={input}
@@ -268,25 +334,41 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); }
           }}
-          placeholder="Ask about your spending, runway, a purchase…"
+          placeholder="Ask about your spending, runway, or snap a receipt…"
           className="max-h-40 min-h-10 flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
+
+        {/* Camera capture button */}
+        <Button
+          type="button"
+          size="icon"
+          variant="secondary"
+          onClick={() => cameraInputRef.current?.click()}
+          disabled={scanningPhoto || recording || busy}
+          aria-label="Snap receipt or bill with camera"
+          title="Take photo of receipt or bill"
+        >
+          {scanningPhoto ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+        </Button>
+
+        {/* Voice recording button */}
         <Button
           type="button"
           size="icon"
           variant={recording ? "destructive" : "secondary"}
           onClick={recording ? stopRecording : startRecording}
-          disabled={transcribing || busy}
+          disabled={transcribing || busy || scanningPhoto}
           aria-label={recording ? "Stop recording" : "Record voice"}
         >
           {transcribing ? <Loader2 className="size-4 animate-spin" /> : recording ? <Square className="size-4" /> : <Mic className="size-4" />}
         </Button>
+
         {busy ? (
           <Button type="button" size="icon" variant="secondary" onClick={() => stop()} aria-label="Stop">
             <Square className="size-4" />
           </Button>
         ) : (
-          <Button type="submit" size="icon" disabled={!input.trim() || recording} aria-label="Send">
+          <Button type="submit" size="icon" disabled={!input.trim() || recording || scanningPhoto} aria-label="Send">
             <ArrowUp className="size-4" />
           </Button>
         )}
