@@ -22,6 +22,7 @@ The previously reported **13 tests** were **12 financial tests and one homepage 
 The later baseline contained **29 passing selected tests**: 12 financial, 15 historical/forecast, one simulator interaction and one route-match test. A route-match test does not prove financial functionality or authentication.
 
 Latest main-project selected run: **33 passed, 0 failed** across five test files, including four realistic synthetic arithmetic checks. These are unit/component tests, not database-backed synthetic-account end-to-end tests. The latest preview check reports build OK.
+Additional period/runway checks bring the latest selected run to **39 passed, 0 failed** across six files: annual transportation spending 180,000; quarterly income 1,350,000/spending 870,000/net 480,000; missing year-on-year data yields no invented percentage; KWD precision, zero-balance runway and currency isolation pass. Real saved-record verification is deferred at the user's request; implementation must continue without production seeding.
 
 ## Implemented before continuation
 
