@@ -154,9 +154,6 @@ export function LandingAssistant() {
         </div>
 
         <div ref={scrollRef} className="max-h-[420px] min-h-[220px] space-y-4 overflow-y-auto px-5 py-6 sm:px-8">
-          <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-muted/50 px-4 py-3 text-sm">
-            Your money. Your time. Your intelligence. What would you like to understand about your finances?
-          </div>
           {messages.map((m, i) => (
             <div key={i} className={m.role === "user" ? "flex justify-end" : ""}>
               <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "rounded-tr-sm bg-primary text-primary-foreground" : "rounded-tl-sm bg-muted/50"}`}>
@@ -164,6 +161,7 @@ export function LandingAssistant() {
               </div>
             </div>
           ))}
+
           {authChoice && (
             <div className="space-y-3 border-t border-border pt-4">
               <p className="text-sm">Welcome back! How would you like to access your account?</p>
@@ -177,6 +175,7 @@ export function LandingAssistant() {
               </div>
             </div>
           )}
+
           {messages.length === 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
               {SUGGESTIONS.map((s) => (
@@ -186,6 +185,7 @@ export function LandingAssistant() {
               ))}
             </div>
           )}
+
           {messages.length >= 2 && !loading && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
               Want answers based on your real income and spending?
@@ -210,6 +210,7 @@ export function LandingAssistant() {
               )}
             </p>
           )}
+
           <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex items-end gap-2">
             {/* Hidden Camera Input */}
             <input
