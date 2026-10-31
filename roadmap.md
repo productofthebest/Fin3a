@@ -44,6 +44,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] End-to-end financial verification with authorized real financial data deferred at the user's request; do not seed synthetic records into live accounts
 - [x] Add realistic test-runner-only synthetic history and reconcile recorded totals, category/chart totals, averages, confirmed-balance scenario and 1205-row pure calculations; 33 selected tests pass
 - [ ] Remaining feature implementation delegated to the separate Phase 4 draft; its saved-data changes require review/acceptance, and its live-connected database must not receive synthetic records
+- [ ] Finish and integrate the full Phase 4 draft into the main app when ready; real-data verification remains deferred, not an implementation blocker
 - [ ] Detailed test breakdown and final completion report; Phase 5 remains blocked until all Phase 4 checks pass
 - [ ] Chat over the signed-in user's data; backend math + AI explanation
 - [ ] Analysis, runway, affordability, what-if, goals, insights
