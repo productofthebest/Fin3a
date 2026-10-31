@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight, ChartLine, ScanLine, Wallet, Zap } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -66,31 +66,7 @@ function Landing() {
 
       <LandingAssistant />
 
-      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            {
-              icon: Wallet,
-              body: "Log income and expenses in your own currency, with categories and recurring bills handled for you.",
-            },
-            {
-              icon: ChartLine,
-              body: "Cash flow by month, spending by category, pending money and available funds — on one dashboard.",
-            },
-            {
-              icon: ScanLine,
-              body: "Soon: snap a receipt, teller slip or statement and Fin3a reads the numbers for you.",
-            },
-          ].map(({ icon: Icon, body }) => (
-            <div key={body} className="rounded-2xl border border-border bg-card p-6">
-              <Icon className="size-5 text-primary" />
-              <p className="mt-2 text-sm text-muted-foreground">{body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:px-6">
         <p className="flex items-center gap-2 text-sm font-medium text-primary">
           <Zap className="size-4 fill-primary" />
           Powered by Top Floor
