@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { currencySymbol } from "./fin3a";
+import { calculateTotals, completedRecords, historicalAverages, roundMoney } from "./financial-calculations";
 
 type Client = SupabaseClient<Database>;
 
@@ -19,13 +20,13 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
     supabase.from("user_settings").select("currency").eq("user_id", userId).maybeSingle(),
     supabase
       .from("transactions")
-      .select("type, amount, occurred_at, status, categories(name)")
+      .select("type, amount, occurred_at, status, classification, currency, flag, categories(name)")
       .eq("user_id", userId)
       .gte("occurred_at", from),
-    supabase.from("transactions").select("type, amount, status").eq("user_id", userId),
+    supabase.from("transactions").select("type, amount, status, classification, currency, flag, occurred_at").eq("user_id", userId),
     supabase
       .from("recurring_bills")
-      .select("name, amount, frequency, next_due_date, active")
+      .select("amount, frequency, next_due_date, active, kind")
       .eq("user_id", userId)
       .eq("active", true),
   ]);
@@ -37,9 +38,8 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
     const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
     months.set(d.toISOString().slice(0, 7), { income: 0, spending: 0, byCategory: {} });
   }
-  const rows = (txRes.data ?? []) as unknown as {
-    type: string; amount: number; occurred_at: string; status: string; categories: { name: string } | null;
-  }[];
+  const today = now.toISOString().slice(0, 10);
+  const rows = completedRecords(txRes.data ?? [], currency, today);
   for (const t of rows) {
     const m = months.get(t.occurred_at.slice(0, 7));
     if (!m) continue;
@@ -47,51 +47,45 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
     if (t.type === "income") m.income += amt;
     else {
       m.spending += amt;
-      const c = t.categories?.name ?? "Uncategorized";
+      const c = t.categories?.[0]?.name ?? "Uncategorized";
       m.byCategory[c] = (m.byCategory[c] ?? 0) + amt;
     }
   }
 
-  let availableFunds = 0;
-  let pendingExpenses = 0;
-  let clearedNotSpendable = 0;
-  for (const t of allRes.data ?? []) {
-    const amt = Number(t.amount);
-    if (t.status === "pending") { if (t.type === "expense") pendingExpenses += amt; continue; }
-    if (t.status === "cleared") { clearedNotSpendable += t.type === "income" ? amt : -amt; continue; }
-    availableFunds += t.type === "income" ? amt : -amt;
-  }
+  const totals = calculateTotals(allRes.data ?? [], currency, today);
+  const money = (value: number) => roundMoney(value, currency);
 
   const monthly = [...months.entries()].map(([month, v]) => ({
     month,
-    income: round(v.income),
-    spending: round(v.spending),
-    net: round(v.income - v.spending),
+    income: money(v.income),
+    spending: money(v.spending),
+    net: money(v.income - v.spending),
     topCategories: Object.entries(v.byCategory)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
-      .map(([name, total]) => ({ name, total: round(total) })),
+      .map(([name, total]) => ({ name, total: money(total) })),
   }));
-  const withData = monthly.filter((m) => m.income > 0 || m.spending > 0);
-  // Exclude the current (partial) month from averages.
-  const complete = withData.filter((m) => m.month !== now.toISOString().slice(0, 7));
-  const avg = (k: "income" | "spending") =>
-    complete.length ? round(complete.reduce((s, m) => s + m[k], 0) / complete.length) : null;
+  const firstRecord = completedRecords(allRes.data ?? [], currency, today).map((r) => r.occurred_at).sort()[0] ?? null;
+  const averages = historicalAverages(monthly, firstRecord, today, currency);
 
   return {
     today: now.toISOString().slice(0, 10),
     currency,
     currencySymbol: currencySymbol(currency),
     transactionCount: (allRes.data ?? []).length,
-    availableFunds: round(availableFunds),
-    pendingExpenses: round(pendingExpenses),
-    clearedFundsNotYetSpendable: round(clearedNotSpendable),
-    completeMonthsWithData: complete.length,
-    averageMonthlyIncome: avg("income"),
-    averageMonthlySpending: avg("spending"),
+    recordedNetCashFlow: totals.recordedNet,
+    confirmedAvailableBalance: null,
+    pendingExpenses: totals.pendingExpenses,
+    clearedFundsNotYetSpendable: totals.clearedNet,
+    excludedRecords: totals.excluded,
+    completeMonthsWithData: averages.completeMonths.length,
+    monthsUsedForAverages: averages.completeMonths,
+    averageMonthlyIncome: averages.income,
+    averageMonthlySpending: averages.spending,
+    assumptions: ["UTC calendar dates; user timezone not configured", "Completed, regular, known-currency records only; duplicate/ambiguous flags excluded", "Unknown and other currencies excluded; no conversion", "First recorded month and current partial month excluded from averages; zero-activity months included", "Recording history does not establish complete account coverage"],
     monthly,
     activeRecurringBills: (billsRes.data ?? []).map((b) => ({
-      name: b.name, amount: Number(b.amount), frequency: b.frequency, nextDue: b.next_due_date,
+      amount: Number(b.amount), frequency: b.frequency, nextDue: b.next_due_date, kind: b.kind,
     })),
   };
 }
@@ -102,7 +96,8 @@ You receive a JSON snapshot of the signed-in user's own records (aggregated tota
 - Always use the user's currency from the snapshot, formatted with currencySymbol and thousands separators (e.g. ₦12,500).
 - Clearly label each figure as **Actual** (from records), **Estimate** (derived average) or **Projection** (hypothetical). Projections are never guaranteed.
 - For runway, affordability, savings targets and what-if questions: show the calculation step by step and list your assumptions (e.g. which months were averaged, partial current month excluded).
-- "availableFunds" = completed income minus completed expenses recorded in Fin3a; it is not necessarily the user's bank balance or net worth — say so when relevant.
+- "recordedNetCashFlow" = eligible completed income minus eligible completed expenses recorded in Fin3a. It is NOT a confirmed available balance, bank balance or net worth. confirmedAvailableBalance is unknown: ask the user for a confirmed starting balance before balance-based affordability/runway calculations.
+- Explain excluded records and averaging assumptions when relevant. Missing-currency records must be reviewed, not assumed to use the selected currency. Recurring commitments have no confirmed currency or payment matching: do not silently add them to spending or double count them.
 - Do not treat transfers, refunds or loans as income/expense unless the user confirms.
 - Keep answers concise, use short markdown sections, bullet lists and small tables.
 - You are not a licensed adviser; for major decisions suggest professional advice briefly.

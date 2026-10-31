@@ -10,6 +10,7 @@ import {
   type TxStatus,
   type TxType,
 } from "./fin3a";
+import { calculateTotals, completedRecords, roundMoney, validFinancialDate } from "./financial-calculations";
 
 const CATEGORY_SELECT = "id, name, icon";
 
@@ -26,6 +27,7 @@ export interface DashboardData {
   dailySpending: { day: number; cumulative: number }[];
   availableFunds: number;
   pendingAmount: number;
+  excludedRecords: Record<string, number>;
   upcomingBills: (RecurringBill & { category?: { id: string; name: string; icon: string } | null })[];
 }
 
@@ -34,6 +36,7 @@ export const getDashboard = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ offset: z.number().int().min(-24).max(0).default(0) }).parse(input))
   .handler(async ({ data, context }): Promise<DashboardData> => {
     const { supabase, userId } = context;
+    const today = new Date().toISOString().slice(0, 10);
 
     // Nine-month window ending at the selected month.
     const from = monthStart(data.offset - 8);
@@ -43,7 +46,8 @@ export const getDashboard = createServerFn({ method: "GET" })
       await Promise.all([
         supabase
           .from("transactions")
-          .select("id, type, amount, occurred_at, status, category_id, categories(name, icon)")
+          .select("id, type, amount, occurred_at, status, classification, currency, flag, category_id, categories(name, icon)")
+          .eq("user_id", userId)
           .gte("occurred_at", from)
           .lt("occurred_at", end)
           .order("occurred_at", { ascending: true }),
@@ -61,7 +65,8 @@ export const getDashboard = createServerFn({ method: "GET" })
     if (settingsError) throw new Error(settingsError.message);
     if (billsError) throw new Error(billsError.message);
 
-    const transactions = (txs ?? []) as (Transaction & { categories: { name: string; icon: string } | null })[];
+    const currency = settings?.currency ?? "USD";
+    const transactions = completedRecords(txs ?? [], currency, today);
 
     // Monthly cash-flow buckets for the nine-month window.
     const months: DashboardData["months"] = [];
@@ -96,7 +101,7 @@ export const getDashboard = createServerFn({ method: "GET" })
         const name = tx.categories?.name ?? "Uncategorized";
         const icon = tx.categories?.icon ?? "💠";
         const entry = catMap.get(name) ?? { name, icon, total: 0 };
-        entry.total += Number(tx.amount);
+        entry.total = roundMoney(entry.total + Number(tx.amount), currency);
         catMap.set(name, entry);
       }
     }
@@ -107,37 +112,29 @@ export const getDashboard = createServerFn({ method: "GET" })
       0,
     )).getUTCDate();
     for (let day = 1; day <= lastDay; day++) {
-      cumulative += dailyMap.get(day) ?? 0;
+      cumulative = roundMoney(cumulative + (dailyMap.get(day) ?? 0), currency);
       dailySpending.push({ day, cumulative });
     }
 
     // Lifetime available funds: completed money in minus money out.
     const { data: totals, error: totalsError } = await supabase
       .from("transactions")
-      .select("type, amount, status");
+      .select("type, amount, status, classification, currency, occurred_at, flag")
+      .eq("user_id", userId);
     if (totalsError) throw new Error(totalsError.message);
-    let availableFunds = 0;
-    let pendingAmount = 0;
-    for (const t of (totals ?? []) as { type: TxType; amount: number; status: TxStatus }[]) {
-      const amt = Number(t.amount);
-      if (t.status === "pending") {
-        if (t.type === "expense") pendingAmount += amt;
-        continue;
-      }
-      if (t.status === "cleared") continue; // set aside, not spendable yet
-      availableFunds += t.type === "income" ? amt : -amt;
-    }
+    const financialTotals = calculateTotals(totals ?? [], currency, today);
 
     const categoryBreakdown = [...catMap.values()].sort((a, b) => b.total - a.total).slice(0, 5);
 
     return {
-      currency: settings?.currency ?? "USD",
-      months: months.map((m) => ({ ...m, label: m.key.slice(5) })),
-      selectedMonth,
+      currency,
+      months: months.map((m) => ({ ...m, income: roundMoney(m.income, currency), spending: roundMoney(m.spending, currency), label: m.key.slice(5) })),
+      selectedMonth: { ...selectedMonth, income: roundMoney(selectedMonth.income, currency), spending: roundMoney(selectedMonth.spending, currency) },
       categoryBreakdown,
       dailySpending,
-      availableFunds,
-      pendingAmount,
+      availableFunds: financialTotals.recordedNet,
+      pendingAmount: financialTotals.pendingExpenses,
+      excludedRecords: financialTotals.excluded,
       upcomingBills: (bills ?? []) as DashboardData["upcomingBills"],
     };
   });
@@ -148,7 +145,7 @@ const txInput = z.object({
   category_id: z.string().uuid().nullable().optional(),
   description: z.string().trim().max(300).optional(),
   merchant: z.string().trim().max(120).optional(),
-  occurred_at: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  occurred_at: z.string().refine(validFinancialDate, "Enter a valid date."),
   status: z.enum(["pending", "cleared", "completed"]).default("completed"),
   notes: z.string().trim().max(2000).optional(),
   recurring_bill_id: z.string().uuid().nullable().optional(),
@@ -172,6 +169,7 @@ export const listTransactions = createServerFn({ method: "GET" })
     let query = context.supabase
       .from("transactions")
       .select(`*, categories(${CATEGORY_SELECT})`)
+      .eq("user_id", context.userId)
       .order("occurred_at", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(data.limit);
@@ -190,6 +188,8 @@ export const addTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => txInput.parse(input))
   .handler(async ({ data, context }) => {
+    const { data: settings, error: settingsError } = await context.supabase.from("user_settings").select("currency").eq("user_id", context.userId).single();
+    if (settingsError || !settings) throw new Error("Choose your currency before adding transactions.");
     const { data: row, error } = await context.supabase
       .from("transactions")
       .insert({
@@ -204,6 +204,7 @@ export const addTransaction = createServerFn({ method: "POST" })
         notes: data.notes ?? null,
         recurring_bill_id: data.recurring_bill_id ?? null,
         source: "manual",
+        currency: settings.currency,
       })
       .select(`*, categories(${CATEGORY_SELECT})`)
       .single();
