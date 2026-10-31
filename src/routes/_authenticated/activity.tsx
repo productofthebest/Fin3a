@@ -33,8 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/activity")({
+  head: () => pageMeta("Activity", "Review and manage your personal Fin3a income and expenses."),
   ssr: false,
   loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());

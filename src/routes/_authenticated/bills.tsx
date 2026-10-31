@@ -29,10 +29,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { pageMeta } from "@/lib/page-meta";
 
 const FREQUENCIES: Frequency[] = ["weekly", "monthly", "quarterly", "yearly"];
 
 export const Route = createFileRoute("/_authenticated/bills")({
+  head: () => pageMeta("Bills", "Manage your recurring bills and payment records in Fin3a."),
   ssr: false,
   loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());

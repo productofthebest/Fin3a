@@ -12,8 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
+  head: () => pageMeta("Welcome", "Choose your preferred currency and start your Fin3a account."),
   ssr: false,
   loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());
