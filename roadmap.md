@@ -28,6 +28,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Duplicate prevention guarding balances and totals
 
 ## Phase 4 — AI Financial Assistant (chat built early: threads, saved history, snapshot-based answers)
+- [ ] Review and implement the uploaded advanced financial intelligence brief incrementally, preserving existing features and design
 - [ ] Chat over the signed-in user's data; backend math + AI explanation
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
