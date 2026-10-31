@@ -37,7 +37,11 @@ async function sendTermii(phone: string, code: string) {
   const body = await res.text();
   if (!res.ok) {
     console.error("Termii send failed", res.status, body.slice(0, 300));
-    throw new Error("We couldn't send the SMS code to this number. Check the number or try again later.");
+    const m = body.toUpperCase();
+    if (m.includes("SENDER_ID")) throw new Error("SMS sign-in is temporarily unavailable: our sender name is awaiting approval. Please use email for now.");
+    if (m.includes("BALANCE") || m.includes("INSUFFICIENT")) throw new Error("SMS sign-in is temporarily unavailable. Please use email for now.");
+    if (m.includes("NUMBER") || m.includes("RECIPIENT") || m.includes("INVALID")) throw new Error("This phone number couldn't receive SMS. Check the number and try again.");
+    throw new Error("We couldn't send the SMS code right now. Please try again later or use email.");
   }
 }
 
