@@ -1,7 +1,7 @@
 import { calculateTotals, completedRecords, historicalAverages, roundMoney, validFinancialDate, type FinancialRecord } from "./financial-calculations";
 
 export type Period = "week" | "month" | "quarter" | "year" | "custom";
-export interface AnalysisFilters { period: Period; start?: string; end?: string; comparison: "previous" | "year" }
+export interface AnalysisFilters { period: Period; start?: string | undefined; end?: string | undefined; comparison: "previous" | "year" }
 export interface AnalysisRecord extends FinancialRecord { id: string; description: string | null; source: string; category_id: string | null; categories: { name: string; icon: string } | null }
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 export function addDays(date: string, days: number) { const d = new Date(`${date}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return iso(d); }

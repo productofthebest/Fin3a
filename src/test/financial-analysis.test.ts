@@ -12,7 +12,7 @@ describe("historical comparisons", () => {
   it("rejects future and reversed date ranges", () => { expect(() => analysisRange({ ...filters, end: "2026-11-01" }, "2026-10-31")).toThrow(); expect(() => analysisRange({ period: "custom", comparison: "previous", start: "2026-10-20", end: "2026-10-01" }, "2026-10-31")).toThrow(); });
   it("reconciles totals, category comparison and eligible drill-down", () => {
     const r = buildAnalysis([row({ amount: 12500 }), row({ occurred_at: "2026-09-15", amount: 10000 }), row({ type: "income", amount: 450000 }), row({ currency: "USD", amount: 999 }), row({ classification: "transfer", amount: 9000 }), row({ flag: "duplicate" }), row({ status: "pending" })], "NGN", "2026-10-31", filters);
-    expect(r.current.spending).toBe(12500); expect(r.current.recordedNet).toBe(437500); expect(r.previous.spending).toBe(10000); expect(r.categories[0].change).toBe(25); expect(r.transactions).toHaveLength(2); expect(r.trend.reduce((s,p) => s+p.spending,0)).toBe(12500);
+    expect(r.current.spending).toBe(12500); expect(r.current.recordedNet).toBe(437500); expect(r.previous.spending).toBe(10000); expect(r.categories[0]?.change).toBe(25); expect(r.transactions).toHaveLength(2); expect(r.trend.reduce((s,p) => s+p.spending,0)).toBe(12500);
   });
   it("never invents growth from a zero comparison", () => expect(percentChange(100,0)).toBeNull());
   it("keeps same-named categories separate by identity", () => expect(buildAnalysis([row({ category_id: "1", categories: { name: "Food", icon: "x" } }), row({ category_id: "2", categories: { name: "Food", icon: "x" } })], "NGN", "2026-10-31", filters).categories).toHaveLength(2));
