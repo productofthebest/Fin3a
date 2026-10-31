@@ -64,6 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {settings?.display_name ? (
               <span className="hidden text-sm text-muted-foreground md:inline">{settings.display_name}</span>
             ) : null}
+            <Link to="/security" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Phone</Link>
             <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
               <LogOut className="size-4" />
             </Button>
