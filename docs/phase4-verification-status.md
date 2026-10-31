@@ -21,6 +21,8 @@ The previously reported **13 tests** were **12 financial tests and one homepage 
 
 The later baseline contained **29 passing selected tests**: 12 financial, 15 historical/forecast, one simulator interaction and one route-match test. A route-match test does not prove financial functionality or authentication.
 
+Latest main-project selected run: **33 passed, 0 failed** across five test files, including four realistic synthetic arithmetic checks. These are unit/component tests, not database-backed synthetic-account end-to-end tests. The latest preview check reports build OK.
+
 ## Implemented before continuation
 
 - Shared transaction eligibility and currency-specific arithmetic used by dashboard and assistant.
