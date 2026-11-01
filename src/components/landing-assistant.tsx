@@ -43,7 +43,7 @@ export function LandingAssistant() {
       setError(null);
       return;
     }
-    setAuthChoice(null);
+    setAuthChoice("choose");
     setError(null);
     const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages([...history, { role: "assistant", content: "" }]);
