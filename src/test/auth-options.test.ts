@@ -10,4 +10,5 @@ describe("Dual authentication rules", () => {
   it("uses the existing dashboard destination", () => { expect(AUTH_DESTINATION).toBe("/dashboard"); });
   it("only accepts known registration methods", () => { expect(authSearch({ mode: "signup", method: "phone" })).toEqual({ mode: "signup", method: "phone" }); expect(authSearch({ mode: "unknown", method: "https://example.org" })).toEqual({ mode: "signin", method: "email" }); });
   it("takes login requests out of AI chat", () => { expect(authenticationIntent("I want to log in.")).toBe("choose"); expect(authenticationIntent("I want to use my phone number.")).toBe("phone"); expect(authenticationIntent("I prefer my email.")).toBe("email"); expect(authenticationIntent("How do I save money?")).toBeNull(); });
+  it("takes signup and signin prompts out of AI chat", () => { expect(authenticationIntent("Sign me up")).toBe("signup"); expect(authenticationIntent("sign me up!")).toBe("signup"); expect(authenticationIntent("I want to create a free account")).toBe("signup"); expect(authenticationIntent("Sign me in")).toBe("choose"); expect(authenticationIntent("sign me in.")).toBe("choose"); });
 });

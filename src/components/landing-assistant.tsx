@@ -13,6 +13,8 @@ const SUGGESTIONS = [
   "What's a simple way to start budgeting?",
   "How do I know how long my money will last?",
   "Should I pay off debt or save first?",
+  "Sign me up",
+  "Sign me in",
 ];
 
 export function LandingAssistant() {
@@ -20,7 +22,7 @@ export function LandingAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | null>("choose");
+  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | "signup" | null>("choose");
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [photoScanning, setPhotoScanning] = useState(false);
@@ -164,13 +166,17 @@ export function LandingAssistant() {
 
           {authChoice && (
             <div className="space-y-3 border-t border-border pt-4">
-              <p className="text-sm">Ready to get started? Sign in or create your free account:</p>
+              <p className="text-sm">
+                {authChoice === "signup"
+                  ? "Great choice! Create your free account with:"
+                  : "Ready to get started? Sign in or create your free account:"}
+              </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button asChild variant={authChoice === "email" ? "secondary" : "default"}>
-                  <Link to="/auth" search={{ method: "phone", mode: "signin" }}>Continue with phone number</Link>
+                  <Link to="/auth" search={{ method: "phone", mode: authChoice === "signup" ? "signup" : "signin" }}>Continue with phone number</Link>
                 </Button>
                 <Button asChild variant={authChoice === "phone" ? "secondary" : "default"} className="whitespace-normal">
-                  <Link to="/auth" search={{ method: "email", mode: "signin" }}>Continue with email and password</Link>
+                  <Link to="/auth" search={{ method: "email", mode: authChoice === "signup" ? "signup" : "signin" }}>Continue with email and password</Link>
                 </Button>
               </div>
             </div>
