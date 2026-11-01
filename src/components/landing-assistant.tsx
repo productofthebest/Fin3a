@@ -13,6 +13,8 @@ const SUGGESTIONS = [
   "What's a simple way to start budgeting?",
   "How do I know how long my money will last?",
   "Should I pay off debt or save first?",
+  "Sign me up",
+  "Sign me in",
 ];
 
 export function LandingAssistant() {

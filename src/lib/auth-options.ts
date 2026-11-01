@@ -20,10 +20,11 @@ export function validOtp(value: string) { return /^\d{6}$/.test(value); }
 
 export const PHONE_COUNTRIES = getCountries().map((code) => ({ code, dial: getCountryCallingCode(code) }));
 
-export function authenticationIntent(text: string): AuthMethod | "choose" | null {
+export function authenticationIntent(text: string): AuthMethod | "choose" | "signup" | null {
   const value = text.trim().toLowerCase();
   if (/^(i (?:want|prefer|would like)(?: to)? (?:use )?(?:my |a )?phone(?: number)?[.!]?|continue with phone(?: number)?[.!]?)$/.test(value)) return "phone";
   if (/^(i (?:want|prefer|would like)(?: to)? (?:use )?(?:my |an? )?email(?: and password)?[.!]?|continue with email(?: and password)?[.!]?)$/.test(value)) return "email";
-  if (/^(?:(?:i (?:want|would like|need) to )?(?:log in|login|sign in)|help me (?:log in|sign in))[.!]?$/.test(value)) return "choose";
+  if (/^(?:(?:i (?:want|would like|need) to )?(?:sign up|register|create (?:a |an |my )?(?:free )?account|get started)|sign me up)[.!]?$/.test(value)) return "signup";
+  if (/^(?:(?:i (?:want|would like|need) to )?(?:log in|login|sign in)|help me (?:log in|sign in)|sign me in)[.!]?$/.test(value)) return "choose";
   return null;
 }
