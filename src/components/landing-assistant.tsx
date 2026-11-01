@@ -168,17 +168,14 @@ export function LandingAssistant() {
             <div className="space-y-3 border-t border-border pt-4">
               <p className="text-sm">
                 {authChoice === "signup"
-                  ? "Great choice! Create your free account with:"
-                  : "Ready to get started? Sign in or create your free account:"}
+                  ? "Great choice! Create your free Fin3a account to get answers based on your own records."
+                  : "Ready to get started? Sign in or create your free account."}
               </p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button asChild variant={authChoice === "email" ? "secondary" : "default"}>
-                  <Link to="/auth" search={{ method: "phone", mode: authChoice === "signup" ? "signup" : "signin" }}>Continue with phone number</Link>
-                </Button>
-                <Button asChild variant={authChoice === "phone" ? "secondary" : "default"} className="whitespace-normal">
-                  <Link to="/auth" search={{ method: "email", mode: authChoice === "signup" ? "signup" : "signin" }}>Continue with email and password</Link>
-                </Button>
-              </div>
+              <Button asChild size="lg" className="w-full sm:w-auto">
+                <Link to="/auth" search={{ method: "email", mode: authChoice === "signup" ? "signup" : "signin" }}>
+                  {authChoice === "signup" ? "Create your free account" : "Sign in to Fin3a"}
+                </Link>
+              </Button>
             </div>
           )}
 
@@ -237,9 +234,9 @@ export function LandingAssistant() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
               placeholder="Ask about budgeting, saving, debt, or snap a bill…"
-              rows={1}
+              rows={2}
               maxLength={2000}
-              className="min-h-11 resize-none"
+              className="min-h-16 resize-none rounded-2xl px-4 py-4 text-base"
               aria-label="Your question"
             />
 
