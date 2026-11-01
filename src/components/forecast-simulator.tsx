@@ -1,280 +1,136 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { Camera, Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
+import { useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { authenticationIntent, type AuthMethod } from "@/lib/auth-options";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { simulateForecast } from "@/lib/financial-analysis";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type History = { completeMonths: string[]; income: number | null; spending: number | null };
 
-const SUGGESTIONS = [
-  "How much should I keep as an emergency fund?",
-  "What's a simple way to start budgeting?",
-  "How do I know how long my money will last?",
-  "Should I pay off debt or save first?",
-];
+type Result = ReturnType<typeof simulateForecast>;
 
-export function LandingAssistant() {
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+function fmt(value: number | null): string {
+  if (value === null) return "Runway: not applicable (no monthly shortfall)";
+  if (value === 0) return "Runway: 0 months";
+  return `Runway: ${Number.isInteger(value) ? value : value.toFixed(1)} months`;
+}
+
+export function ForecastSimulator({ history, currency }: { history: History; currency: string }) {
+  const [balance, setBalance] = useState("");
+  const [incomeChange, setIncomeChange] = useState("");
+  const [spendingChange, setSpendingChange] = useState("");
+  const [purchase, setPurchase] = useState("");
+  const [months, setMonths] = useState("12");
+  const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | null>(null);
-  const [recording, setRecording] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
-  const [photoScanning, setPhotoScanning] = useState(false);
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages]);
+  const eligible = history.completeMonths.length >= 3 && history.income !== null && history.spending !== null;
 
-  async function send(text: string) {
-    const content = text.trim();
-    if (!content || loading) return;
-    const intent = authenticationIntent(content);
-    if (intent) {
-      setAuthChoice(intent);
-      setInput("");
-      setError(null);
+  function calculate() {
+    setError(null);
+    setResult(null);
+    const parsed = {
+      balance: Number(balance),
+      income: history.income ?? 0,
+      spending: history.spending ?? 0,
+      incomeChange: Number(incomeChange || 0),
+      spendingChange: Number(spendingChange || 0),
+      purchase: Number(purchase || 0),
+      months: Number(months || 12),
+    };
+    if (balance.trim() === "") {
+      setError("Enter your confirmed available balance first — forecasts are never guessed from recorded cash flow.");
       return;
     }
-    setAuthChoice(null);
-    setError(null);
-    const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
-    setMessages([...history, { role: "assistant", content: "" }]);
-    setInput("");
-    setLoading(true);
     try {
-      const res = await fetch("/api/public/visitor-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
-      });
-      if (!res.ok || !res.body) {
-        const j = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(j.error ?? "Fin3a AI is unavailable right now.");
-      }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        setMessages([...history, { role: "assistant", content: acc }]);
-      }
-      if (!acc.trim()) throw new Error("No answer came back. Please try again.");
+      setResult(simulateForecast(parsed, currency));
     } catch (e) {
-      setMessages(history);
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-    } finally {
-      setLoading(false);
+      setError(e instanceof Error ? e.message : "Enter valid numbers.");
     }
-  }
-
-  function handleCameraPhoto(file: File) {
-    if (file.size > 15 * 1024 * 1024) {
-      setError("Image file is larger than 15 MB.");
-      return;
-    }
-    setError(null);
-    setPhotoScanning(true);
-
-    const userEntry: Msg = {
-      role: "user",
-      content: `📷 Captured document photo: ${file.name}`,
-    };
-    const assistantEntry: Msg = {
-      role: "assistant",
-      content: `I received your document photo (${file.name})! Fin3a AI automatically scans receipts, utility bills, POS slips, and bank statements, extracts merchants and amounts, and matches them to your custom categories.\n\nSign in or create a free account to securely store this scan in your personal ledger.`,
-    };
-
-    setMessages((prev) => [...prev, userEntry, assistantEntry]);
-    setAuthChoice("choose");
-    setPhotoScanning(false);
-  }
-
-  async function startRecording() {
-    setError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
-      chunksRef.current = [];
-      rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
-      rec.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
-        if (!blob.size) return;
-        setTranscribing(true);
-        try {
-          const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
-          const fd = new FormData();
-          fd.append("file", blob, `recording.${ext}`);
-          const res = await fetch("/api/public/transcribe", { method: "POST", body: fd });
-          const j = (await res.json()) as { text?: string; error?: string };
-          if (!res.ok) throw new Error(j.error ?? "Transcription failed.");
-          if (!j.text) throw new Error("We didn't catch that. Try speaking a little louder.");
-          setInput((prev) => (prev ? `${prev} ${j.text}` : (j.text ?? "")));
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Transcription failed.");
-        } finally {
-          setTranscribing(false);
-        }
-      };
-      rec.start();
-      recorderRef.current = rec;
-      setRecording(true);
-    } catch {
-      setError("Microphone access was blocked. Allow it in your browser to use voice.");
-    }
-  }
-
-  function stopRecording() {
-    recorderRef.current?.stop();
-    recorderRef.current = null;
-    setRecording(false);
   }
 
   return (
-    <section id="try-fin3a-ai" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-      <div className="overflow-hidden rounded-3xl border border-primary/30 bg-card shadow-[0_0_80px_-30px] shadow-primary/50">
-        <div className="flex items-center gap-3 border-b border-border px-5 py-4 sm:px-8">
-          <span className="flex size-9 items-center justify-center rounded-full bg-primary/15">
-            <Sparkles className="size-4 text-primary" />
-          </span>
-          <div>
-            <h2 className="font-display text-lg font-semibold">Try Fin3a AI</h2>
-            <p className="text-xs text-muted-foreground">General guidance only — sign up for answers based on your own records.</p>
+    <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <h2 className="font-display text-lg font-semibold">What-if forecast</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Based on your average of {history.completeMonths.length} complete month{history.completeMonths.length === 1 ? "" : "s"}
+        {eligible ? ` (${currency} ${history.income} income, ${currency} ${history.spending} spending per month)` : ""}.
+        Scenario inputs are temporary and never saved.
+      </p>
+
+      {!eligible ? (
+        <p className="mt-4 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+          Forecasts need at least three complete historical months of records. Keep logging income and expenses and check back.
+        </p>
+      ) : (
+        <form
+          className="mt-4 space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            calculate();
+          }}
+        >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="fs-balance">Confirmed available balance ({currency})</Label>
+              <Input id="fs-balance" type="number" min="0" step="any" value={balance} onChange={(e) => setBalance(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fs-income-change">Monthly income change (+ / −)</Label>
+              <Input id="fs-income-change" type="number" step="any" value={incomeChange} onChange={(e) => setIncomeChange(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fs-spending-change">Monthly spending change (+ / −)</Label>
+              <Input id="fs-spending-change" type="number" step="any" value={spendingChange} onChange={(e) => setSpendingChange(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fs-purchase">One-time purchase</Label>
+              <Input id="fs-purchase" type="number" min="0" step="any" value={purchase} onChange={(e) => setPurchase(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fs-months">Horizon (months)</Label>
+              <Input id="fs-months" type="number" min="1" max="60" step="1" value={months} onChange={(e) => setMonths(e.target.value)} />
+            </div>
           </div>
-        </div>
 
-        <div ref={scrollRef} className="max-h-[420px] min-h-[220px] space-y-4 overflow-y-auto px-5 py-6 sm:px-8">
-          {/* Greeting message bubble - edit or remove this block if desired */}
-          <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-muted/50 px-4 py-3 text-sm">
-            Your money. Your time. Your intelligence. What would you like to understand about your finances?
-          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
-          {messages.map((m, i) => (
-            <div key={i} className={m.role === "user" ? "flex justify-end" : ""}>
-              <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "rounded-tr-sm bg-primary text-primary-foreground" : "rounded-tl-sm bg-muted/50"}`}>
-                {m.content || <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="size-3.5 animate-spin" />Thinking…</span>}
+          <Button type="submit">Calculate scenario</Button>
+
+          {result && (
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
+                  <p className="font-medium">Current path</p>
+                  <p className="mt-1 text-muted-foreground">Net per month: {currency} {result.baselineNet}</p>
+                  <p className="mt-1">{fmt(result.baselineRunway)}</p>
+                </div>
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+                  <p className="font-medium">Your scenario</p>
+                  <p className="mt-1 text-muted-foreground">Net per month: {currency} {result.scenarioNet}</p>
+                  <p className="mt-1">{fmt(result.scenarioRunway)}</p>
+                </div>
               </div>
-            </div>
-          ))}
 
-          {authChoice && (
-            <div className="space-y-3 border-t border-border pt-4">
-              <p className="text-sm">Welcome back! How would you like to access your account?</p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button asChild variant={authChoice === "email" ? "secondary" : "default"}>
-                  <Link to="/auth" search={{ method: "phone", mode: "signin" }}>Continue with phone number</Link>
-                </Button>
-                <Button asChild variant={authChoice === "phone" ? "secondary" : "default"} className="whitespace-normal">
-                  <Link to="/auth" search={{ method: "email", mode: "signin" }}>Continue with email and password</Link>
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {messages.length === 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => send(s)} className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-foreground">
-                  {s}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {messages.length >= 2 && !loading && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
-              Want answers based on your real income and spending?
-              <div className="mt-3 flex gap-2">
-                <Button asChild size="sm"><Link to="/auth" search={{ mode: "signup", method: "email" }}>Sign up free</Link></Button>
-                <Button asChild size="sm" variant="ghost"><Link to="/auth">Log in</Link></Button>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={result.points} margin={{ top: 8, right: 12, bottom: 0, left: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="month" tickFormatter={(m: number) => `M${m}`} className="text-xs" />
+                    <Tooltip
+                      formatter={(value: number, name: string) => [`${currency} ${value}`, name === "baseline" ? "Current path" : "Scenario"]}
+                      labelFormatter={(m: number) => `Month ${m}`}
+                    />
+                    <Line type="monotone" dataKey="baseline" stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" dot={false} />
+                    <Line type="monotone" dataKey="scenario" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
-        </div>
-
-        <div className="border-t border-border p-3 sm:p-4">
-          {error && <p className="mb-2 px-1 text-xs text-destructive">{error}</p>}
-          {(recording || transcribing || photoScanning) && (
-            <p className="mb-2 flex items-center gap-2 px-1 text-xs text-primary">
-              {recording ? (
-                <><span className="size-2 animate-pulse rounded-full bg-destructive" />Recording… tap stop when you're done</>
-              ) : photoScanning ? (
-                <><Loader2 className="size-3 animate-spin" />Processing photo…</>
-              ) : (
-                <><Loader2 className="size-3 animate-spin" />Turning your voice into text…</>
-              )}
-            </p>
-          )}
-
-          <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex items-end gap-2">
-            {/* Hidden Camera Input */}
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleCameraPhoto(f);
-                e.target.value = "";
-              }}
-            />
-
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-              placeholder="Ask about budgeting, saving, debt, or snap a bill…"
-              rows={1}
-              maxLength={2000}
-              className="min-h-11 resize-none"
-              aria-label="Your question"
-            />
-
-            {/* Camera snap button */}
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              className="size-11 shrink-0"
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={loading || recording || photoScanning}
-              aria-label="Take photo of receipt or bill"
-              title="Snap receipt or bill with camera"
-            >
-              <Camera className="size-4" />
-            </Button>
-
-            {/* Voice record button */}
-            <Button
-              type="button"
-              size="icon"
-              variant={recording ? "destructive" : "secondary"}
-              className="size-11 shrink-0"
-              onClick={recording ? stopRecording : startRecording}
-              disabled={transcribing || loading || photoScanning}
-              aria-label={recording ? "Stop recording" : "Record voice"}
-            >
-              {recording ? <Square className="size-4" /> : <Mic className="size-4" />}
-            </Button>
-
-            {/* Send button */}
-            <Button
-              type="submit"
-              size="icon"
-              className="size-11 shrink-0"
-              disabled={loading || !input.trim() || recording || photoScanning}
-              aria-label="Send"
-            >
-              {loading ? <Loader2 className="size
+        </form>
+      )}
+    </section>
+  );
+}
