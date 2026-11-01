@@ -245,7 +245,7 @@ export function LandingAssistant() {
               type="button"
               size="icon"
               variant="secondary"
-              className="size-11 shrink-0"
+              className="size-12 shrink-0 rounded-xl"
               onClick={() => cameraInputRef.current?.click()}
               disabled={loading || recording || photoScanning}
               aria-label="Take photo of receipt or bill"
@@ -259,7 +259,7 @@ export function LandingAssistant() {
               type="button"
               size="icon"
               variant={recording ? "destructive" : "secondary"}
-              className="size-11 shrink-0"
+              className="size-12 shrink-0 rounded-xl"
               onClick={recording ? stopRecording : startRecording}
               disabled={transcribing || loading || photoScanning}
               aria-label={recording ? "Stop recording" : "Record voice"}
@@ -271,7 +271,7 @@ export function LandingAssistant() {
             <Button
               type="submit"
               size="icon"
-              className="size-11 shrink-0"
+              className="size-12 shrink-0 rounded-xl"
               disabled={loading || !input.trim() || recording || photoScanning}
               aria-label="Send"
             >
