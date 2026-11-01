@@ -20,7 +20,7 @@ export function LandingAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | null>(null);
+  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | null>("choose");
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [photoScanning, setPhotoScanning] = useState(false);
@@ -43,7 +43,7 @@ export function LandingAssistant() {
       setError(null);
       return;
     }
-    setAuthChoice(null);
+    setAuthChoice("choose");
     setError(null);
     const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages([...history, { role: "assistant", content: "" }]);
@@ -164,7 +164,7 @@ export function LandingAssistant() {
 
           {authChoice && (
             <div className="space-y-3 border-t border-border pt-4">
-              <p className="text-sm">Welcome back! How would you like to access your account?</p>
+              <p className="text-sm">Ready to get started? Sign in or create your free account:</p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button asChild variant={authChoice === "email" ? "secondary" : "default"}>
                   <Link to="/auth" search={{ method: "phone", mode: "signin" }}>Continue with phone number</Link>
