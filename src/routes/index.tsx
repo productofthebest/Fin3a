@@ -1,9 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { LandingAssistant } from "@/components/landing-assistant";
 
 export const Route = createFileRoute("/")({
@@ -38,13 +37,10 @@ function Landing() {
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+      <header className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
         <span className="font-display text-lg font-semibold tracking-tight">
           Fin<span className="text-primary">3a</span>
         </span>
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/auth" search={{ mode: "signin", method: "email" }}>Sign in</Link>
-        </Button>
       </header>
 
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 sm:pt-14">
@@ -52,16 +48,6 @@ function Landing() {
           Fin3a AI tracks what you earn, what you spend, and what's coming due — then turns it into
           clear, personal financial intelligence.
         </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link to="/auth" search={{ mode: "signup", method: "email" }}>
-              Get started <ArrowRight className="ml-1 size-4" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="secondary">
-            <Link to="/auth">I already have an account</Link>
-          </Button>
-        </div>
       </section>
 
       <LandingAssistant />
