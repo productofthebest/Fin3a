@@ -42,3 +42,41 @@ export async function consumeQuota(
   if (error) console.error("quota check failed", error.message);
   return !error && data === true;
 }
+
+export type AiFeature = "assistant" | "landing_chat" | "transcribe" | "scan";
+type Sb = Awaited<ReturnType<typeof verifyBearer>> extends infer R ? (R extends { supabase: infer S } ? S : never) : never;
+export type AiTokens = { model: string; input?: number | null; cached?: number | null; output?: number | null };
+
+/** Atomic server-side preflight (kill switch, budgets, per-user limits, duplicate requests). Fails closed. */
+export async function beginAiUsage(supabase: Sb | import("@supabase/supabase-js").SupabaseClient, feature: AiFeature, requestKey: string | null, units = 1) {
+  const { data, error } = await (supabase as Sb).rpc("ai_begin", { _feature: feature, _request_key: requestKey as string, _units: units });
+  if (error || !data) {
+    console.error("ai preflight failed", error?.message);
+    return { allowed: false as const, message: "Fin3a AI is temporarily unavailable. Please try again shortly." };
+  }
+  const r = data as { allowed: boolean; reason?: string; usage_id?: string; warning?: string | null };
+  if (!r.allowed) return { allowed: false as const, message: aiLimitMessage(r.reason) , reason: r.reason };
+  return { allowed: true as const, usageId: r.usage_id!, warning: r.warning ?? null };
+}
+
+export async function finishAiUsage(supabase: Sb | import("@supabase/supabase-js").SupabaseClient, usageId: string, ok: boolean, tokens: AiTokens | null, errorCode?: string) {
+  const { error } = await (supabase as Sb).rpc("ai_finish", {
+    _usage_id: usageId, _status: ok ? "ok" : "failed", _model: tokens?.model ?? "",
+    _in: (tokens?.input ?? null) as number, _cached: (tokens?.cached ?? null) as number, _out: (tokens?.output ?? null) as number,
+    _error: (errorCode ?? null) as string,
+  });
+  if (error) console.error("ai usage record failed", error.message);
+}
+
+export function aiLimitMessage(reason?: string): string {
+  switch (reason) {
+    case "disabled": return "Fin3a AI is temporarily paused by the administrator. Please try again later.";
+    case "blocked": return "AI features are paused on this account. Contact support if you think this is a mistake.";
+    case "duplicate": return "This request is already being processed.";
+    case "budget": return "Fin3a AI has reached its usage budget for now. Please try again later.";
+    case "daily_scan_limit": return "You've reached today's document-scan limit. Try again tomorrow.";
+    case "monthly_scan_limit": return "You've reached this month's document-scan limit.";
+    case "daily_limit": return "You've reached today's AI request limit. Try again tomorrow.";
+    default: return "Fin3a AI is unavailable right now.";
+  }
+}
