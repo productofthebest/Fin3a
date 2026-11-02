@@ -17,6 +17,7 @@ import { createThread, deleteThread, getThreadMessages, listThreads } from "@/li
 import { analyzeDocument, createDocument } from "@/lib/documents.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
 import { settingsQuery } from "@/lib/queries";
+import { AppShell } from "@/components/app-shell";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -104,42 +105,10 @@ function AssistantPage() {
   const current = threads.find((t) => t.id === threadId);
 
   return (
-    <div className="theme-lavender min-h-screen px-3 py-4 sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-[1020px]">
-        <div className="mx-auto max-w-[1000px] px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
-          {/* Top navigation */}
-          <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:grid-cols-[auto_1fr_auto]">
-            <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
-              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground"><Zap className="size-4" /></span>
-              <span className="truncate text-lg font-bold tracking-tight">FIN3A</span>
-            </Link>
-            <nav className="order-3 col-span-2 flex items-center gap-0 overflow-x-auto rounded-full border border-border bg-card px-2 py-1.5 shadow-sm md:order-none md:col-span-1 md:mx-auto">
-              {PRIMARY_NAV.map((n) => (
-                <Link key={n.to} to={n.to} className="shrink-0 rounded-full px-2.5 py-1 text-xs text-foreground/80 hover:text-primary" activeProps={{ className: "text-primary font-medium" }}>
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Link to="/activity" aria-label="Search transactions" className="grid size-8 place-items-center rounded-full text-foreground hover:text-primary"><Search className="size-[18px]" /></Link>
-              <Link to="/security" aria-label="Settings" className="grid size-8 place-items-center rounded-full text-foreground hover:text-primary"><Settings className="size-[18px]" /></Link>
-              <Link to="/insights" aria-label="Insights" className="relative grid size-8 place-items-center rounded-full text-foreground hover:text-primary">
-                <Bell className="size-[18px]" /><span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger aria-label="Account menu" className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-accent to-primary text-sm font-semibold text-primary-foreground ring-2 ring-card">
-                  {(name?.[0] ?? "F").toUpperCase()}
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="theme-lavender">
-                  {settings?.currency ? <DropdownMenuItem disabled>Currency: {settings.currency}</DropdownMenuItem> : null}
-                  <DropdownMenuItem asChild><Link to="/security">Phone & security</Link></DropdownMenuItem>
-                  {isAdmin ? <DropdownMenuItem asChild><Link to="/admin">Admin</Link></DropdownMenuItem> : null}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void handleSignOut()}><LogOut className="size-4" /> Sign out</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </header>
+    <AppShell>
+    <div className="px-0 py-2">
+      <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-6xl px-4 pb-8 pt-6 sm:px-6 sm:pb-10">
 
           {/* Conversations */}
           <div className="mt-5 flex items-center justify-end gap-2">
@@ -173,6 +142,7 @@ function AssistantPage() {
         </div>
       </div>
     </div>
+    </AppShell>
   );
 }
 
