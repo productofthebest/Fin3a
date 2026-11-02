@@ -12,7 +12,7 @@ Single source of truth for every requirement, audit finding and approved task. U
 | Milestone | Status |
 |---|---|
 | Development complete | No |
-| Automated tests passed | Yes — 146/146 unit tests (2026-11-02) |
+| Automated tests passed | Yes — fresh full suite: 146/146 across 17 files (2026-11-02); not paid-use or backend enforcement verification |
 | Integration tests passed | No — no isolated test backend |
 | Real-world testing passed | No |
 | Security review passed | No — open findings (SEC rows) |
@@ -77,15 +77,19 @@ Single source of truth for every requirement, audit finding and approved task. U
 | SEC-01 | Homepage chat & voice require sign-in | Code done | Workflow (signed-out) | 401s; sign-in prompt shown | Signed-in use by owner |
 | SEC-02 | Atomic per-account AI quotas (chat 20/h, voice 30/h) | Code done | None | DB function applied | Staging |
 | SEC-03 | Account cache cleared on logout/identity change | Code done | Workflow | Logout redirect verified | — |
-| SEC-04 | Role-spoofing in assistant conversation input | Not started | None | Deep-scan finding | — |
+| SEC-04 | Role-spoofing in assistant conversation input | Not started | None | Read-only review: api/chat.ts forwards browser history; chat_messages currently permits owned client writes of assistant/system rows | Approve proposed staging-first fix; trusted server-only message writes and provenance policy |
 | SEC-05 | Phone-code disruption protections review | Partial | Unit | — | Termii live |
 | SEC-06 | Full security review re-run after fixes | Not started | None | — | — |
-| COST-01 | Per-user AI and document-scan limits with warnings | Code done | Unit + Workflow (admin page) | Daily requests 100, scans 20/day 200/month defaults; warning at 80% | Staging: hit limits for real |
+| COST-01 | Per-user AI and document-scan limits with warnings | Partial | Unit + Workflow (admin page only) | Daily requests 100, scans 20/day 200/month defaults; daily warning emitted at 80%; monthly request cap absent | Staging: daily/monthly limits and visible warnings with real requests |
 | COST-02 | Admin AI usage monitoring (tokens, estimated cost, per user, failures) | Code done | Workflow (empty data) | Admin page loads for owner; visitors denied | Owner enters official model prices; real usage |
-| COST-03 | Admin budgets, user limits, pause user, AI on/off switch | Code done | None (not toggled live) | Database re-checks admin role on every action | Staging toggle test |
+| COST-03 | Admin budgets, user limits, pause user, AI on/off switch | Partial | None (not toggled live) | Database checks admin; budget check sums finalized estimates only, with no in-flight reservation/global admission lock | Staging-first budget hardening approval, modality-correct prices and real toggle/budget tests |
 | COST-04 | Duplicate request protection; failed scans not counted toward scan limits | Code done | Unit | Same doc within a minute / same chat message rejected | Staging |
+| COST-05 | Monthly AI request limits (default and per-account) | Not started | None | Missing in 0013_ai_cost_management.sql and admin controls | Proposed change approval; staging |
+| COST-06 | Concurrent request enforcement and budget reservations | Partial | None | Per-user admission lock exists; pending costs not reserved globally; no runtime concurrency evidence | Staging across one and multiple accounts |
+| COST-07 | Daily/monthly 80% warning delivery | Partial | None | Daily warning returned; monthly warning absent; visible delivery across chat/voice/scans unverified | Staging warning-edge/UI tests |
+| COST-08 | Accurate model pricing and usage modality accounting | Partial | Unit (text estimator only) | Admin form uses generic input/output token prices; voice audio/text usage needs modality review | docs/staging-setup.md; official pricing and actual provider usage |
 | ADM-01 | Role-based admin; owner is first admin | Code done | Workflow | Owner sees Admin link and page | — |
-| OPS-01 | Isolated staging backend with test accounts | Blocked | — | Draft used live database; stopped safely | Owner creates remixed project with own backend (docs/staging-setup.md) |
+| OPS-01 | Isolated staging backend with test accounts | Blocked | None | Staging guide/test matrix prepared; no separate backend or staging key verified; no paid tests or live writes this review | Owner creates remix, mentions it here or continues in its chat; isolation/auth/key verification before tests |
 | OPS-02 | Notifications, account deletion, data export | Not started | None | — | — |
 | OPS-03 | Performance, accessibility, deployment checks | Not started | None | — | — |
 
@@ -97,3 +101,9 @@ Single source of truth for every requirement, audit finding and approved task. U
 
 ## Database safety
 All migrations so far are additive (new tables/columns/indexes/functions). No destructive operation has been run. Destructive changes require a backup and rollback plan and owner approval.
+
+## November 2 next-priorities review
+- Changes this review: documentation and saved completion constraints only; application code, database, prices, AI switches and financial records untouched. No deployment.
+- Baseline: full existing suite rerun, 146/146 passed in 17 files. Real paid-request, scan, warning, budget and concurrency verification remains **not run**.
+- Security fix proposal must also restrict direct writes of assistant/system messages; merely reading persisted browser-writable history is insufficient. Existing untrusted history needs a conservative compatibility policy, without rewriting financial records.
+- Proposed implementation and test gates are presented in the approval plan; no requirement is certified complete by this review.
