@@ -163,6 +163,8 @@ export type Database = {
           fingerprint: string
           id: string
           mime_type: string
+          page_count: number | null
+          reconciliation: Json | null
           size_bytes: number
           status: string
           storage_path: string
@@ -178,6 +180,8 @@ export type Database = {
           fingerprint: string
           id?: string
           mime_type: string
+          page_count?: number | null
+          reconciliation?: Json | null
           size_bytes?: number
           status?: string
           storage_path: string
@@ -193,6 +197,8 @@ export type Database = {
           fingerprint?: string
           id?: string
           mime_type?: string
+          page_count?: number | null
+          reconciliation?: Json | null
           size_bytes?: number
           status?: string
           storage_path?: string
