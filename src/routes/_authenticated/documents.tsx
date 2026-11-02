@@ -15,13 +15,15 @@ import {
   listDocuments,
   listDrafts,
   updateDraft,
+  getDocumentReference,
 } from "@/lib/documents.functions";
 import { settingsQuery } from "@/lib/queries";
 import { formatMoney } from "@/lib/fin3a";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { validateDocumentContent } from "@/lib/document-security";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CLASSIFICATIONS, draftImportEligible } from "@/lib/document-rules";
 
 const docsQuery = () => queryOptions({ queryKey: ["documents"], queryFn: () => listDocuments() });
 const draftsQuery = (documentId: string) =>
@@ -65,7 +67,6 @@ function DocumentsPage() {
     }
     setBusy(true);
     try {
-      await validateDocumentContent(file, { filename: file.name, mime_type: file.type, size_bytes: file.size });
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id;
       if (!uid) throw new Error("Please sign in again.");
@@ -142,16 +143,17 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
   const qc = useQueryClient();
   const { data: drafts = [], isLoading } = useQuery(draftsQuery(documentId));
   const pending = drafts.filter((d) => d.status === "pending");
+  const ready=pending.filter(d=>draftImportEligible(d,new Date().toISOString().slice(0,10)));
   const refresh = () => { qc.invalidateQueries({ queryKey: ["drafts", documentId] }); qc.invalidateQueries({ queryKey: ["documents"] }); };
 
-  const save = useMutation({ mutationFn: (p: { id: string; txn_date?: string | null; merchant?: string | null; amount?: number; type?: "income" | "expense" }) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
+  const save = useMutation({ mutationFn: (p: { id: string; txn_date?: string | null; merchant?: string | null; amount?: number; type?: "income" | "expense"; currency?:string|null; classification?:typeof CLASSIFICATIONS[number]; review_confirmed?:boolean }) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
   const remove = useMutation({ mutationFn: (id: string) => deleteDraft({ data: { id } }), onSuccess: refresh });
   const imp = useMutation({
     mutationFn: () => importDrafts({ data: { documentId } }),
     onSuccess: (r) => { toast.success(`${r.imported} transactions added to your ledger`); refresh(); qc.invalidateQueries(); },
     onError: (e: Error) => toast.error(e.message),
   });
-  const del = useMutation({ mutationFn: () => deleteDocument({ data: { documentId } }), onSuccess: () => { refresh(); onDeleted(); }, onError: (e: Error) => toast.error(e.message) });
+  const del = useMutation({ mutationFn: () => deleteDocument({ data: { documentId } }), onSuccess: () => { refresh(); onDeleted(); } });
   const rescan = useMutation({ mutationFn: () => analyzeDocument({ data: { documentId } }), onSuccess: refresh, onError: (e: Error) => { toast.error(e.message); refresh(); } });
 
   return (
@@ -163,6 +165,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
           {doc?.summary && !doc.error_message && <p className="mt-1 text-sm text-muted-foreground">{doc.summary}</p>}
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={async()=>{try{const link=await getDocumentReference({data:{documentId}});window.open(link.url,"_blank","noopener,noreferrer");}catch(e){toast.error(e instanceof Error?e.message:"Could not open original.");}}}>Original</Button>
           <Button variant="outline" size="sm" onClick={() => rescan.mutate()} disabled={rescan.isPending}>
             {rescan.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Rescan
           </Button>
@@ -172,9 +175,9 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
       <CardContent className="space-y-3">
         {isLoading && <Loader2 className="mx-auto h-5 w-5 animate-spin" />}
         {!isLoading && pending.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">
-          {drafts.length ? "Everything from this document is in your ledger." : "No transactions to review."}</p>}
+          {drafts.length ? "No pending lines; imported and rejected records retain their review status." : "No transactions to review."}</p>}
         {pending.map((d) => (
-          <div key={d.id} className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[130px_1fr_120px_110px_auto] sm:items-center">
+          <div key={d.id} className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-2 xl:grid-cols-3 sm:items-center">
             <Input type="date" defaultValue={d.txn_date ?? ""} onBlur={(e) => e.target.value !== (d.txn_date ?? "") && save.mutate({ id: d.id, txn_date: e.target.value || null })} />
             <div>
               <Input defaultValue={d.merchant ?? d.description ?? ""} placeholder="Description"
@@ -192,15 +195,18 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
               <option value="expense">Expense</option><option value="income">Income</option>
             </select>
             <Button variant="ghost" size="icon" aria-label="Remove line" onClick={() => remove.mutate(d.id)}><Trash2 className="h-4 w-4" /></Button>
+            <Input aria-label="Transaction currency" maxLength={3} placeholder="Currency (NGN / USD)" defaultValue={d.currency??""} onBlur={e=>{const value=e.target.value.trim().toUpperCase();if(value!==(d.currency??""))save.mutate({id:d.id,currency:value||null,review_confirmed:false});}}/>
+            <select aria-label="Transaction classification" className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={d.classification} onChange={e=>save.mutate({id:d.id,classification:e.target.value as typeof CLASSIFICATIONS[number],review_confirmed:false})}>{CLASSIFICATIONS.map(c=><option key={c} value={c}>{c.replaceAll("_"," ")}</option>)}</select>
+            <div className="flex items-center gap-2"><Checkbox id={`review-${d.id}`} checked={d.review_confirmed} disabled={!!d.duplicate_of||save.isPending} onCheckedChange={v=>save.mutate({id:d.id,review_confirmed:v===true})}/><label htmlFor={`review-${d.id}`} className="text-xs">I checked this line's date, currency and classification</label></div>
           </div>
         ))}
         {pending.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
             <span className="text-sm text-muted-foreground">
-              {pending.length} lines · {formatMoney(pending.reduce((s, d) => s + (d.type === "expense" ? -1 : 1) * Number(d.amount ?? 0), 0), currency)} net
+              {pending.length} pending lines · {ready.length} reviewed and eligible · Amounts stay in each line's currency
             </span>
-            <Button onClick={() => imp.mutate()} disabled={imp.isPending}>
-              {imp.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Add {pending.length} to ledger
+            <Button onClick={() => imp.mutate()} disabled={imp.isPending||save.isPending||ready.length===0}>
+              {imp.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Add {ready.length} reviewed lines to ledger
             </Button>
           </div>
         )}
