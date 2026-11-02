@@ -22,3 +22,4 @@
 
 - AI endpoints (`/api/landing-chat`, `/api/transcribe`, `/api/chat`) require a verified bearer; paid-AI quotas use the atomic `consume_ai_quota` RPC via `api-auth.server.ts`, because in-memory worker counters reset and can be bypassed.
 - Statement reconciliation and duplicate matching are pure functions in `statement-reconciliation.ts` (integer cents, printed figures only); PDFs are split with pdf-lib so long statements fit model limits and a failed part fails the whole scan.
+- Every paid OpenAI call goes through `beginAiUsage`/`finishAiUsage` (DB `ai_begin`/`ai_finish`): kill switch, budgets, per-user limits and duplicate keys are enforced atomically in SQL, costs are estimated only from admin-entered prices and real token counts. Admin RPCs re-check `has_role('admin')` in the database.
