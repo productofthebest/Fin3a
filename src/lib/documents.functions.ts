@@ -321,10 +321,13 @@ async function splitPdf(buffer: ArrayBuffer): Promise<{ parts: ArrayBuffer[]; pa
   return { parts, pageCount };
 }
 
+type TokenTally = { input: number; cached: number; output: number };
+
 async function extractWithAi(
   buffer: ArrayBuffer,
   mimeType: string,
   filename: string,
+  tally: TokenTally,
 ): Promise<{ parsed: ParsedRow[]; documentType: string; summary: StatementSummary | null; pageCount: number | null }> {
   const { extractDocumentWithOpenAI } = await import("./document-openai.server");
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
@@ -341,6 +344,7 @@ async function extractWithAi(
       apiKey: process.env["OPENAI_API_KEY"], buffer: part, mimeType: resolvedMime,
       filename: parts.length > 1 ? `${filename.replace(/\.pdf$/i, "")}-part${i + j + 1}.pdf` : filename,
       instructions: EXTRACT_INSTRUCTIONS,
+      onUsage: (u) => { tally.input += u.input; tally.cached += u.cached; tally.output += u.output; },
     })));
     results.forEach((r, j) => { outputs[i + j] = r; });
   }
@@ -481,8 +485,21 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       .maybeSingle();
     const currencyFallback = settings?.currency ?? "USD";
 
+    const extLower = document.filename.split(".").pop()?.toLowerCase() ?? "";
+    const usesAi = !(/csv|spreadsheetml|ms-excel/.test(document.mime_type.toLowerCase()) || ["csv","xlsx","xls"].includes(extLower));
+    const { beginAiUsage, finishAiUsage } = await import("./api-auth.server");
+    const { SCANNER_MODEL } = await import("./document-openai.server");
+    const { scanRequestKey } = await import("./ai-usage-rules");
+    const usage = usesAi ? await beginAiUsage(supabase, "scan", scanRequestKey(document.id)) : null;
+    if (usage && !usage.allowed) throw new Error(usage.message);
+    const usageId = usage?.allowed ? usage.usageId : null;
+    const tally: TokenTally = { input: 0, cached: 0, output: 0 };
+
     const {data:claimed,error:claimError}=await supabase.from("documents").update({ status: "processing", error_message: null }).eq("id", document.id).eq("user_id",userId).eq("status",document.status).select("id").maybeSingle();
-    if(claimError || !claimed)throw new Error("Another scan is running. Try again after it finishes.");
+    if(claimError || !claimed){
+      if (usageId) await finishAiUsage(supabase, usageId, false, { model: SCANNER_MODEL, input: 0, cached: 0, output: 0 }, "not_claimed");
+      throw new Error("Another scan is running. Try again after it finishes.");
+    }
 
     try {
       const { data: file, error: downloadError } = await supabase.storage
@@ -514,7 +531,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         if (!kind) {
           throw new Error("Unsupported file type. Upload a CSV, Excel file, PDF or photo (PNG/JPG/WebP).");
         }
-        const extracted = await extractWithAi(buffer, kind === "pdf" ? "application/pdf" : document.mime_type, document.filename);
+        const extracted = await extractWithAi(buffer, kind === "pdf" ? "application/pdf" : document.mime_type, document.filename, tally);
         parsed=extracted.parsed; documentType=extracted.documentType;
         statementSummary=extracted.summary; pageCount=extracted.pageCount;
       }
@@ -568,9 +585,11 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         .eq("id", document.id);
       if (updateError) throw new Error(updateError.message);
 
-      return { draftCount: parsed.length, summary, reconciliationStatus: reconciliation?.status ?? null };
+      if (usageId) await finishAiUsage(supabase, usageId, true, { model: SCANNER_MODEL, ...tally });
+      return { draftCount: parsed.length, summary, reconciliationStatus: reconciliation?.status ?? null, usageWarning: usage?.allowed ? usage.warning : null };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Extraction failed";
+      if (usageId) await finishAiUsage(supabase, usageId, false, { model: SCANNER_MODEL, ...tally }, "scan_failed");
       await supabase
         .from("documents")
         .update({ status: "failed", error_message: message.slice(0, 500) })
