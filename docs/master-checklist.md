@@ -89,7 +89,7 @@ Single source of truth for every requirement, audit finding and approved task. U
 | COST-07 | Daily/monthly 80% warning delivery | Partial | None | Daily warning returned; monthly warning absent; visible delivery across chat/voice/scans unverified | Staging warning-edge/UI tests |
 | COST-08 | Accurate model pricing and usage modality accounting | Partial | Unit (text estimator only) | Admin form uses generic input/output token prices; voice audio/text usage needs modality review | docs/staging-setup.md; official pricing and actual provider usage |
 | ADM-01 | Role-based admin; owner is first admin | Code done | Workflow | Owner sees Admin link and page | — |
-| OPS-01 | Isolated staging backend with test accounts | Blocked | None | Staging guide/test matrix prepared; no separate backend or staging key verified; no paid tests or live writes this review | Owner creates remix, mentions it here or continues in its chat; isolation/auth/key verification before tests |
+| OPS-01 | Isolated staging backend with test accounts | Blocked | None (hosted verification) | Owner referenced Fin3a Staging; read-only source snapshot accessible on 2026-11-02. Source access does not certify independent backend/auth/key; no accounts, records or paid calls created | Continue in staging's own chat for hosted isolation, data provenance, authentication and staging-specific key verification before tests |
 | OPS-02 | Notifications, account deletion, data export | Not started | None | — | — |
 | OPS-03 | Performance, accessibility, deployment checks | Not started | None | — | — |
 
