@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_counters: {
+        Row: {
+          bucket: string
+          used: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          used?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          used?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -687,6 +708,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_ai_quota: {
+        Args: { _bucket: string; _limit: number; _window_seconds: number }
+        Returns: boolean
+      }
       import_document_drafts: {
         Args: { p_document_id: string }
         Returns: number

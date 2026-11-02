@@ -59,6 +59,16 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Chat over the signed-in user's data; backend math + AI explanation
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
+## Launch-readiness priorities (approved Nov 2; one at a time, report and wait between)
+- [x] P1: Homepage AI chat and voice-to-text require sign-in; atomic per-account hourly limits in the database (chat 20/h, voice 30/h), output cap; old public endpoints removed. Signed-out blocking verified; signed-in use not exercised (would spend OpenAI credit and write live rows)
+- [ ] P2: Fix scanning for PDF statements, receipts, deposit slips, images (awaiting approval)
+- [ ] P3: Statement reconciliation: opening/closing balances, totals, duplicate detection
+- [ ] P4: Full transaction-history pagination
+- [ ] P5: Verify spending, affordability, goals, runway calculations
+- [ ] Termii ready for FIN3A approval + wallet funding (not operational until a real OTP is verified)
+- [ ] Phase 4 full completion with documented assumptions (approved; follows priorities)
+- [ ] Isolated staging backend for test data (needed for real end-to-end tests)
+
 ## Phase 5 — Testing, Launch, Growth
 - [x] Start Phase 5 incrementally at the user's explicit request: 65-check baseline, basic security scan, deep scan started; first account-cache/document-validation/deletion fixes; 74 regression checks and signed-in upload rejection/logout/responsive checks passed; this does not certify Phase 4 completion
 - [x] Review uploaded Phase 5 security/optimization and performance/QA/deployment specifications; queue after Phase 4 completion gate

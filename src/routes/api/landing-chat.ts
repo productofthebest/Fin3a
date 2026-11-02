@@ -1,0 +1,52 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { consumeQuota, jsonError, verifyBearer } from "@/lib/api-auth.server";
+
+// Homepage Fin3a AI: signed-in only, general guidance, no database reads of financial records.
+const MODEL = "gpt-5-mini";
+const HOURLY_LIMIT = 20;
+
+const INSTRUCTIONS = `You are Fin3a AI, a personal financial intelligence assistant on the Fin3a homepage.
+- You have NO access to the person's financial records here. Never pretend to know their income, spending or balances.
+- Give clear, practical, general financial guidance (budgeting, saving, emergency funds, debt, cash flow, runway) in plain language. Keep answers under 180 words, markdown-free, with short lists when helpful.
+- When the question needs their real numbers, explain the method and suggest opening the Fin3a Assistant in their dashboard.
+- Do not give crypto, trading or specific investment-product recommendations.`;
+
+const bodySchema = z.object({
+  messages: z
+    .array(z.object({ role: z.literal("user").or(z.literal("assistant")), content: z.string().trim().min(1).max(2000) }))
+    .min(1)
+    .max(12),
+});
+
+export const Route = createFileRoute("/api/landing-chat")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const auth = await verifyBearer(request);
+        if ("error" in auth) return auth.error;
+        const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) return jsonError(400, "Invalid message.");
+        // Only the latest turn may be a user turn; earlier assistant turns are context only.
+        if (parsed.data.messages.at(-1)?.role !== "user") return jsonError(400, "Invalid message.");
+        const apiKey = process.env["OPENAI_API_KEY"];
+        if (!apiKey) return jsonError(500, "Fin3a AI is not configured yet.");
+        if (!(await consumeQuota(auth.supabase, "landing_chat", HOURLY_LIMIT, 3600))) {
+          return jsonError(429, "You've reached the hourly limit here. Open the Assistant in your dashboard to continue.");
+        }
+
+        const { streamText } = await import("ai");
+        const { createOpenAI } = await import("@ai-sdk/openai");
+        const openai = createOpenAI({ apiKey });
+        const result = streamText({
+          model: openai.responses(MODEL),
+          system: INSTRUCTIONS,
+          messages: parsed.data.messages,
+          maxOutputTokens: 1200,
+          providerOptions: { openai: { store: false, reasoningEffort: "low" } },
+        });
+        return result.toTextStreamResponse();
+      },
+    },
+  },
+});

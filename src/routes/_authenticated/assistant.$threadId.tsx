@@ -222,7 +222,12 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
           const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
           const fd = new FormData();
           fd.append("file", blob, `recording.${ext}`);
-          const res = await fetch("/api/public/transcribe", { method: "POST", body: fd });
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            body: fd,
+            headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
+          });
           const j = (await res.json()) as { text?: string; error?: string };
           if (!res.ok) throw new Error(j.error ?? "Transcription failed.");
           if (!j.text) throw new Error("We didn't catch that. Try speaking a little louder.");
