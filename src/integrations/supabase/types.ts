@@ -103,6 +103,36 @@ export type Database = {
         }
         Relationships: []
       }
+      confirmed_balances: {
+        Row: {
+          amount: number
+          as_of: string
+          coverage_confirmed: boolean
+          created_at: string
+          currency: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          as_of: string
+          coverage_confirmed?: boolean
+          created_at?: string
+          currency: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          as_of?: string
+          coverage_confirmed?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
@@ -150,6 +180,122 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      financial_commitments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          due_date: string
+          id: string
+          included_in_history: boolean
+          matched_transaction_id: string | null
+          name: string
+          settled: boolean
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          due_date: string
+          id?: string
+          included_in_history?: boolean
+          matched_transaction_id?: string | null
+          name: string
+          settled?: boolean
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          due_date?: string
+          id?: string
+          included_in_history?: boolean
+          matched_transaction_id?: string | null
+          name?: string
+          settled?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      financial_goals: {
+        Row: {
+          contribution_amount: number
+          created_at: string
+          currency: string
+          frequency: string
+          id: string
+          name: string
+          start_date: string
+          target_amount: number
+          target_date: string
+          user_id: string
+        }
+        Insert: {
+          contribution_amount?: number
+          created_at?: string
+          currency: string
+          frequency: string
+          id?: string
+          name: string
+          start_date: string
+          target_amount: number
+          target_date: string
+          user_id: string
+        }
+        Update: {
+          contribution_amount?: number
+          created_at?: string
+          currency?: string
+          frequency?: string
+          id?: string
+          name?: string
+          start_date?: string
+          target_amount?: number
+          target_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_progress: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          goal_id: string
+          id: string
+          occurred_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          goal_id: string
+          id?: string
+          occurred_at: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          goal_id?: string
+          id?: string
+          occurred_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_progress_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "financial_goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       merchant_rules: {
         Row: {
@@ -292,6 +438,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_scenarios: {
+        Row: {
+          balance_id: string
+          budget: number | null
+          created_at: string
+          currency: string
+          id: string
+          income_change: number
+          months: number
+          name: string
+          purchase: number
+          savings_contribution: number
+          spending_change: number
+          user_id: string
+        }
+        Insert: {
+          balance_id: string
+          budget?: number | null
+          created_at?: string
+          currency: string
+          id?: string
+          income_change?: number
+          months?: number
+          name: string
+          purchase?: number
+          savings_contribution?: number
+          spending_change?: number
+          user_id: string
+        }
+        Update: {
+          balance_id?: string
+          budget?: number | null
+          created_at?: string
+          currency?: string
+          id?: string
+          income_change?: number
+          months?: number
+          name?: string
+          purchase?: number
+          savings_contribution?: number
+          spending_change?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       transaction_drafts: {
         Row: {
