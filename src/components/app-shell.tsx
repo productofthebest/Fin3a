@@ -11,11 +11,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
-  { to: "/dashboard", label: "Dashboard" },
+  { to: "/assistant", label: "Dashboard" },
+  { to: "/spending", label: "Spending" },
   { to: "/activity", label: "Activity" },
   { to: "/categories", label: "Categories" },
   { to: "/bills", label: "Bills" },
-  { to: "/assistant", label: "Assistant" },
   { to: "/analysis", label: "Analysis" },
   { to: "/planning", label: "Planning" },
   { to: "/goals", label: "Goals" },

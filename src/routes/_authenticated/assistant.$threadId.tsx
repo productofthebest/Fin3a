@@ -34,15 +34,15 @@ const SUGGESTIONS = [
 ];
 
 const PRIMARY_NAV = [
-  { to: "/dashboard", label: "Overview" },
-  { to: "/activity", label: "Transactions" },
-  { to: "/planning", label: "Accounts" },
-  { to: "/categories", label: "Budgets" },
-  { to: "/analysis", label: "Reports" },
+  { to: "/assistant", label: "Dashboard" },
+  { to: "/spending", label: "Spending" },
+  { to: "/activity", label: "Activity" },
+  { to: "/bills", label: "Bills" },
+  { to: "/analysis", label: "Analysis" },
 ] as const;
 const MORE_NAV = [
-  { to: "/assistant", label: "Assistant" },
-  { to: "/bills", label: "Bills" },
+  { to: "/categories", label: "Categories" },
+  { to: "/planning", label: "Planning" },
   { to: "/goals", label: "Goals" },
   { to: "/insights", label: "Insights" },
   { to: "/documents", label: "Scan documents" },

@@ -24,8 +24,8 @@ const searchSchema = z.object({
   offset: z.coerce.number().int().min(-24).max(0).optional(),
 });
 
-export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => pageMeta("Dashboard", "Your personal Fin3a cash flow, spending and financial overview."),
+export const Route = createFileRoute("/_authenticated/spending")({
+  head: () => pageMeta("Spending", "Your Fin3a spending, income, expenses and trends."),
   ssr: false,
   validateSearch: searchSchema,
   loader: async ({ context }) => {
@@ -90,7 +90,7 @@ function DashboardPage() {
             size="icon"
             aria-label="Previous month"
             disabled={offset <= -24}
-            onClick={() => navigate({ to: "/dashboard", search: { offset: offset - 1 } })}
+            onClick={() => navigate({ to: "/spending", search: { offset: offset - 1 } })}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -100,7 +100,7 @@ function DashboardPage() {
             size="icon"
             aria-label="Next month"
             disabled={offset >= 0}
-            onClick={() => navigate({ to: "/dashboard", search: { offset: offset + 1 } })}
+            onClick={() => navigate({ to: "/spending", search: { offset: offset + 1 } })}
           >
             <ChevronRight className="size-4" />
           </Button>
