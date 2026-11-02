@@ -19,3 +19,5 @@
 - Document vision extraction uses `document-openai.server.ts` through the authenticated scanner handler with the existing OpenAI secret, direct Responses API and storage disabled; no gateway fallback or raw provider errors prevent unintended billing and sensitive-data exposure.
 - Account-agnostic query keys require synchronous cache clearing and query cancellation on logout or identity changes through `session-cache.ts`, preventing the previous account's cached financial workspace from rendering.
 - Document registration and extraction share `document-security.ts` for size/type, account-prefix and actual-byte validation; storage deletion errors must preserve the document row so private-file cleanup can be retried.
+
+- AI endpoints (`/api/landing-chat`, `/api/transcribe`, `/api/chat`) require a verified bearer; paid-AI quotas use the atomic `consume_ai_quota` RPC via `api-auth.server.ts`, because in-memory worker counters reset and can be bypassed.
