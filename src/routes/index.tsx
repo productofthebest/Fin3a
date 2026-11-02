@@ -44,7 +44,7 @@ function Landing() {
       </header>
 
       <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 sm:pt-14">
-        <p className="max-w-xl text-lg text-muted-foreground">
+        <p className="max-w-xl text-lg text-primary">
           Fin3a AI tracks what you earn, what you spend, and what's coming due — then turns it into
           clear, personal financial intelligence.
         </p>
