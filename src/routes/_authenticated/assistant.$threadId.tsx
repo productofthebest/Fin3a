@@ -54,9 +54,9 @@ export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Conversation — Fin3a AI Assistant" },
+      { title: "Dashboard — Fin3a AI" },
       { name: "description", content: "Chat with Fin3a AI about your own financial records." },
-      { property: "og:title", content: "Conversation — Fin3a AI Assistant" },
+      { property: "og:title", content: "Dashboard — Fin3a AI" },
       { property: "og:description", content: "Chat with Fin3a AI about your own financial records." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
