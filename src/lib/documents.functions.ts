@@ -279,141 +279,24 @@ Rules:
 - Ignore balance columns, page headers, footers and summaries.
 - If the document contains no transaction lines, return an empty list.`;
 
-interface AiExtraction {
-  transactions: {
-    txn_date: string | null;
-    description: string | null;
-    merchant: string | null;
-    amount: number | null;
-    currency: string | null;
-    type: "income" | "expense";
-    reference: string | null;
-    payment_method: string | null;
-    category_hint: string | null;
-    confidence: "high" | "medium" | "low";
-  }[];
-}
-
 async function extractWithAi(
   buffer: ArrayBuffer,
   mimeType: string,
   filename: string,
 ): Promise<ParsedRow[]> {
-  const { streamText, Output, NoObjectGeneratedError, jsonSchema } = await import("ai");
-  const { createOpenAI } = await import("@ai-sdk/openai");
-  const { LOVABLE_AI_GATEWAY_URL, createLovableAiGatewayRunIdFetch } = await import("./ai-gateway.server");
-
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new Error("AI is not configured for this workspace yet.");
-
-  const bytes = new Uint8Array(buffer);
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  const base64 = btoa(bin);
-  const mime = (mimeType || "application/octet-stream").toLowerCase();
-  const mediaPart =
-    mime.startsWith("image/")
-      ? { type: "file" as const, data: base64, mediaType: mime }
-      : { type: "file" as const, filename, data: base64, mediaType: "application/pdf" };
-
-  const schema = {
-    description: "Transactions extracted from a financial document",
-    type: "object" as const,
-    properties: {
-      transactions: {
-        type: "array" as const,
-        items: {
-          type: "object" as const,
-          properties: {
-            txn_date: { type: ["string", "null"] as const, description: "YYYY-MM-DD or null" },
-            description: { type: ["string", "null"] as const },
-            merchant: { type: ["string", "null"] as const },
-            amount: { type: ["number", "null"] as const },
-            currency: { type: ["string", "null"] as const, description: "3-letter currency code or null" },
-            type: { type: "string" as const, enum: ["income", "expense"] },
-            reference: { type: ["string", "null"] as const },
-            payment_method: { type: ["string", "null"] as const },
-            category_hint: { type: ["string", "null"] as const },
-            confidence: { type: "string" as const, enum: ["high", "medium", "low"] },
-          },
-          required: [
-            "txn_date",
-            "description",
-            "merchant",
-            "amount",
-            "currency",
-            "type",
-            "reference",
-            "payment_method",
-            "category_hint",
-            "confidence",
-          ],
-          additionalProperties: false,
-        },
-      },
-    },
-    required: ["transactions"],
-    additionalProperties: false,
-  };
-
-  const runIdFetch = createLovableAiGatewayRunIdFetch();
-  const provider = createOpenAI({
-    baseURL: LOVABLE_AI_GATEWAY_URL,
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    fetch: runIdFetch.fetch,
+  const { extractDocumentWithOpenAI } = await import("./document-openai.server");
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  const normalizedMime = mimeType.toLowerCase();
+  const resolvedMime = normalizedMime.startsWith("image/") || normalizedMime === "application/pdf"
+    ? normalizedMime
+    : AI_MIME_BY_EXT[ext] ?? normalizedMime;
+  const output = await extractDocumentWithOpenAI({
+    apiKey: process.env["OPENAI_API_KEY"],
+    buffer,
+    mimeType: resolvedMime,
+    filename,
+    instructions: EXTRACT_INSTRUCTIONS,
   });
-
-  const result = streamText({
-    model: provider.responses("openai/gpt-6-astra"),
-    system: EXTRACT_INSTRUCTIONS,
-    messages: [
-      {
-        role: "user",
-        content: [
-          mediaPart,
-          { type: "text" as const, text: `Extract every transaction line from this document ("${filename}").` },
-        ],
-      },
-    ],
-    output: Output.object({
-      schema: z.object({
-        transactions: z.array(
-          z.object({
-            txn_date: z.string().nullable().describe("YYYY-MM-DD or null"),
-            description: z.string().nullable(),
-            merchant: z.string().nullable(),
-            amount: z.number().nullable(),
-            currency: z.string().nullable().describe("3-letter currency code or null"),
-            type: z.enum(["income", "expense"]),
-            reference: z.string().nullable(),
-            payment_method: z.string().nullable(),
-            category_hint: z.string().nullable(),
-            confidence: z.enum(["high", "medium", "low"]),
-          }),
-        ),
-      }),
-    }),
-    providerOptions: {
-      openai: {
-        store: false,
-        forceReasoning: true,
-        reasoningEffort: "low",
-        reasoningSummary: "auto",
-        include: ["reasoning.encrypted_content"],
-      },
-    },
-  });
-
-  let output: AiExtraction;
-  try {
-    output = (await result.output) as AiExtraction;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      throw new Error("The document could not be read clearly. Try a sharper photo or a cleaner scan.");
-    }
-    throw error;
-  }
 
   return (output.transactions ?? [])
     .filter((t) => typeof t.amount === "number" && Number.isFinite(t.amount) && t.amount > 0)
