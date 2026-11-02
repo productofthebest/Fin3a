@@ -1,3 +1,4 @@
+import { duplicateSearchRange, matchDuplicates, mergeSummaries, planPageChunks, reconcileStatement, type StatementSummary } from "./statement-reconciliation";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -288,24 +289,62 @@ Rules:
 - merchant is the counterparty name printed on the line; description is the line's printed description or narration.
 - category_hint is a short spending-category guess in English (e.g. "Groceries", "Transport", "Rent", "Utilities", "Airtime") only when the description clearly suggests one; otherwise null.
 - confidence reflects how legible the line was: "high" for clearly printed values, "medium" when slightly uncertain, "low" when you had to guess.
-- Ignore balance columns, page headers, footers and summaries.
+- Do not turn balance columns, page headers, footers or summary rows into transactions.
+- statement_summary: copy the opening balance, closing balance, total credits/deposits and total debits/withdrawals ONLY if printed on these pages (null otherwise, and null entirely for receipts/slips without such figures). These pages may be one part of a longer statement.
 - If the document contains no transaction lines, return an empty list.`;
+
+const PDF_CHUNK_PAGES = 8;
+const PDF_MAX_PAGES = 60;
+const PDF_PARALLEL = 3;
+
+async function splitPdf(buffer: ArrayBuffer): Promise<{ parts: ArrayBuffer[]; pageCount: number }> {
+  const { PDFDocument } = await import("pdf-lib");
+  let src: import("pdf-lib").PDFDocument;
+  try {
+    src = await PDFDocument.load(buffer, { updateMetadata: false });
+  } catch {
+    throw new Error("This PDF is password-protected or damaged. Upload an unlocked copy or a CSV/Excel export.");
+  }
+  const pageCount = src.getPageCount();
+  if (pageCount > PDF_MAX_PAGES) {
+    throw new Error(`This PDF has ${pageCount} pages; the scanner handles up to ${PDF_MAX_PAGES}. Split it by month or upload a CSV/Excel export.`);
+  }
+  if (pageCount <= PDF_CHUNK_PAGES) return { parts: [buffer], pageCount };
+  const parts: ArrayBuffer[] = [];
+  for (const { start, end } of planPageChunks(pageCount, PDF_CHUNK_PAGES)) {
+    const out = await PDFDocument.create();
+    const pages = await out.copyPages(src, Array.from({ length: end - start }, (_, i) => start + i));
+    pages.forEach((p) => out.addPage(p));
+    const bytes = await out.save();
+    parts.push(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
+  }
+  return { parts, pageCount };
+}
 
 async function extractWithAi(
   buffer: ArrayBuffer,
   mimeType: string,
   filename: string,
-): Promise<{parsed: ParsedRow[]; documentType: string}> {
+): Promise<{ parsed: ParsedRow[]; documentType: string; summary: StatementSummary | null; pageCount: number | null }> {
   const { extractDocumentWithOpenAI } = await import("./document-openai.server");
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
   const normalizedMime = mimeType.toLowerCase();
   const resolvedMime = normalizedMime.startsWith("image/") || normalizedMime === "application/pdf"
     ? normalizedMime : AI_MIME_BY_EXT[ext] ?? normalizedMime;
-  const output = await extractDocumentWithOpenAI({
-    apiKey: process.env["OPENAI_API_KEY"], buffer, mimeType: resolvedMime,
-    filename, instructions: EXTRACT_INSTRUCTIONS,
-  });
-  const parsed: ParsedRow[] = output.transactions
+  const isPdf = resolvedMime === "application/pdf";
+  const { parts, pageCount } = isPdf ? await splitPdf(buffer) : { parts: [buffer], pageCount: null };
+  const outputs: Awaited<ReturnType<typeof extractDocumentWithOpenAI>>[] = new Array(parts.length);
+  // Bounded parallelism; any failed chunk fails the whole scan so no partial statement is saved.
+  for (let i = 0; i < parts.length; i += PDF_PARALLEL) {
+    const batch = parts.slice(i, i + PDF_PARALLEL);
+    const results = await Promise.all(batch.map((part, j) => extractDocumentWithOpenAI({
+      apiKey: process.env["OPENAI_API_KEY"], buffer: part, mimeType: resolvedMime,
+      filename: parts.length > 1 ? `${filename.replace(/\.pdf$/i, "")}-part${i + j + 1}.pdf` : filename,
+      instructions: EXTRACT_INSTRUCTIONS,
+    })));
+    results.forEach((r, j) => { outputs[i + j] = r; });
+  }
+  const parsed: ParsedRow[] = outputs.flatMap((o) => o.transactions)
     .filter(t => typeof t.amount === "number" && Number.isFinite(t.amount) && t.amount > 0)
     .map(t => ({
       txn_date: parseDate(t.txn_date), description: cleanText(t.description, 300),
@@ -314,16 +353,18 @@ async function extractWithAi(
       reference: cleanText(t.reference, 120), payment_method: cleanText(t.payment_method, 80),
       category_hint: cleanText(t.category_hint, 80), confidence: t.confidence,
     }));
-  return { parsed, documentType: output.document_type ?? "other" };
+  const types = outputs.map((o) => o.document_type).filter(Boolean);
+  return {
+    parsed,
+    documentType: types.includes("statement") ? "statement" : types[0] ?? "other",
+    summary: mergeSummaries(outputs.map((o) => o.statement_summary ?? null)),
+    pageCount,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Duplicate detection (drafts vs existing transactions)
 // ---------------------------------------------------------------------------
-
-function msBetweenDays(a: string, b: string): number {
-  return Math.abs(new Date(`${a}T00:00:00Z`).getTime() - new Date(`${b}T00:00:00Z`).getTime());
-}
 
 async function flagDraftDuplicates(
   supabase: import("@supabase/supabase-js").SupabaseClient,
@@ -332,27 +373,17 @@ async function flagDraftDuplicates(
 ): Promise<void> {
   const pending = drafts.filter((d) => d.txn_date && d.amount !== null);
   if (pending.length === 0) return;
-  const dates = [...new Set(pending.map((d) => d.txn_date as string))].sort();
+  const range = duplicateSearchRange(pending.map((d) => d.txn_date as string));
+  if (!range) return;
   const txs = await collectPages((a,b)=>supabase
     .from("transactions")
     .select("id, amount, occurred_at, merchant, reference, currency, type")
     .eq("user_id", userId)
-    .gte("occurred_at", dates[0])
-    .lte("occurred_at", dates[dates.length - 1]).order("occurred_at").order("id").range(a,b));
+    .gte("occurred_at", range.from)
+    .lt("occurred_at", range.toExclusive).order("occurred_at").order("id").range(a,b));
   if (txs.length === 0) return;
-
-  for (const draft of pending) {
-    const match = txs.find(
-      (tx) =>
-        Math.abs(Number(tx.amount) - Number(draft.amount)) < 0.01 &&
-        tx.currency===draft.currency && tx.type===draft.type &&
-        msBetweenDays(tx.occurred_at.slice(0, 10), draft.txn_date as string) <= 3 * 86_400_000 &&
-        ((draft.reference && tx.reference && draft.reference.toLowerCase() === tx.reference.toLowerCase()) ||
-          (draft.merchant && tx.merchant && draft.merchant.toLowerCase() === tx.merchant.toLowerCase())),
-    );
-    if (match) {
-      await supabase.from("transaction_drafts").update({ duplicate_of: match.id }).eq("id", draft.id);
-    }
+  for (const [draftId, txId] of matchDuplicates(pending, txs as never)) {
+    await supabase.from("transaction_drafts").update({ duplicate_of: txId }).eq("id", draftId).eq("user_id", userId);
   }
 }
 
@@ -473,6 +504,8 @@ export const analyzeDocument = createServerFn({ method: "POST" })
 
       let parsed: ParsedRow[];
       let documentType=document.doc_type;
+      let statementSummary: StatementSummary | null = null;
+      let pageCount: number | null = null;
       if (isSpreadsheet) {
         parsed = await parseSpreadsheet(buffer, currencyFallback);
         documentType="statement";
@@ -483,6 +516,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         }
         const extracted = await extractWithAi(buffer, kind === "pdf" ? "application/pdf" : document.mime_type, document.filename);
         parsed=extracted.parsed; documentType=extracted.documentType;
+        statementSummary=extracted.summary; pageCount=extracted.pageCount;
       }
 
       // Re-extracting replaces previous pending drafts.
@@ -520,17 +554,21 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         await flagDraftDuplicates(supabase, userId, (inserted ?? []) as never);
       }
 
+      const reconciliation = documentType === "statement" || statementSummary
+        ? reconcileStatement(statementSummary, parsed.map((r) => ({ amount: r.amount ?? 0, type: r.type === "income" ? "income" : "expense" })))
+        : null;
       const summary =
-        parsed.length === 0
+        (parsed.length === 0
           ? "No transaction lines found in this document."
-          : `${parsed.length} transaction${parsed.length === 1 ? "" : "s"} found`;
+          : `${parsed.length} transaction${parsed.length === 1 ? "" : "s"} found`) + (reconciliation ? `. ${reconciliation.message}` : "");
       const { error: updateError } = await supabase
         .from("documents")
-        .update({ status: "extracted", summary, error_message: null, doc_type:documentType })
+        .update({ status: "extracted", summary: summary.slice(0, 1000), error_message: null, doc_type:documentType,
+          reconciliation: reconciliation ? { ...reconciliation, summary: statementSummary } : null, page_count: pageCount } as never)
         .eq("id", document.id);
       if (updateError) throw new Error(updateError.message);
 
-      return { draftCount: parsed.length, summary };
+      return { draftCount: parsed.length, summary, reconciliationStatus: reconciliation?.status ?? null };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Extraction failed";
       await supabase

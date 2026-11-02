@@ -13,7 +13,11 @@ const transactionSchema = z.object({
   category_hint: z.string().nullable(),
   confidence: z.enum(["high", "medium", "low"]),
 });
-const extractionSchema = z.object({ document_type: z.enum(DOCUMENT_TYPES).optional(), transactions: z.array(transactionSchema) });
+const summarySchema = z.object({
+  opening_balance: z.number().nullable(), closing_balance: z.number().nullable(),
+  total_credits: z.number().nullable(), total_debits: z.number().nullable(), currency: z.string().nullable(),
+});
+const extractionSchema = z.object({ document_type: z.enum(DOCUMENT_TYPES).optional(), statement_summary: summarySchema.nullable().optional(), transactions: z.array(transactionSchema) });
 
 function providerError(status: number, code?: string): string {
   if (status === 401) return "OpenAI rejected the saved API key. Please check the key in project secrets.";
@@ -59,8 +63,12 @@ export async function extractDocumentWithOpenAI(input: {
         text: { format: {
           type: "json_schema", name: "document_transactions", strict: true,
           schema: {
-            type: "object", additionalProperties: false, required: ["document_type", "transactions"],
-            properties: { document_type: { type: "string", enum: DOCUMENT_TYPES, description: "Identify the actual document type from visible content, not its filename" }, transactions: { type: "array", items: {
+            type: "object", additionalProperties: false, required: ["document_type", "statement_summary", "transactions"],
+            properties: { statement_summary: { anyOf: [{ type: "null" }, { type: "object", additionalProperties: false,
+              description: "Only figures PRINTED on these pages; null for any not printed. Never calculate.",
+              required: ["opening_balance", "closing_balance", "total_credits", "total_debits", "currency"],
+              properties: { opening_balance: { type: ["number", "null"] }, closing_balance: { type: ["number", "null"] },
+                total_credits: { type: ["number", "null"] }, total_debits: { type: ["number", "null"] }, currency: { type: ["string", "null"] } } }] }, document_type: { type: "string", enum: DOCUMENT_TYPES, description: "Identify the actual document type from visible content, not its filename" }, transactions: { type: "array", items: {
               type: "object", additionalProperties: false,
               required: Object.keys(transactionSchema.shape),
               properties: {
