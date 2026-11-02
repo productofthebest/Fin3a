@@ -140,3 +140,31 @@
     scrollbar-color: var(--color-border) transparent;
   }
 }
+
+/* Lavender light theme scoped to the AI Assistant page (matches owner's reference). */
+.theme-lavender {
+  --background: #f3eafe;
+  --foreground: #25232b;
+  --card: #ffffff;
+  --card-foreground: #25232b;
+  --popover: #ffffff;
+  --popover-foreground: #25232b;
+  --primary: #8050f5;
+  --primary-foreground: #ffffff;
+  --secondary: #f7f4ff;
+  --secondary-foreground: #25232b;
+  --muted: #f7f4ff;
+  --muted-foreground: #77717f;
+  --accent: #a47aff;
+  --accent-foreground: #ffffff;
+  --border: #e8ddf8;
+  --input: #e8ddf8;
+  --ring: #a47aff;
+  --lavender-surface: #f7f4ff;
+  --lavender-glow: color-mix(in oklab, #a47aff 35%, transparent);
+  --shadow-lavender: 0 20px 60px -24px color-mix(in oklab, #8050f5 30%, transparent);
+  color: var(--foreground);
+  background: radial-gradient(1200px 600px at 80% 0%, #f7f4ff, transparent), var(--background);
+  font-family: "Manrope", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+.theme-lavender h1, .theme-lavender h2 { font-family: "Manrope", "DM Sans", sans-serif; }
