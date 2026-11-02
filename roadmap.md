@@ -29,6 +29,8 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Duplicate prevention guarding balances and totals
 
 ## Phase 4 — AI Financial Assistant (chat built early: threads, saved history, snapshot-based answers)
+- [ ] Complete Phase 4 at the user's November 2 request: integrate remaining forecasts, affordability, goals, insights, assistant context and scanner safeguards; verify before certifying completion
+- [ ] Review and approve the Phase 4 completion plan, including integrating the existing ready draft while preserving newer main-app protections
 - [x] Review uploaded Phase 4 brief and agree incremental delivery preserving existing features/design
 - [x] Shared calculation foundation adopted by dashboard and assistant: classification/status/currency/date safeguards, recorded cash-flow distinction, disclosed averaging assumptions; 12 finance tests and routing test pass
 - [x] Verify signed-in dashboard and live OpenAI balance-clarification answer; preview builds without errors
