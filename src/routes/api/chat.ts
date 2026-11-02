@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { beginAiUsage, finishAiUsage } from "@/lib/api-auth.server";
 
 const MODEL = "gpt-5-mini";
 const HOURLY_LIMIT = 40;
@@ -94,6 +95,9 @@ export const Route = createFileRoute("/api/chat")({
           return json(429, "You've reached the hourly message limit. Please try again a little later.");
         }
 
+        const usage = await beginAiUsage(supabase, "assistant", `chat:${thread.id}:${last.id}`.slice(0, 200));
+        if (!usage.allowed) return json(usage.reason === "duplicate" ? 409 : 429, usage.message);
+
         const { error: saveErr } = await supabase.from("chat_messages").upsert(
           {
             thread_id: thread.id,
@@ -132,9 +136,12 @@ export const Route = createFileRoute("/api/chat")({
           messages: await convertToModelMessages(history),
           abortSignal: request.signal,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
+          onFinish: ({ totalUsage }) => finishAiUsage(supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.cachedInputTokens ?? null, output: totalUsage.outputTokens ?? null }),
+          onError: () => finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
         });
 
         return result.toUIMessageStreamResponse({
+          ...(usage.warning ? { headers: { "x-ai-usage-warning": encodeURIComponent(usage.warning) } } : {}),
           originalMessages: history,
           generateMessageId: () => crypto.randomUUID(),
           onError: (err) => {

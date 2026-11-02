@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { consumeQuota, jsonError, verifyBearer } from "@/lib/api-auth.server";
+import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } from "@/lib/api-auth.server";
 
 // Signed-in speech-to-text. Audio is forwarded to OpenAI and not stored.
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -24,20 +24,29 @@ export const Route = createFileRoute("/api/transcribe")({
           return jsonError(429, "You've reached the hourly voice limit. Try again later.");
         }
 
+        const usage = await beginAiUsage(auth.supabase, "transcribe", null);
+        if (!usage.allowed) return jsonError(429, usage.message);
+        const MODEL = "gpt-4o-mini-transcribe";
         const upstream = new FormData();
         upstream.append("file", file, file.name || "recording.webm");
-        upstream.append("model", "gpt-4o-mini-transcribe");
+        upstream.append("model", MODEL);
         const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}` },
           body: upstream,
-        });
+        }).catch(() => null);
+        if (!res) {
+          await finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "network");
+          return jsonError(502, "Couldn't reach the voice service. Please try again.");
+        }
         if (!res.ok) {
+          await finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, `http_${res.status}`);
           console.error("transcribe failed", res.status);
           return jsonError(res.status === 429 ? 429 : 502, "Couldn't understand the recording. Please try again.");
         }
-        const json = (await res.json()) as { text?: string };
-        return Response.json({ text: (json.text ?? "").trim() });
+        const json = (await res.json()) as { text?: string; usage?: { input_tokens?: number; output_tokens?: number; input_token_details?: { cached_tokens?: number } } };
+        await finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: json.usage?.input_tokens ?? null, cached: json.usage?.input_token_details?.cached_tokens ?? null, output: json.usage?.output_tokens ?? null });
+        return Response.json({ text: (json.text ?? "").trim(), warning: usage.warning });
       },
     },
   },
