@@ -165,6 +165,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
           <CardTitle className="truncate text-base">{doc?.filename ?? "Document"}</CardTitle>
           {doc?.error_message && <p className="mt-1 text-sm text-destructive">{doc.error_message}</p>}
           {doc?.summary && !doc.error_message && <p className="mt-1 text-sm text-muted-foreground">{doc.summary}</p>}
+          {!doc?.error_message && <ReconciliationBadge value={(doc as { reconciliation?: unknown } | undefined)?.reconciliation} />}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={async()=>{try{const link=await getDocumentReference({data:{documentId}});window.open(link.url,"_blank","noopener,noreferrer");}catch(e){toast.error(e instanceof Error?e.message:"Could not open original.");}}}>Original</Button>
@@ -214,5 +215,22 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ReconciliationBadge({ value }: { value: unknown }) {
+  const status = value && typeof value === "object" ? (value as { status?: string }).status : undefined;
+  if (!status) return null;
+  const map = {
+    matched: { label: "Verified", cls: "border-positive/40 bg-positive/10 text-positive" },
+    mismatch: { label: "Mismatch", cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+    unverifiable: { label: "Unable to verify", cls: "border-border bg-muted text-muted-foreground" },
+  } as const;
+  const item = map[status as keyof typeof map];
+  if (!item) return null;
+  return (
+    <span className={`mt-2 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${item.cls}`} aria-label={`Statement totals: ${item.label}`}>
+      Totals: {item.label}
+    </span>
   );
 }
