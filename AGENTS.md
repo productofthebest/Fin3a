@@ -21,3 +21,4 @@
 - Document registration and extraction share `document-security.ts` for size/type, account-prefix and actual-byte validation; storage deletion errors must preserve the document row so private-file cleanup can be retried.
 
 - AI endpoints (`/api/landing-chat`, `/api/transcribe`, `/api/chat`) require a verified bearer; paid-AI quotas use the atomic `consume_ai_quota` RPC via `api-auth.server.ts`, because in-memory worker counters reset and can be bypassed.
+- Statement reconciliation and duplicate matching are pure functions in `statement-reconciliation.ts` (integer cents, printed figures only); PDFs are split with pdf-lib so long statements fit model limits and a failed part fails the whole scan.

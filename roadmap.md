@@ -61,8 +61,9 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 
 ## Launch-readiness priorities (approved Nov 2; one at a time, report and wait between)
 - [x] P1: Homepage AI chat and voice-to-text require sign-in; atomic per-account hourly limits in the database (chat 20/h, voice 30/h), output cap; old public endpoints removed. Signed-out blocking verified; signed-in use not exercised (would spend OpenAI credit and write live rows)
-- [ ] P2: Fix scanning for PDF statements, receipts, deposit slips, images (awaiting approval)
-- [ ] P3: Statement reconciliation: opening/closing balances, totals, duplicate detection
+- [x] P2 (code): long PDFs split into 8-page parts (max 60 pages), locked/damaged PDF message, all-or-nothing scan. Real documents not yet verified — needs staging + sample files
+- [x] P3 (code): printed opening/closing/credit/debit totals checked in cents; duplicate window fixed (full ±3 days, one match per transaction). Reconciliation result not yet shown as its own badge on the Scan page
+- [ ] Final directive (Nov 2): complete Phases 1–5, staging environment, full test matrix, final report — do not declare launch-ready
 - [ ] P4: Full transaction-history pagination
 - [ ] P5: Verify spending, affordability, goals, runway calculations
 - [ ] Termii ready for FIN3A approval + wallet funding (not operational until a real OTP is verified)
