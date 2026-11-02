@@ -52,6 +52,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
 ## Phase 5 — Testing, Launch, Growth
+- [ ] Start Phase 5 incrementally at the user's explicit request: security/reliability baseline, first scoped fixes and regression checks; this does not certify Phase 4 completion
 - [x] Review uploaded Phase 5 security/optimization and performance/QA/deployment specifications; queue after Phase 4 completion gate
 - [ ] Backend reliability and financial indexes; consistent error handling and pagination
 - [ ] Authentication/security review, user isolation and sensitive endpoint protections
