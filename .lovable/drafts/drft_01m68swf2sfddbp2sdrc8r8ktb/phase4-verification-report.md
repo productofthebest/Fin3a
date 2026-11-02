@@ -1,7 +1,7 @@
 # Phase 4 draft delivery and verification
 
 ## Status
-Implementation is staged, **not Phase 4 complete**. Phase 5 must not start.
+Implementation is staged, **not Phase 4 complete**. Main's November 2 Phase 5 reliability work is retained under the user's explicit authorization; it does not certify Phase 4 completion.
 
 `drafts.list` positively identified this draft as sharing the project's live database. Cloud status was healthy. Neither establishes isolation. No synthetic accounts, financial rows, document uploads, balances or messages were written to the live backend. No schema migration was executed. Fixtures exist only as test source under `src/test/fixtures`, with no seed statements in any staged migration.
 
@@ -23,7 +23,7 @@ Three staged additive migrations create confirmed_balances, financial_commitment
 New-schema pages/assistant/scanner cannot be exercised here before acceptance. No fake preview rows or missing-table fallbacks were introduced. Planning/Goals/Insights route error states explain that acceptance is required; the existing dashboard and analysis remain usable.
 
 ## Verification performed
-- **Final suite: 98 passed, 0 failed across 9 test files.** Final automated preview build: OK. Selected finance/routing baseline (29) remains covered; full suite also covers existing phone/email rules.
+- **Post-refresh suite: 130 passed, 0 failed across 14 test files.** Final automated preview build: OK. The original draft's 98 checks and main's additional regressions are retained, with one added content-based document recognition check.
 - All original selected tests retained.
 - Added 52 financial rule tests covering confirmed/missing/stale/foreign currency balances, zero cash/spending, negative net/runway, income loss, savings allocation conservation, budget override, explicit commitment matching, all excluded classifications/statuses/currencies/flags, history insufficiency, affordability, goals and all seven assistant aggregate evidence paths, pagination and scanner recognition/review rules.
 - One owned-pagination integration mock verifies 1,001 rows and UUID scope on every page with stable tie-break ordering.
@@ -54,3 +54,10 @@ These are infrastructure-dependent blockers: the available draft backend is live
 **Test data merge assurance:** only fixture source files merge as test code. No test database records exist to merge; no seeds, data copying or migrations containing sample financial rows were created.
 
 External issues: isolated backend required; FIN3A Termii sender approval/real owner SMS flow remains separately unverified; existing OpenAI quota/key remains unchanged. No new paid provider was added.
+
+## November 2 refresh reconciliation
+All 28 draft-only paths were restored using the draft reconciliation CLI. Five overlapping files were manually combined: AGENTS.md, roadmap.md, src/lib/documents.functions.ts, src/routes/_authenticated/assistant.$threadId.tsx and src/routes/_authenticated/documents.tsx. Verification reports no dropped paths; these five hand merges require human review by design.
+
+Main's direct OpenAI Responses helper, safe provider errors, storage-disabled requests, upload metadata/content/ownership validation, safe document deletion, account-cache isolation, assistant camera/voice controls and Phase 5 roadmap remain intact. The draft's document recognition schema now extends main's direct helper. The draft's alternative SDK extraction implementation is intentionally superseded by main's direct helper, retaining gpt-5-mini, document recognition and classification review. Main's separate post-import status write is intentionally superseded by the staged atomic import RPC, which updates document status inside the import transaction.
+
+No database data or schema was changed during reconciliation. No synthetic rows exist to merge. Live saved-feature/scanner E2E remains blocked on the same isolated-backend and staged-schema prerequisites; the 130 passing checks are not a substitute for that gate.
