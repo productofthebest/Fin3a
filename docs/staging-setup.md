@@ -2,11 +2,17 @@
 
 Goal: a remixed copy of Fin3a with its OWN database, storage, auth users and secrets. No test record may reach production.
 
+## November 2 staging project reference
+- The owner supplied **Fin3a Staging**; its read-only source snapshot is accessible from this chat.
+- A successful checkout proves source access only, not backend isolation, independent authentication or a staging-specific OpenAI key. Hosted configuration and data provenance still require verification before tests.
+- Cross-project access is read-only: this chat cannot configure secrets, change code, apply migrations or run authenticated verification in that other project. Continue in **Fin3a Staging's own chat** for those actions; do not copy production sessions or credentials there.
+- No accounts, financial rows, files, settings or paid requests were created during this source-access check. Production remains unchanged.
+
 ## Owner steps
 1. Project name (top left) → Settings → "Remix this project". Name it "Fin3a Staging".
 2. In the remix, inspect Lovable Cloud before doing anything else. If no backend exists, enable Cloud there. A remix label alone does NOT establish isolation: stop if it still points to production or its backend cannot be independently verified.
 3. Create a separate OpenAI project and restricted key for staging. Set a low usage budget/alerts in OpenAI's controls, and check whether those controls actually enforce a hard cap; alerts alone are not a spending guarantee. Save the key securely as `OPENAI_API_KEY` in the remix only. Never copy the production key or expose it in the browser. Do not add `TERMII_API_KEY` unless SMS testing is intended.
-4. Mention the staging project here using `@`, or tell the agent in its own chat to start verification. The agent cannot create a new project through the currently available tools; this owner step is still required.
+4. Project reference received: **Fin3a Staging**. Open that project's own chat to verify isolation and configure its independent backend/auth/secrets; this chat can inspect its source but cannot write to it.
 
 ## Separation checks the agent must pass before any test
 - Independently verify both server and browser backend destinations differ from production, plus storage and authentication destinations. Record only a pass/fail isolation result in the user report, not private connection details.

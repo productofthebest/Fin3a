@@ -68,7 +68,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [x] P4: Activity page pages through full history (50/page, no cap) with date range, category, type and safe search; history index added; signed-in check on owner account
 - [x] Statement totals badge on Scan page (Verified / Mismatch / Unable to verify)
 - [x] OpenAI cost-management initial implementation (daily request and daily/monthly scan limits, monitoring, budgets, switches, estimated costs); 146 automated tests pass. NOT fully complete: monthly request caps absent, budget reservations absent, real-use verification blocked on staging.
-- [ ] Isolated staging: BLOCKED — drafts share the live database; needs a separate project with its own backend (owner action)
+- [ ] Isolated staging: owner referenced Fin3a Staging; read-only snapshot accessible. Verify hosted backend/auth/key isolation in staging's own chat before test accounts, financial rows or paid calls; this chat cannot modify that project.
 - [ ] P5: Verify spending, affordability, goals, runway calculations
 - [ ] Termii ready for FIN3A approval + wallet funding (not operational until a real OTP is verified)
 - [ ] Phase 4 full completion with documented assumptions (approved; follows priorities)
