@@ -488,6 +488,7 @@ export type Database = {
         Row: {
           amount: number | null
           category_hint: string | null
+          classification: string
           confidence: string
           created_at: string
           currency: string | null
@@ -495,9 +496,11 @@ export type Database = {
           document_id: string
           duplicate_of: string | null
           id: string
+          imported_transaction_id: string | null
           merchant: string | null
           payment_method: string | null
           reference: string | null
+          review_confirmed: boolean
           status: string
           txn_date: string | null
           type: string
@@ -506,6 +509,7 @@ export type Database = {
         Insert: {
           amount?: number | null
           category_hint?: string | null
+          classification?: string
           confidence?: string
           created_at?: string
           currency?: string | null
@@ -513,9 +517,11 @@ export type Database = {
           document_id: string
           duplicate_of?: string | null
           id?: string
+          imported_transaction_id?: string | null
           merchant?: string | null
           payment_method?: string | null
           reference?: string | null
+          review_confirmed?: boolean
           status?: string
           txn_date?: string | null
           type?: string
@@ -524,6 +530,7 @@ export type Database = {
         Update: {
           amount?: number | null
           category_hint?: string | null
+          classification?: string
           confidence?: string
           created_at?: string
           currency?: string | null
@@ -531,9 +538,11 @@ export type Database = {
           document_id?: string
           duplicate_of?: string | null
           id?: string
+          imported_transaction_id?: string | null
           merchant?: string | null
           payment_method?: string | null
           reference?: string | null
+          review_confirmed?: boolean
           status?: string
           txn_date?: string | null
           type?: string
@@ -567,6 +576,7 @@ export type Database = {
           flag: string | null
           flag_note: string | null
           id: string
+          import_identity: string | null
           merchant: string | null
           notes: string | null
           occurred_at: string
@@ -589,6 +599,7 @@ export type Database = {
           flag?: string | null
           flag_note?: string | null
           id?: string
+          import_identity?: string | null
           merchant?: string | null
           notes?: string | null
           occurred_at?: string
@@ -611,6 +622,7 @@ export type Database = {
           flag?: string | null
           flag_note?: string | null
           id?: string
+          import_identity?: string | null
           merchant?: string | null
           notes?: string | null
           occurred_at?: string
