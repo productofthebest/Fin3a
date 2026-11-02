@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   ArrowRight, Bell, Camera, ChevronDown, FileText, History, Loader2, LogOut, MessageSquarePlus, Mic,
-  PiggyBank, Search, Send, Settings, Sparkles as _unused, Square, Target, Trash2, TrendingUp, Wallet, Zap,
+  PiggyBank, Search, Send, Settings, Square, Target, Trash2, TrendingUp, Wallet, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -188,7 +188,7 @@ function AssistantPage() {
   );
 }
 
-function ChatWindow({ threadId, initialMessages, name }: { threadId: string; initialMessages: UIMessage[]; name?: string }) {
+function ChatWindow({ threadId, initialMessages, name }: { threadId: string; initialMessages: UIMessage[]; name?: string | undefined }) {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
