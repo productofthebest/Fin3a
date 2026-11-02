@@ -60,55 +60,55 @@
 :root {
   --radius: 0.875rem;
 
-  /* Surfaces — deep navy with a violet cast */
-  --background: oklch(0.16 0.03 285);
-  --elevated: oklch(0.2 0.035 285);
-  --card: oklch(0.21 0.04 285);
-  --card-foreground: oklch(0.94 0.004 285);
-  --popover: oklch(0.23 0.04 285);
-  --popover-foreground: oklch(0.94 0.004 285);
+  /* Lavender light theme — shared by every page (matches the AI Assistant). */
+  --background: #f3eafe;
+  --elevated: #f7f4ff;
+  --card: #ffffff;
+  --card-foreground: #25232b;
+  --popover: #ffffff;
+  --popover-foreground: #25232b;
 
-  /* Type */
-  --foreground: oklch(0.95 0.004 285);
-  --muted: oklch(0.27 0.035 285);
-  --muted-foreground: oklch(0.68 0.02 285);
+  --foreground: #25232b;
+  --muted: #f7f4ff;
+  --muted-foreground: #77717f;
 
-  /* Indigo accent */
-  --primary: oklch(0.62 0.21 288);
-  --primary-foreground: oklch(0.98 0.004 285);
-  --secondary: oklch(0.29 0.07 286);
-  --secondary-foreground: oklch(0.94 0.004 285);
-  --accent: oklch(0.29 0.08 288);
-  --accent-foreground: oklch(0.96 0.004 285);
+  --primary: #8050f5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1eafe;
+  --secondary-foreground: #25232b;
+  --accent: #a47aff;
+  --accent-foreground: #ffffff;
 
-  --destructive: oklch(0.62 0.2 25);
-  --destructive-foreground: oklch(0.98 0.004 285);
+  --destructive: oklch(0.58 0.21 25);
+  --destructive-foreground: #ffffff;
 
-  /* Semantic */
-  --positive: oklch(0.72 0.17 155);
-  --negative: oklch(0.62 0.2 25);
+  --positive: oklch(0.6 0.15 155);
+  --negative: oklch(0.58 0.21 25);
 
-  --border: oklch(0.3 0.035 285);
-  --input: oklch(0.26 0.04 285);
-  --ring: oklch(0.62 0.21 288);
+  --border: #e8ddf8;
+  --input: #e8ddf8;
+  --ring: #a47aff;
 
-  --chart-1: oklch(0.62 0.21 288);
-  --chart-2: oklch(0.72 0.17 155);
-  --chart-3: oklch(0.75 0.15 85);
-  --chart-4: oklch(0.65 0.18 320);
-  --chart-5: oklch(0.65 0.18 190);
+  --chart-1: #8050f5;
+  --chart-2: oklch(0.65 0.15 155);
+  --chart-3: oklch(0.75 0.15 75);
+  --chart-4: #a47aff;
+  --chart-5: oklch(0.65 0.14 220);
 
-  --sidebar: oklch(0.14 0.035 285);
-  --sidebar-foreground: oklch(0.94 0.004 285);
-  --sidebar-primary: oklch(0.62 0.21 288);
-  --sidebar-primary-foreground: oklch(0.98 0.004 285);
-  --sidebar-accent: oklch(0.25 0.06 286);
-  --sidebar-accent-foreground: oklch(0.94 0.004 285);
-  --sidebar-border: oklch(0.28 0.04 285);
-  --sidebar-ring: oklch(0.62 0.21 288);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #25232b;
+  --sidebar-primary: #8050f5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f7f4ff;
+  --sidebar-accent-foreground: #25232b;
+  --sidebar-border: #e8ddf8;
+  --sidebar-ring: #a47aff;
 
-  --font-display: "Space Grotesk", "DM Sans", sans-serif;
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --lavender-glow: color-mix(in oklab, #a47aff 35%, transparent);
+  --shadow-lavender: 0 20px 60px -24px color-mix(in oklab, #8050f5 30%, transparent);
+
+  --font-display: "Manrope", "DM Sans", sans-serif;
+  --font-sans: "Manrope", "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -117,7 +117,8 @@
   }
 
   body {
-    background-color: var(--color-background);
+    background: radial-gradient(1200px 600px at 80% 0%, #f7f4ff, transparent), var(--color-background);
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
