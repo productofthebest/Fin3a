@@ -296,8 +296,8 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
     <section className="flex flex-col">
       {empty ? (
         <>
-          <div className="grid items-center gap-4 md:grid-cols-[1fr_300px]">
-            <div className="order-2 md:order-1">
+          <div className="grid items-center gap-4">
+            <div>
               <p className="text-sm font-medium text-foreground/80">{greeting()}{name ? `, ${name}` : ""} 👋</p>
               <h1 className="mt-3 text-4xl font-medium leading-[1.15] tracking-tight sm:text-[46px]">
                 How Can I <span className="text-primary">Assist</span>
@@ -306,10 +306,6 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
               <p className="mt-5 max-w-[290px] text-sm leading-relaxed text-muted-foreground">
                 Your AI finance assistant to simplify, analyze and help you make smarter financial decisions.
               </p>
-            </div>
-            <div className="relative order-1 mx-auto size-48 md:order-2 md:size-[260px]">
-              <div className="absolute inset-4 rounded-full bg-[var(--lavender-glow)] blur-2xl" />
-              <img src={robot} alt="Fin3a assistant" width={1024} height={1024} className="relative size-full object-contain" />
             </div>
           </div>
 
