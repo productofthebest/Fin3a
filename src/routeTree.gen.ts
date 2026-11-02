@@ -25,10 +25,10 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPlanningRouteImport } from './routes/_authenticated/planning'
 import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiLandingChatRouteImport } from './routes/api/landing-chat'
+import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
-import { Route as ApiPublicTranscribeRouteImport } from './routes/api/public/transcribe'
-import { Route as ApiPublicVisitorChatRouteImport } from './routes/api/public/visitor-chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -109,6 +109,16 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLandingChatRoute = ApiLandingChatRouteImport.update({
+  id: '/api/landing-chat',
+  path: '/api/landing-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
+  id: '/api/transcribe',
+  path: '/api/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAssistantIndexRoute =
   AuthenticatedAssistantIndexRouteImport.update({
     id: '/assistant/',
@@ -121,16 +131,6 @@ const AuthenticatedAssistantThreadIdRoute =
     path: '/assistant/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicTranscribeRoute = ApiPublicTranscribeRouteImport.update({
-  id: '/api/public/transcribe',
-  path: '/api/public/transcribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicVisitorChatRoute = ApiPublicVisitorChatRouteImport.update({
-  id: '/api/public/visitor-chat',
-  path: '/api/public/visitor-chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -148,9 +148,9 @@ export interface FileRoutesByFullPath {
   '/planning': typeof AuthenticatedPlanningRoute
   '/security': typeof AuthenticatedSecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/landing-chat': typeof ApiLandingChatRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
-  '/api/public/transcribe': typeof ApiPublicTranscribeRoute
-  '/api/public/visitor-chat': typeof ApiPublicVisitorChatRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
 }
 export interface FileRoutesByTo {
@@ -169,9 +169,9 @@ export interface FileRoutesByTo {
   '/planning': typeof AuthenticatedPlanningRoute
   '/security': typeof AuthenticatedSecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/landing-chat': typeof ApiLandingChatRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
-  '/api/public/transcribe': typeof ApiPublicTranscribeRoute
-  '/api/public/visitor-chat': typeof ApiPublicVisitorChatRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
 }
 export interface FileRoutesById {
@@ -192,9 +192,9 @@ export interface FileRoutesById {
   '/_authenticated/planning': typeof AuthenticatedPlanningRoute
   '/_authenticated/security': typeof AuthenticatedSecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/landing-chat': typeof ApiLandingChatRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
-  '/api/public/transcribe': typeof ApiPublicTranscribeRoute
-  '/api/public/visitor-chat': typeof ApiPublicVisitorChatRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
 }
 export interface FileRouteTypes {
@@ -215,9 +215,9 @@ export interface FileRouteTypes {
     | '/planning'
     | '/security'
     | '/api/chat'
+    | '/api/landing-chat'
+    | '/api/transcribe'
     | '/assistant/$threadId'
-    | '/api/public/transcribe'
-    | '/api/public/visitor-chat'
     | '/assistant/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -236,9 +236,9 @@ export interface FileRouteTypes {
     | '/planning'
     | '/security'
     | '/api/chat'
+    | '/api/landing-chat'
+    | '/api/transcribe'
     | '/assistant/$threadId'
-    | '/api/public/transcribe'
-    | '/api/public/visitor-chat'
     | '/assistant'
   id:
     | '__root__'
@@ -258,9 +258,9 @@ export interface FileRouteTypes {
     | '/_authenticated/planning'
     | '/_authenticated/security'
     | '/api/chat'
+    | '/api/landing-chat'
+    | '/api/transcribe'
     | '/_authenticated/assistant/$threadId'
-    | '/api/public/transcribe'
-    | '/api/public/visitor-chat'
     | '/_authenticated/assistant/'
   fileRoutesById: FileRoutesById
 }
@@ -270,8 +270,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiChatRoute: typeof ApiChatRoute
-  ApiPublicTranscribeRoute: typeof ApiPublicTranscribeRoute
-  ApiPublicVisitorChatRoute: typeof ApiPublicVisitorChatRoute
+  ApiLandingChatRoute: typeof ApiLandingChatRoute
+  ApiTranscribeRoute: typeof ApiTranscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -388,6 +388,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/landing-chat': {
+      id: '/api/landing-chat'
+      path: '/api/landing-chat'
+      fullPath: '/api/landing-chat'
+      preLoaderRoute: typeof ApiLandingChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/transcribe': {
+      id: '/api/transcribe'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe'
+      preLoaderRoute: typeof ApiTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/assistant/': {
       id: '/_authenticated/assistant/'
       path: '/assistant'
@@ -401,20 +415,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/assistant/$threadId'
       preLoaderRoute: typeof AuthenticatedAssistantThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/transcribe': {
-      id: '/api/public/transcribe'
-      path: '/api/public/transcribe'
-      fullPath: '/api/public/transcribe'
-      preLoaderRoute: typeof ApiPublicTranscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/visitor-chat': {
-      id: '/api/public/visitor-chat'
-      path: '/api/public/visitor-chat'
-      fullPath: '/api/public/visitor-chat'
-      preLoaderRoute: typeof ApiPublicVisitorChatRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -460,8 +460,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiChatRoute: ApiChatRoute,
-  ApiPublicTranscribeRoute: ApiPublicTranscribeRoute,
-  ApiPublicVisitorChatRoute: ApiPublicVisitorChatRoute,
+  ApiLandingChatRoute: ApiLandingChatRoute,
+  ApiTranscribeRoute: ApiTranscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

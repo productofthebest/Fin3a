@@ -5,6 +5,14 @@ import { Camera, Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { authenticationIntent, type AuthMethod } from "@/lib/auth-options";
+import { supabase } from "@/integrations/supabase/client";
+
+async function accessToken() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+const SIGN_IN_REQUIRED = "Please sign in or create a free account to chat with Fin3a AI. This keeps the assistant secure and fair for everyone.";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -47,14 +55,20 @@ export function LandingAssistant() {
     }
     setAuthChoice("choose");
     setError(null);
+    const token = await accessToken();
+    if (!token) {
+      setMessages((prev) => [...prev, { role: "user", content }, { role: "assistant", content: SIGN_IN_REQUIRED }]);
+      setInput("");
+      return;
+    }
     const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages([...history, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
     try {
-      const res = await fetch("/api/public/visitor-chat", {
+      const res = await fetch("/api/landing-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ messages: history }),
       });
       if (!res.ok || !res.body) {
@@ -103,6 +117,11 @@ export function LandingAssistant() {
 
   async function startRecording() {
     setError(null);
+    if (!(await accessToken())) {
+      setAuthChoice("choose");
+      setError("Voice input is available after you sign in.");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const rec = new MediaRecorder(stream);
@@ -117,7 +136,9 @@ export function LandingAssistant() {
           const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
           const fd = new FormData();
           fd.append("file", blob, `recording.${ext}`);
-          const res = await fetch("/api/public/transcribe", { method: "POST", body: fd });
+          const token = await accessToken();
+          if (!token) throw new Error("Voice input is available after you sign in.");
+          const res = await fetch("/api/transcribe", { method: "POST", body: fd, headers: { Authorization: `Bearer ${token}` } });
           const j = (await res.json()) as { text?: string; error?: string };
           if (!res.ok) throw new Error(j.error ?? "Transcription failed.");
           if (!j.text) throw new Error("We didn't catch that. Try speaking a little louder.");
