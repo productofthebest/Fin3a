@@ -366,10 +366,6 @@ async function extractWithAi(
 // Duplicate detection (drafts vs existing transactions)
 // ---------------------------------------------------------------------------
 
-function msBetweenDays(a: string, b: string): number {
-  return Math.abs(new Date(`${a}T00:00:00Z`).getTime() - new Date(`${b}T00:00:00Z`).getTime());
-}
-
 async function flagDraftDuplicates(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   userId: string,
