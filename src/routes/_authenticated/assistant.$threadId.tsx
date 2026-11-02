@@ -9,6 +9,7 @@ import { ArrowUp, Camera, Loader2, MessageSquarePlus, Mic, Square, Trash2, Trend
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/app-shell";
+import { AssistantUploadMenu } from "@/components/assistant-upload-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { createThread, deleteThread, getThreadMessages, listThreads } from "@/lib/assistant.functions";
 import { analyzeDocument, createDocument } from "@/lib/documents.functions";
@@ -331,6 +332,7 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
           }}
         />
 
+        <AssistantUploadMenu />
         <textarea
           ref={inputRef}
           value={input}

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Camera, Loader2, Mic, Send, Sparkles, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AssistantUploadMenu } from "@/components/assistant-upload-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { authenticationIntent, type AuthMethod } from "@/lib/auth-options";
 import { supabase } from "@/integrations/supabase/client";
@@ -250,6 +251,7 @@ export function LandingAssistant() {
               }}
             />
 
+            <AssistantUploadMenu />
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}

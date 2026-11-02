@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { queryOptions, useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { takeQueuedUploads } from "@/lib/pending-uploads";
 import { toast } from "sonner";
 import { AlertTriangle, FileText, Loader2, ScanLine, Trash2, Upload } from "lucide-react";
 
@@ -61,10 +62,30 @@ function DocumentsPage() {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  async function handleFile(file: File) {
+  const [progress, setProgress] = useState<{ done: number; total: number; current: string; results: { name: string; ok: boolean; note: string }[] } | null>(null);
+
+  async function handleFiles(files: File[]) {
+    if (files.length === 0) return;
+    const results: { name: string; ok: boolean; note: string }[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i]!;
+      setProgress({ done: i, total: files.length, current: f.name, results: [...results] });
+      const note = await handleFile(f);
+      results.push({ name: f.name, ok: note.ok, note: note.message });
+    }
+    setProgress({ done: files.length, total: files.length, current: "", results });
+  }
+
+  useEffect(() => {
+    const queued = takeQueuedUploads();
+    if (queued.length) void handleFiles(queued);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleFile(file: File): Promise<{ ok: boolean; message: string }> {
     if (file.size > 15 * 1024 * 1024) {
       toast.error("File is larger than 15 MB.");
-      return;
+      return { ok: false, message: "Larger than 15 MB" };
     }
     setBusy(true);
     try {
@@ -84,8 +105,11 @@ function DocumentsPage() {
       toast.info("Scanning… this can take up to a minute.");
       const res = await analyzeDocument({ data: { documentId: document.id } });
       toast.success(res.summary);
+      return { ok: true, message: res.summary };
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Upload failed");
+      const message = e instanceof Error ? e.message : "Upload failed";
+      toast.error(message);
+      return { ok: false, message };
     } finally {
       setBusy(false);
       qc.invalidateQueries({ queryKey: ["documents"] });
@@ -100,12 +124,25 @@ function DocumentsPage() {
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Scan documents</h1>
           <p className="text-muted-foreground">Bank statements, bills, receipts and POS slips. You review everything before it's saved.</p>
         </div>
-        <input ref={fileRef} type="file" accept={ACCEPT} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
+        <input ref={fileRef} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => { const fs = Array.from(e.target.files ?? []); e.target.value = ""; void handleFiles(fs); }} />
         <Button onClick={() => fileRef.current?.click()} disabled={busy}>
           {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
           {busy ? "Scanning…" : "Upload & scan"}
         </Button>
       </div>
+
+      {progress && (
+        <Card className="mt-6">
+          <CardContent className="space-y-2 py-4 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-medium">{progress.done < progress.total ? `Scanning ${progress.done + 1} of ${progress.total}: ${progress.current}` : `Finished ${progress.total} file${progress.total === 1 ? "" : "s"}`}</span>
+              {progress.done >= progress.total && <Button variant="ghost" size="sm" onClick={() => setProgress(null)}>Dismiss</Button>}
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary transition-all" style={{ width: `${(progress.done / progress.total) * 100}%` }} /></div>
+            {progress.results.map((r) => <p key={r.name} className={r.ok ? "text-muted-foreground" : "text-destructive"}>{r.name}: {r.note}</p>)}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
         <Card>
@@ -148,7 +185,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
   const ready=pending.filter(d=>draftImportEligible(d,new Date().toISOString().slice(0,10)));
   const refresh = () => { qc.invalidateQueries({ queryKey: ["drafts", documentId] }); qc.invalidateQueries({ queryKey: ["documents"] }); };
 
-  const save = useMutation({ mutationFn: (p: { id: string; txn_date?: string | null; merchant?: string | null; amount?: number; type?: "income" | "expense"; currency?:string|null; classification?:typeof CLASSIFICATIONS[number]; review_confirmed?:boolean }) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
+  const save = useMutation({ mutationFn: (p: { id: string; txn_date?: string | null; merchant?: string | null; amount?: number; type?: "income" | "expense"; currency?:string|null; classification?:typeof CLASSIFICATIONS[number]; review_confirmed?:boolean; not_duplicate?: true }) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
   const remove = useMutation({ mutationFn: (id: string) => deleteDraft({ data: { id } }), onSuccess: refresh });
   const imp = useMutation({
     mutationFn: () => importDrafts({ data: { documentId } }),
@@ -187,7 +224,14 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
                 onBlur={(e) => e.target.value !== (d.merchant ?? d.description ?? "") && save.mutate({ id: d.id, merchant: e.target.value || null })} />
               <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 {d.confidence === "low" && <span className="text-warning">Low confidence — check this</span>}
-                {d.duplicate_of && <span className="flex items-center gap-1 text-destructive"><AlertTriangle className="h-3 w-3" />Possible duplicate</span>}
+                {d.duplicate_of && (
+                  <span className="flex flex-wrap items-center gap-1 text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    {(d as { duplicate_confidence?: string | null }).duplicate_confidence === "exact" ? "Already recorded" : "Possible duplicate"}
+                    {(d as { duplicate_reason?: string | null }).duplicate_reason ? ` — ${(d as { duplicate_reason?: string | null }).duplicate_reason}` : ""}
+                    <button type="button" className="ml-1 underline text-foreground" onClick={() => save.mutate({ id: d.id, not_duplicate: true })}>It's a separate transaction</button>
+                  </span>
+                )}
                 {!d.txn_date && <span className="text-destructive">Missing date</span>}
               </div>
             </div>
