@@ -29,6 +29,12 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Duplicate prevention guarding balances and totals
 
 ## Phase 4 — AI Financial Assistant (chat built early: threads, saved history, snapshot-based answers)
+- [x] Implemented draft code: dated confirmed balances, saved server-calculated scenarios, savings/budgets, affordability, goals/progress, evidence-backed insights, seven original assistant prompts/aggregates, scanner currency/classification review and idempotent import RPC
+- [ ] Isolated synthetic E2E gate: BLOCKED — this draft shares the live backend; no synthetic account or financial rows may be created here
+- [x] Staged additive schema changes with RLS/grants and ownership/date validation; no schema changes or synthetic rows applied to live
+- [x] In-memory synthetic rule tests and form/pagination regressions; existing signed-in dashboard/analysis and signed-out guard checked without financial writes
+- [ ] Verify staged migrations, ownership policies, concurrent/retry scanner imports, saved reload and full seven-question OpenAI answers on an isolated backend
+- [ ] Remaining verification: affordability/goals, explainable insights, assistant extensions and scanner hardening against isolated saved records; not Phase 4 complete
 - [ ] Complete Phase 4 at the user's November 2 request: integrate remaining forecasts, affordability, goals, insights, assistant context and scanner safeguards; verify before certifying completion
 - [x] Review and approve the Phase 4 completion plan; acceptance of the existing ready draft is queued, preserving newer main-app protections; integrated verification waits on acceptance
 - [x] Review uploaded Phase 4 brief and agree incremental delivery preserving existing features/design

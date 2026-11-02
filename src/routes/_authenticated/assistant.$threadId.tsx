@@ -16,12 +16,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const SUGGESTIONS = [
-  "How much did I spend this month?",
+  "How much did I spend last month?",
   "What category consumes most of my money?",
-  "Compare my spending this month with last month.",
-  "How long can my current money sustain me?",
-  "What happens if my income increases by 20%?",
-  "Identify unusual spending patterns.",
+  "Can I afford a ₦500,000 purchase?",
+  "How long can my current balance sustain me?",
+  "How much did I spend on transportation this year?",
+  "Why are my expenses increasing?",
+  "How much should I save monthly to reach my target?",
 ];
 
 const threadsQuery = { queryKey: ["chat-threads"], queryFn: () => listThreads() };

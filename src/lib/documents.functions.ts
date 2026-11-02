@@ -8,6 +8,7 @@ import { collectPages } from "./pagination";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ScannerDatabase } from "./scanner-types";
 import { CURRENCIES } from "./fin3a";
+import { assertOwnedDocumentPath, documentUploadInput, validateDocumentContent, validateDocumentMetadata } from "./document-security";
 
 const DOC_SELECT = "*";
 
@@ -290,111 +291,30 @@ Rules:
 - Ignore balance columns, page headers, footers and summaries.
 - If the document contains no transaction lines, return an empty list.`;
 
-interface AiExtraction {
-  document_type: typeof DOCUMENT_TYPES[number];
-  transactions: {
-    txn_date: string | null;
-    description: string | null;
-    merchant: string | null;
-    amount: number | null;
-    currency: string | null;
-    type: "income" | "expense";
-    reference: string | null;
-    payment_method: string | null;
-    category_hint: string | null;
-    confidence: "high" | "medium" | "low";
-  }[];
-}
-
 async function extractWithAi(
   buffer: ArrayBuffer,
   mimeType: string,
   filename: string,
-): Promise<{parsed:ParsedRow[];documentType:string}> {
-  const { streamText, Output, NoObjectGeneratedError } = await import("ai");
-  const { createOpenAI } = await import("@ai-sdk/openai");
-
-  const apiKey = process.env["OPENAI_API_KEY"];
-  if (!apiKey) throw new Error("AI is not configured for this workspace yet.");
-
-  const bytes = new Uint8Array(buffer);
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  const base64 = btoa(bin);
-  const mime = (mimeType || "application/octet-stream").toLowerCase();
-  const mediaPart =
-    mime.startsWith("image/")
-      ? { type: "file" as const, data: base64, mediaType: mime }
-      : { type: "file" as const, filename, data: base64, mediaType: "application/pdf" };
-
-  const provider = createOpenAI({ apiKey });
-
-  const result = streamText({
-    model: provider.responses("gpt-5-mini"),
-    system: EXTRACT_INSTRUCTIONS,
-    messages: [
-      {
-        role: "user",
-        content: [
-          mediaPart,
-          { type: "text" as const, text: `Extract every transaction line from this document ("${filename}").` },
-        ],
-      },
-    ],
-    output: Output.object({
-      schema: z.object({
-        document_type: z.enum(DOCUMENT_TYPES).describe("Identify the actual document type from visible content, not its filename"),
-        transactions: z.array(
-          z.object({
-            txn_date: z.string().nullable().describe("YYYY-MM-DD or null"),
-            description: z.string().nullable(),
-            merchant: z.string().nullable(),
-            amount: z.number().nullable(),
-            currency: z.string().nullable().describe("3-letter currency code or null"),
-            type: z.enum(["income", "expense"]),
-            reference: z.string().nullable(),
-            payment_method: z.string().nullable(),
-            category_hint: z.string().nullable(),
-            confidence: z.enum(["high", "medium", "low"]),
-          }),
-        ),
-      }),
-    }),
-    providerOptions: {
-      openai: {
-        store: false,
-        reasoningEffort: "low",
-        reasoningSummary: "auto",
-        include: ["reasoning.encrypted_content"],
-      },
-    },
+): Promise<{parsed: ParsedRow[]; documentType: string}> {
+  const { extractDocumentWithOpenAI } = await import("./document-openai.server");
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  const normalizedMime = mimeType.toLowerCase();
+  const resolvedMime = normalizedMime.startsWith("image/") || normalizedMime === "application/pdf"
+    ? normalizedMime : AI_MIME_BY_EXT[ext] ?? normalizedMime;
+  const output = await extractDocumentWithOpenAI({
+    apiKey: process.env["OPENAI_API_KEY"], buffer, mimeType: resolvedMime,
+    filename, instructions: EXTRACT_INSTRUCTIONS,
   });
-
-  let output: AiExtraction;
-  try {
-    output = (await result.output) as AiExtraction;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      throw new Error("The document could not be read clearly. Try a sharper photo or a cleaner scan.");
-    }
-    throw error;
-  }
-
-  const parsed:ParsedRow[] = (output.transactions ?? [])
-    .filter((t) => typeof t.amount === "number" && Number.isFinite(t.amount) && t.amount > 0)
-    .map((t) => ({
-      txn_date: parseDate(t.txn_date),
-      description: cleanText(t.description, 300),
-      merchant: cleanText(t.merchant, 120),
-      amount: Number(t.amount),
-      currency: normalizeCurrency(t.currency),
-      type: t.type === "income" ? ("income" as const) : ("expense" as const),
-      reference: cleanText(t.reference, 120),
-      payment_method: cleanText(t.payment_method, 80),
-      category_hint:cleanText(t.category_hint,80),
-      confidence: t.confidence === "high" || t.confidence === "medium" ? t.confidence : "low",
+  const parsed: ParsedRow[] = output.transactions
+    .filter(t => typeof t.amount === "number" && Number.isFinite(t.amount) && t.amount > 0)
+    .map(t => ({
+      txn_date: parseDate(t.txn_date), description: cleanText(t.description, 300),
+      merchant: cleanText(t.merchant, 120), amount: Number(t.amount),
+      currency: normalizeCurrency(t.currency), type: t.type,
+      reference: cleanText(t.reference, 120), payment_method: cleanText(t.payment_method, 80),
+      category_hint: cleanText(t.category_hint, 80), confidence: t.confidence,
     }));
-  return { parsed, documentType: output.document_type };
+  return { parsed, documentType: output.document_type ?? "other" };
 }
 
 // ---------------------------------------------------------------------------
@@ -462,23 +382,14 @@ export const listDocuments = createServerFn({ method: "GET" })
 
 export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z
-      .object({
-        filename: z.string().trim().min(1).max(255),
-        mime_type: z.string().trim().max(120),
-        size_bytes: z.number().int().positive(),
-        storage_path: z.string().trim().min(1).max(600),
-      })
-      .parse(input),
-  )
+  .inputValidator((input) => documentUploadInput.parse(input))
   .handler(async ({ data, context }) => {
-    if(!data.storage_path.startsWith(`${context.userId}/`) || data.storage_path.includes(".."))throw new Error("Invalid document ownership.");
-    if(data.size_bytes>15*1024*1024)throw new Error("Maximum file size is 15 MB.");
+    assertOwnedDocumentPath(data.storage_path, context.userId);
+    validateDocumentMetadata(data);
     const {data:file,error:downloadError}=await context.supabase.storage.from("documents").download(data.storage_path);
-    if(downloadError || !file || file.size!==data.size_bytes)throw new Error("Uploaded file could not be verified.");
-    const bytes=await file.arrayBuffer();
-    const digest=await crypto.subtle.digest("SHA-256",bytes);
+    if(downloadError || !file)throw new Error("Uploaded file could not be verified.");
+    await validateDocumentContent(file, data);
+    const digest=await crypto.subtle.digest("SHA-256",await file.arrayBuffer());
     const fingerprint=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
     const docType = guessDocType(data.filename);
     const { data: row, error } = await context.supabase
@@ -527,6 +438,8 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       .single();
     if (docError || !doc) throw new Error(docError?.message ?? "Document not found");
     const document = doc as FinDocument;
+    assertOwnedDocumentPath(document.storage_path, userId);
+    validateDocumentMetadata(document);
     if(document.status==="processing")throw new Error("This document is already being scanned.");
     if(document.status==="imported")throw new Error("This document has already been imported; use the original ledger records.");
 
@@ -546,6 +459,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         .download(document.storage_path);
       if (downloadError || !file) throw new Error(downloadError?.message ?? "Could not open the uploaded file");
 
+      await validateDocumentContent(file, document);
       const buffer = await file.arrayBuffer();
       const ext = document.filename.split(".").pop()?.toLowerCase() ?? "";
       const mime = document.mime_type.toLowerCase();
@@ -689,15 +603,17 @@ export const deleteDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ documentId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: doc } = await context.supabase
+    const { data: doc, error: readError } = await context.supabase
       .from("documents")
       .select("storage_path")
       .eq("id", data.documentId)
       .eq("user_id", context.userId)
-      .single();
-    if (doc) {
-      await context.supabase.storage.from("documents").remove([doc.storage_path]);
-    }
+      .maybeSingle();
+    if (readError) throw new Error("Could not check this document. Please try again.");
+    if (!doc) throw new Error("Document not found.");
+    assertOwnedDocumentPath(doc.storage_path, context.userId);
+    const { error: storageError } = await context.supabase.storage.from("documents").remove([doc.storage_path]);
+    if (storageError) throw new Error("Could not delete the private file. Nothing was removed from your document list; please try again.");
     const { error } = await context.supabase
       .from("documents")
       .delete()
