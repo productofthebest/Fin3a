@@ -136,7 +136,7 @@ export const Route = createFileRoute("/api/chat")({
           messages: await convertToModelMessages(history),
           abortSignal: request.signal,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
-          onFinish: ({ totalUsage }) => finishAiUsage(supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.cachedInputTokens ?? null, output: totalUsage.outputTokens ?? null }),
+          onFinish: ({ totalUsage }) => finishAiUsage(supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
           onError: () => finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
         });
 

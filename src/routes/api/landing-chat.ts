@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/landing-chat")({
           messages: parsed.data.messages,
           maxOutputTokens: 1200,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
-          onFinish: ({ totalUsage }) => finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.cachedInputTokens ?? null, output: totalUsage.outputTokens ?? null }),
+          onFinish: ({ totalUsage }) => finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
           onError: () => finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
         });
         return result.toTextStreamResponse(usage.warning ? { headers: { "x-ai-usage-warning": encodeURIComponent(usage.warning) } } : undefined);
