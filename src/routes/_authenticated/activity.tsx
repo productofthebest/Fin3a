@@ -315,7 +315,7 @@ function ActivityPage() {
           </div>
         ) : !transactions || transactions.length === 0 ? (
           <p className="p-8 text-center text-sm text-muted-foreground">
-            {hasFilters ? "No transactions match these filters." : "Nothing here yet. Add your first transaction to see it on the dashboard."}
+            {hasFilters ? "No transactions match these filters." : "Nothing here yet. Add your first transaction to see it in Spending."}
           </p>
         ) : (
           <ul className="divide-y divide-border">

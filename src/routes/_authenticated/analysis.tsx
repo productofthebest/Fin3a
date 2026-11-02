@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/analysis")({
   pendingComponent: () => <p className="p-8 text-muted-foreground">Loading your financial history…</p>,
   component: AnalysisPage,
 });
-function AnalysisError({ error }: { error: unknown }) { const router = useRouter(); return <div className="p-8"><p role="alert">{error instanceof Error ? error.message : "Your financial analysis could not be loaded."}</p><Button className="mt-4" onClick={() => router.invalidate()}>Try again</Button><Link to="/dashboard" className="ml-4 text-primary">Dashboard</Link></div>; }
+function AnalysisError({ error }: { error: unknown }) { const router = useRouter(); return <div className="p-8"><p role="alert">{error instanceof Error ? error.message : "Your financial analysis could not be loaded."}</p><Button className="mt-4" onClick={() => router.invalidate()}>Try again</Button><Link to="/spending" className="ml-4 text-primary">Spending</Link></div>; }
 function AnalysisPage() {
   const filters = Route.useSearch();
   const navigate = useNavigate();

@@ -34,15 +34,15 @@ const SUGGESTIONS = [
 ];
 
 const PRIMARY_NAV = [
-  { to: "/dashboard", label: "Overview" },
-  { to: "/activity", label: "Transactions" },
-  { to: "/planning", label: "Accounts" },
-  { to: "/categories", label: "Budgets" },
-  { to: "/analysis", label: "Reports" },
+  { to: "/assistant", label: "Dashboard" },
+  { to: "/spending", label: "Spending" },
+  { to: "/activity", label: "Activity" },
+  { to: "/bills", label: "Bills" },
+  { to: "/analysis", label: "Analysis" },
 ] as const;
 const MORE_NAV = [
-  { to: "/assistant", label: "Assistant" },
-  { to: "/bills", label: "Bills" },
+  { to: "/categories", label: "Categories" },
+  { to: "/planning", label: "Planning" },
   { to: "/goals", label: "Goals" },
   { to: "/insights", label: "Insights" },
   { to: "/documents", label: "Scan documents" },
@@ -54,9 +54,9 @@ export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Conversation — Fin3a AI Assistant" },
+      { title: "Dashboard — Fin3a AI" },
       { name: "description", content: "Chat with Fin3a AI about your own financial records." },
-      { property: "og:title", content: "Conversation — Fin3a AI Assistant" },
+      { property: "og:title", content: "Dashboard — Fin3a AI" },
       { property: "og:description", content: "Chat with Fin3a AI about your own financial records." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -6,9 +6,9 @@ export const Route = createFileRoute("/_authenticated/assistant/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "AI Assistant — Fin3a AI" },
+      { title: "Dashboard — Fin3a AI" },
       { name: "description", content: "Ask Fin3a AI about your spending, runway and what-if scenarios." },
-      { property: "og:title", content: "AI Assistant — Fin3a AI" },
+      { property: "og:title", content: "Dashboard — Fin3a AI" },
       { property: "og:description", content: "Ask Fin3a AI about your spending, runway and what-if scenarios." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
