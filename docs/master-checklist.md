@@ -1,0 +1,98 @@
+# Fin3a — Master Requirements Checklist
+
+Owner: Top Floor Ltd. Updated: 2026-11-02.
+Single source of truth for every requirement, audit finding and approved task. Update at the end of every priority.
+
+## Status vocabulary
+- **Impl**: Not started · Partial · Code done
+- **Test**: None · Unit · Integration · Workflow (real user flow observed in the app) · Real-world (real data/providers)
+- A row is **Complete** only when Impl = Code done AND Test reaches Workflow (and Real-world where the row requires it). Interface, written code, connected API or passing unit tests alone never count.
+
+## Milestones (separate; none reached unless stated)
+| Milestone | Status |
+|---|---|
+| Development complete | No |
+| Automated tests passed | Yes — 142/142 unit tests (2026-11-02) |
+| Integration tests passed | No — no isolated test backend |
+| Real-world testing passed | No |
+| Security review passed | No — open findings (SEC rows) |
+| External dependencies satisfied | No — Termii, staging backend |
+| Ready for controlled beta | No |
+| Ready for public launch | No |
+
+## Phase 1 — Foundation
+| Ref | Requirement | Impl | Test | Evidence | Dependencies |
+|---|---|---|---|---|---|
+| P1-01 | Email/password sign-up & sign-in | Code done | Real-world | Owner confirmed email account login works | — |
+| P1-02 | Phone sign-in with six-digit SMS OTP (Termii) | Code done | Unit | 6 OTP rule tests; Termii returned SENDER_ID_NOT_APPROVED | Termii approve sender `FIN3A`; fund wallet; real OTP delivery |
+| P1-03 | Google and Lovable sign-in retained | Code done | None | Buttons present; not re-tested | — |
+| P1-04 | Password recovery | Code done | None | Not workflow-tested | — |
+| P1-05 | Onboarding with user-chosen currency (156 ISO currencies) | Code done | Workflow | Owner account onboarded (NGN) | — |
+| P1-06 | Starter categories; categories CRUD | Code done | None | Not re-tested since Phase 4 | — |
+| P1-07 | Manual income/expense entry | Code done | None | Not re-tested since Phase 4 | Staging backend |
+| P1-08 | Transaction history | Code done | Workflow | P4 paging/filters signed-in check (empty account) | Records to page through |
+| P1-09 | Dashboard (cash flow, categories, net spending, month switcher) | Code done | Workflow | Signed-in load verified on empty account | Nonempty data |
+| P1-10 | Recurring bills CRUD | Code done | None | — | Staging backend |
+| P1-11 | Responsive mobile/tablet/desktop | Partial | Workflow (Scan page only) | No overflow at 390/768/1280 px on Scan | Full pass |
+| P1-12 | Landing page; removed copy stays removed | Code done | Workflow | Exclusions in project memory | — |
+
+## Phase 2 — Universal Financial Scanner
+| Ref | Requirement | Impl | Test | Evidence | Dependencies |
+|---|---|---|---|---|---|
+| P2-01 | Upload statements, receipts, POS slips, teller, cheques, invoices, bills | Code done | Workflow (CSV, nonfinancial image) | Earlier Playwright scans | Real samples |
+| P2-02 | PDF/CSV/Excel/image extraction via server-side OpenAI | Code done | Unit | 11 checks | Real samples, staging |
+| P2-03 | Long PDFs split into 8-page parts, max 60 pages, all-or-nothing | Code done | Unit | 70-page synthetic split preserved all pages | Real long statement in staging |
+| P2-04 | Locked/damaged PDF gives clear message, no partial save | Code done | None | — | Staging |
+| P2-05 | Review-before-import; currency/classification confirmation | Code done | None (since Phase 4) | — | Staging |
+| P2-06 | File security: size/type/byte signature, owner path | Code done | Workflow | Disguised PDF rejected before upload | — |
+| P2-07 | Duplicate file detection (content hash) | Code done | None | — | Staging |
+
+## Phase 3 — Financial Intelligence / Reconciliation
+| Ref | Requirement | Impl | Test | Evidence | Dependencies |
+|---|---|---|---|---|---|
+| P3-01 | Statement reconciliation: opening/closing/credits/debits (cents, printed only) | Code done | Unit | 5 tests | Real statements |
+| P3-02 | Reconciliation badge: Verified / Mismatch / Unable to verify | Code done | None | Not seen with a real scan | Staging scan |
+| P3-03 | Duplicate transaction detection, full ±3-day window, one match each | Code done | Unit | 3 tests | Staging boundary test |
+| P3-04 | Money states pending/cleared/completed | Code done | None | — | — |
+| P3-05 | Runway with explainable assumptions | Code done | Unit | Arithmetic tests incl. zero-balance runway | Real data |
+
+## Phase 4 — Advanced Financial Intelligence
+| Ref | Requirement | Impl | Test | Evidence | Dependencies |
+|---|---|---|---|---|---|
+| P4-01 | Shared calculation rules (exclude transfers/flagged/unknown currency) | Code done | Unit | 12+ finance tests | — |
+| P4-02 | Historical comparisons, YoY, category drill-down, CSV export | Code done | Workflow (empty account) | Signed-in checks | Nonempty data |
+| P4-03 | Forecast requires confirmed balance + 3 full months | Code done | Unit | Simulator tests | Real data |
+| P4-04 | Saved confirmed balances & scenarios (server-calculated) | Code done | None | Schema applied 2026-10-31 | Staging |
+| P4-05 | Affordability | Code done | Unit | planning-calculations tests | Staging workflow |
+| P4-06 | Goals with contributions/progress | Code done | Unit | — | Staging workflow |
+| P4-07 | Explainable insights with evidence | Partial | Unit | — | Staging workflow |
+| P4-08 | Assistant answers from aggregate user data (7 original questions) | Code done | Partial | One live balance-clarification answer | Staging + OpenAI |
+| P4-09 | Recurring expense analysis | Partial | None | — | — |
+| P4-10 | Scanner atomic import, immutable identity, duplicate withholding | Code done | None | Migrations applied | Concurrency test in staging |
+| P4-11 | Full transaction-history paging, filters, search | Code done | Workflow (empty account) + Unit | 4 tests, signed-in check | Paging over thousands of rows in staging |
+
+## Phase 5 — Security, Cost, Launch
+| Ref | Requirement | Impl | Test | Evidence | Dependencies |
+|---|---|---|---|---|---|
+| SEC-01 | Homepage chat & voice require sign-in | Code done | Workflow (signed-out) | 401s; sign-in prompt shown | Signed-in use by owner |
+| SEC-02 | Atomic per-account AI quotas (chat 20/h, voice 30/h) | Code done | None | DB function applied | Staging |
+| SEC-03 | Account cache cleared on logout/identity change | Code done | Workflow | Logout redirect verified | — |
+| SEC-04 | Role-spoofing in assistant conversation input | Not started | None | Deep-scan finding | — |
+| SEC-05 | Phone-code disruption protections review | Partial | Unit | — | Termii live |
+| SEC-06 | Full security review re-run after fixes | Not started | None | — | — |
+| COST-01 | Per-user AI and document-scan limits with notices | Partial | None | SEC-02 covers chat/voice only | Approval of admin role |
+| COST-02 | Admin AI usage monitoring (tokens, estimated cost, per user, failures) | Not started | None | — | Admin role; real pricing source |
+| COST-03 | Admin budgets, user limits, AI on/off switch | Not started | None | — | Admin role |
+| COST-04 | Skip re-scanning identical documents; no charge for system retries where possible | Partial | None | Content hash exists | — |
+| OPS-01 | Isolated staging backend with test accounts | Blocked | — | Draft used live database; stopped safely | Owner creates remixed project with own backend |
+| OPS-02 | Notifications, account deletion, data export | Not started | None | — | — |
+| OPS-03 | Performance, accessibility, deployment checks | Not started | None | — | — |
+
+## External dependencies
+- Termii: approve sender ID `FIN3A`, fund wallet, then one real OTP round-trip.
+- OpenAI: account billing/quota adequate for scans; pricing used for cost estimates must come from the official pricing page at implementation time.
+- Isolated staging backend (separate project).
+- Anonymised representative documents (statements, receipts, invoices, deposit slips).
+
+## Database safety
+All migrations so far are additive (new tables/columns/indexes/functions). No destructive operation has been run. Destructive changes require a backup and rollback plan and owner approval.
