@@ -37,15 +37,13 @@ const PRIMARY_NAV = [
   { to: "/assistant", label: "Dashboard" },
   { to: "/spending", label: "Spending" },
   { to: "/activity", label: "Activity" },
+  { to: "/categories", label: "Categories" },
   { to: "/bills", label: "Bills" },
   { to: "/analysis", label: "Analysis" },
-] as const;
-const MORE_NAV = [
-  { to: "/categories", label: "Categories" },
   { to: "/planning", label: "Planning" },
   { to: "/goals", label: "Goals" },
   { to: "/insights", label: "Insights" },
-  { to: "/documents", label: "Scan documents" },
+  { to: "/documents", label: "Scan" },
 ] as const;
 
 const threadsQuery = { queryKey: ["chat-threads"], queryFn: () => listThreads() };
@@ -108,29 +106,19 @@ function AssistantPage() {
   return (
     <div className="theme-lavender min-h-screen px-3 py-4 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-[1020px]">
-        <div className="mx-auto max-w-[820px] px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
+        <div className="mx-auto max-w-[1000px] px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
           {/* Top navigation */}
           <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:grid-cols-[auto_1fr_auto]">
             <Link to="/dashboard" className="flex min-w-0 items-center gap-2">
               <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground"><Zap className="size-4" /></span>
               <span className="truncate text-lg font-bold tracking-tight">FIN3A</span>
             </Link>
-            <nav className="order-3 col-span-2 flex items-center gap-1 overflow-x-auto rounded-full border border-border bg-card px-2 py-1.5 shadow-sm md:order-none md:col-span-1 md:mx-auto">
+            <nav className="order-3 col-span-2 flex items-center gap-0 overflow-x-auto rounded-full border border-border bg-card px-2 py-1.5 shadow-sm md:order-none md:col-span-1 md:mx-auto">
               {PRIMARY_NAV.map((n) => (
-                <Link key={n.to} to={n.to} className="shrink-0 rounded-full px-3 py-1 text-xs text-foreground/80 hover:text-primary" activeProps={{ className: "text-primary font-medium" }}>
+                <Link key={n.to} to={n.to} className="shrink-0 rounded-full px-2.5 py-1 text-xs text-foreground/80 hover:text-primary" activeProps={{ className: "text-primary font-medium" }}>
                   {n.label}
                 </Link>
               ))}
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex shrink-0 items-center gap-0.5 rounded-full px-2 py-1 text-xs text-primary">
-                  Assistant <ChevronDown className="size-3" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="theme-lavender">
-                  {MORE_NAV.map((n) => (
-                    <DropdownMenuItem key={n.to} asChild><Link to={n.to}>{n.label}</Link></DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
             </nav>
             <div className="flex items-center gap-1 sm:gap-2">
               <Link to="/activity" aria-label="Search transactions" className="grid size-8 place-items-center rounded-full text-foreground hover:text-primary"><Search className="size-[18px]" /></Link>
