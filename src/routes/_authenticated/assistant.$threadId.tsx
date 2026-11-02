@@ -107,7 +107,7 @@ function AssistantPage() {
 
   return (
     <div className="theme-lavender min-h-screen px-3 py-4 sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-[1020px] rounded-[28px] border-[6px] border-card bg-background/60 shadow-[var(--shadow-lavender)] sm:rounded-[36px]">
+      <div className="mx-auto max-w-[1020px]">
         <div className="mx-auto max-w-[820px] px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6">
           {/* Top navigation */}
           <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:grid-cols-[auto_1fr_auto]">
