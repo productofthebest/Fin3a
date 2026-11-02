@@ -1,0 +1,3 @@
+import type {Database} from "@/integrations/supabase/types";
+type Base=Database["public"]["Tables"]["transaction_drafts"];
+export type ScannerDatabase=Omit<Database,"public"> & {public:Omit<Database["public"],"Tables"> & {Tables:Omit<Database["public"]["Tables"],"transaction_drafts"> & {transaction_drafts:{Row:Base["Row"] & {classification:string;review_confirmed:boolean;imported_transaction_id:string|null};Insert:Base["Insert"] & {classification?:string;review_confirmed?:boolean;imported_transaction_id?:string|null};Update:Base["Update"] & {classification?:string;review_confirmed?:boolean;imported_transaction_id?:string|null};Relationships:Base["Relationships"]}}}};

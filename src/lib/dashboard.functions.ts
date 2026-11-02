@@ -9,6 +9,7 @@ import {
   type Transaction,
 } from "./fin3a";
 import { calculateTotals, completedRecords, roundMoney, validFinancialDate } from "./financial-calculations";
+import { ownedFinancialRecords } from "./financial-records.server";
 
 const CATEGORY_SELECT = "id, name, icon";
 
@@ -39,15 +40,9 @@ export const getDashboard = createServerFn({ method: "GET" })
     const from = monthStart(data.offset - 8);
     const { start, end } = monthRange(data.offset);
 
-    const [{ data: txs, error: txError }, { data: settings, error: settingsError }, { data: bills, error: billsError }] =
+    const [allTransactions, { data: settings, error: settingsError }, { data: bills, error: billsError }] =
       await Promise.all([
-        supabase
-          .from("transactions")
-          .select("id, type, amount, occurred_at, status, classification, currency, flag, category_id, categories(name, icon)")
-          .eq("user_id", userId)
-          .gte("occurred_at", from)
-          .lt("occurred_at", end)
-          .order("occurred_at", { ascending: true }),
+        ownedFinancialRecords(supabase,userId),
         supabase.from("user_settings").select("currency").eq("user_id", userId).maybeSingle(),
         supabase
           .from("recurring_bills")
@@ -58,12 +53,11 @@ export const getDashboard = createServerFn({ method: "GET" })
           .lt("next_due_date", end)
           .order("next_due_date", { ascending: true }),
       ]);
-    if (txError) throw new Error(txError.message);
     if (settingsError) throw new Error(settingsError.message);
     if (billsError) throw new Error(billsError.message);
 
     const currency = settings?.currency ?? "USD";
-    const transactions = completedRecords(txs ?? [], currency, today);
+    const transactions = completedRecords(allTransactions.filter(t=>t.occurred_at>=from && t.occurred_at<end), currency, today);
 
     // Monthly cash-flow buckets for the nine-month window.
     const months: DashboardData["months"] = [];
@@ -114,12 +108,7 @@ export const getDashboard = createServerFn({ method: "GET" })
     }
 
     // Lifetime available funds: completed money in minus money out.
-    const { data: totals, error: totalsError } = await supabase
-      .from("transactions")
-      .select("type, amount, status, classification, currency, occurred_at, flag")
-      .eq("user_id", userId);
-    if (totalsError) throw new Error(totalsError.message);
-    const financialTotals = calculateTotals(totals ?? [], currency, today);
+    const financialTotals = calculateTotals(allTransactions, currency, today);
 
     const categoryBreakdown = [...catMap.values()].sort((a, b) => b.total - a.total).slice(0, 5);
 

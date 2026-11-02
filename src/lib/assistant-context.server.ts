@@ -4,6 +4,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { currencySymbol } from "./fin3a";
 import { calculateTotals, completedRecords, historicalAverages, roundMoney } from "./financial-calculations";
+import { collectPages } from "./pagination";
+import { planningContext } from "./planning.server";
+import { assistantAggregates } from "./assistant-aggregates";
 
 type Client = SupabaseClient<Database>;
 
@@ -14,19 +17,19 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
 
   const [settingsRes, txRes, allRes, billsRes] = await Promise.all([
     supabase.from("user_settings").select("currency").eq("user_id", userId).maybeSingle(),
-    supabase
+    collectPages((a,b)=>supabase
       .from("transactions")
-      .select("type, amount, occurred_at, status, classification, currency, flag, categories(name)")
+      .select("id,type, amount, occurred_at, status, classification, currency, flag, categories(name)")
       .eq("user_id", userId)
-      .gte("occurred_at", from),
-    supabase.from("transactions").select("type, amount, status, classification, currency, flag, occurred_at").eq("user_id", userId),
+      .gte("occurred_at", from).order("occurred_at").order("id").range(a,b)),
+    collectPages((a,b)=>supabase.from("transactions").select("id,type, amount, status, classification, currency, flag, occurred_at").eq("user_id", userId).order("occurred_at").order("id").range(a,b)),
     supabase
       .from("recurring_bills")
       .select("amount, frequency, next_due_date, active, kind")
       .eq("user_id", userId)
       .eq("active", true),
   ]);
-  for (const r of [settingsRes, txRes, allRes, billsRes]) if (r.error) throw new Error(r.error.message);
+  for (const r of [settingsRes, billsRes]) if (r.error) throw new Error(r.error.message);
 
   const currency = settingsRes.data?.currency ?? "USD";
   const months = new Map<string, { income: number; spending: number; byCategory: Record<string, number> }>();
@@ -35,7 +38,7 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
     months.set(d.toISOString().slice(0, 7), { income: 0, spending: 0, byCategory: {} });
   }
   const today = now.toISOString().slice(0, 10);
-  const rows = completedRecords(txRes.data ?? [], currency, today);
+  const rows = completedRecords(txRes, currency, today);
   for (const t of rows) {
     const m = months.get(t.occurred_at.slice(0, 7));
     if (!m) continue;
@@ -48,7 +51,7 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
     }
   }
 
-  const totals = calculateTotals(allRes.data ?? [], currency, today);
+  const totals = calculateTotals(allRes, currency, today);
   const money = (value: number) => roundMoney(value, currency);
 
   const monthly = [...months.entries()].map(([month, v]) => ({
@@ -61,16 +64,19 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
       .slice(0, 6)
       .map(([name, total]) => ({ name, total: money(total) })),
   }));
-  const firstRecord = completedRecords(allRes.data ?? [], currency, today).map((r) => r.occurred_at).sort()[0] ?? null;
+  const firstRecord = completedRecords(allRes, currency, today).map((r) => r.occurred_at).sort()[0] ?? null;
   const averages = historicalAverages(monthly, firstRecord, today, currency);
+  const planning=await planningContext(supabase,userId);
+  const advanced=assistantAggregates(planning.records,currency,today,planning.balances,planning.commitments,planning.goals,planning.progress);
 
   return {
     today: now.toISOString().slice(0, 10),
     currency,
     currencySymbol: currencySymbol(currency),
-    transactionCount: (allRes.data ?? []).length,
+    transactionCount: allRes.length,
     recordedNetCashFlow: totals.recordedNet,
-    confirmedAvailableBalance: null,
+    confirmedAvailableBalance: advanced.confirmedBalance,
+    advanced,
     pendingExpenses: totals.pendingExpenses,
     clearedFundsNotYetSpendable: totals.clearedNet,
     excludedRecords: totals.excluded,
@@ -92,7 +98,10 @@ You receive a JSON snapshot of the signed-in user's own records (aggregated tota
 - Always use the user's currency from the snapshot, formatted with currencySymbol and thousands separators (e.g. ₦12,500).
 - Clearly label each figure as **Actual** (from records), **Estimate** (derived average) or **Projection** (hypothetical). Projections are never guaranteed.
 - For runway, affordability, savings targets and what-if questions: show the calculation step by step and list your assumptions (e.g. which months were averaged, partial current month excluded).
-- "recordedNetCashFlow" = eligible completed income minus eligible completed expenses recorded in Fin3a. It is NOT a confirmed available balance, bank balance or net worth. confirmedAvailableBalance is unknown: ask the user for a confirmed starting balance before balance-based affordability/runway calculations.
+- "recordedNetCashFlow" = eligible completed income minus eligible completed expenses recorded in Fin3a. It is NOT a confirmed available balance, bank balance or net worth. Use confirmedAvailableBalance only when present (user-confirmed today with coverage); otherwise ask for a dated confirmation in Planning.
+- For last-month spending and top categories use advanced.lastMonth. Transportation this year uses advanced.yearToDate.categories: only matching transportation/transport category names, never infer from merchant descriptions. Expense increases use advanced.insights evidence; explain associations, never invent causal explanations.
+- For the 500,000 purchase example use advanced.examplePurchase500000 (in the selected currency, no conversion). If the question specifies another currency, ask for a same-currency assessment. For other amounts ask the user to run Assess purchase in Planning; do not invent server calculations.
+- Runway uses advanced.baselineProjection. Goals use advanced.goals suggestedContribution and estimatedCompletion. If no goal exists, ask for target/date/frequency and direct the user to Goals. No returns are assumed and savings are not automatically expenses.
 - Explain excluded records and averaging assumptions when relevant. Missing-currency records must be reviewed, not assumed to use the selected currency. Recurring commitments have no confirmed currency or payment matching: do not silently add them to spending or double count them.
 - Do not treat transfers, refunds or loans as income/expense unless the user confirms.
 - Keep answers concise, use short markdown sections, bullet lists and small tables.

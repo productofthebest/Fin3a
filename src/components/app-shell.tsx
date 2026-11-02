@@ -17,6 +17,9 @@ const NAV_ITEMS = [
   { to: "/documents", label: "Scan" },
   { to: "/assistant", label: "Assistant" },
   { to: "/analysis", label: "Analysis" },
+  { to: "/planning", label: "Planning" },
+  { to: "/goals", label: "Goals" },
+  { to: "/insights", label: "Insights" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {

@@ -76,7 +76,8 @@ export const Route = createFileRoute("/api/chat")({
           .maybeSingle();
         if (!thread) return json(404, "Conversation not found.");
 
-        const last = body.messages[body.messages.length - 1]!;
+        const last = body.messages[body.messages.length - 1];
+        if(!last)return json(400,"Message is empty.");
         const userText = textOf(last.parts).trim();
         if (last.role !== "user" || !userText) return json(400, "Message is empty.");
         if (userText.length > 4000) return json(400, "Message is too long (max 4,000 characters).");

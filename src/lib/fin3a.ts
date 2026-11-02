@@ -304,4 +304,4 @@ export function today(): string {
 }
 
 export type FinDocument = import("@/integrations/supabase/types").Database["public"]["Tables"]["documents"]["Row"];
-export type TransactionDraft = import("@/integrations/supabase/types").Database["public"]["Tables"]["transaction_drafts"]["Row"];
+export type TransactionDraft = import("@/integrations/supabase/types").Database["public"]["Tables"]["transaction_drafts"]["Row"] & { classification:string; review_confirmed:boolean; imported_transaction_id:string|null };
