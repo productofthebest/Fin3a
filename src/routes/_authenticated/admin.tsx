@@ -14,6 +14,8 @@ import { budgetUse } from "@/lib/ai-usage-rules";
 import { getAiOverview, getIsAdmin, setModelPrice, setUserAiLimit, updateAiSettings, type AiOverview } from "@/lib/admin.functions";
 import { pageMeta } from "@/lib/page-meta";
 
+type UserLimitInput = { user_id: string; daily_requests: number | null; daily_scans: number | null; monthly_scans: number | null; blocked: boolean; note: string | null };
+
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => pageMeta("AI usage admin", "Monitor Fin3a AI usage, estimated spend, budgets and limits."),
   ssr: false,
@@ -180,7 +182,7 @@ function Field({ label, value, onChange, step = "1", required }: { label: string
 function UsersCard({ data }: { data: AiOverview }) {
   const refresh = useRefresh();
   const save = useMutation({
-    mutationFn: (p: Parameters<typeof setUserAiLimit>[0]["data"]) => setUserAiLimit({ data: p }),
+    mutationFn: (p: UserLimitInput) => setUserAiLimit({ data: p }),
     onSuccess: () => { toast.success("User limit saved"); refresh(); },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -202,7 +204,7 @@ function UsersCard({ data }: { data: AiOverview }) {
   );
 }
 
-function UserLimitForm({ onSave, pending, users }: { onSave: (p: Parameters<typeof setUserAiLimit>[0]["data"]) => void; pending: boolean; users: AiOverview["users"] }) {
+function UserLimitForm({ onSave, pending, users }: { onSave: (p: UserLimitInput) => void; pending: boolean; users: AiOverview["users"] }) {
   const [userId, setUserId] = useState("");
   const [req, setReq] = useState(""); const [scans, setScans] = useState(""); const [mscans, setMscans] = useState("");
   if (users.length === 0) return null;
