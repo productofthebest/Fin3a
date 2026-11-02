@@ -1,4 +1,4 @@
-import { duplicateSearchRange, matchDuplicates, mergeSummaries, planPageChunks, reconcileStatement, type StatementSummary } from "./statement-reconciliation";
+import { duplicateSearchRange, findDuplicates, mergeSummaries, planPageChunks, reconcileStatement, type StatementSummary } from "./statement-reconciliation";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -49,6 +49,7 @@ const draftUpdateInput = z.object({
   payment_method: z.string().trim().max(80).nullable().optional(),
   classification: z.enum(CLASSIFICATIONS).optional(),
   review_confirmed: z.boolean().optional(),
+  not_duplicate: z.literal(true).optional(),
 });
 
 async function sha256Hex(value: string): Promise<string> {
@@ -381,13 +382,13 @@ async function flagDraftDuplicates(
   if (!range) return;
   const txs = await collectPages((a,b)=>supabase
     .from("transactions")
-    .select("id, amount, occurred_at, merchant, reference, currency, type")
+    .select("id, amount, occurred_at, merchant, description, reference, currency, type")
     .eq("user_id", userId)
     .gte("occurred_at", range.from)
     .lt("occurred_at", range.toExclusive).order("occurred_at").order("id").range(a,b));
   if (txs.length === 0) return;
-  for (const [draftId, txId] of matchDuplicates(pending, txs as never)) {
-    await supabase.from("transaction_drafts").update({ duplicate_of: txId }).eq("id", draftId).eq("user_id", userId);
+  for (const [draftId, m] of findDuplicates(pending, txs as never)) {
+    await supabase.from("transaction_drafts").update({ duplicate_of: m.txId, duplicate_confidence: m.confidence, duplicate_reason: m.reason } as never).eq("id", draftId).eq("user_id", userId).eq("confirmed_separate" as never, false as never);
   }
 }
 
@@ -566,7 +567,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
               status: "pending",
             })),
           )
-          .select("id, txn_date, amount, merchant, reference, currency, type");
+          .select("id, txn_date, amount, merchant, description, reference, currency, type");
         if (insertError) throw new Error(insertError.message);
         await flagDraftDuplicates(supabase, userId, (inserted ?? []) as never);
       }
@@ -616,9 +617,11 @@ export const updateDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => draftUpdateInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { id, ...rest } = data;
-    const patch=Object.fromEntries(Object.entries(rest).filter(([,v])=>v!==undefined)) as ScannerDatabase["public"]["Tables"]["transaction_drafts"]["Update"];
+    const { id, not_duplicate, ...rest } = data;
+    const patch=Object.fromEntries(Object.entries(rest).filter(([,v])=>v!==undefined)) as ScannerDatabase["public"]["Tables"]["transaction_drafts"]["Update"] & { confirmed_separate?: boolean };
     if(Object.keys(rest).some(key=>key!=="review_confirmed"))patch.review_confirmed=false;
+    // User confirms a legitimate separate transaction: clear the flag but keep the reason for audit.
+    if(not_duplicate){patch.duplicate_of=null;patch.confirmed_separate=true;patch.review_confirmed=false;}
     const { data: row, error } = await (context.supabase as unknown as SupabaseClient<ScannerDatabase>)
       .from("transaction_drafts")
       .update(patch)

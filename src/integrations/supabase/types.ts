@@ -664,11 +664,14 @@ export type Database = {
           category_hint: string | null
           classification: string
           confidence: string
+          confirmed_separate: boolean
           created_at: string
           currency: string | null
           description: string | null
           document_id: string
+          duplicate_confidence: string | null
           duplicate_of: string | null
+          duplicate_reason: string | null
           id: string
           imported_transaction_id: string | null
           merchant: string | null
@@ -685,11 +688,14 @@ export type Database = {
           category_hint?: string | null
           classification?: string
           confidence?: string
+          confirmed_separate?: boolean
           created_at?: string
           currency?: string | null
           description?: string | null
           document_id: string
+          duplicate_confidence?: string | null
           duplicate_of?: string | null
+          duplicate_reason?: string | null
           id?: string
           imported_transaction_id?: string | null
           merchant?: string | null
@@ -706,11 +712,14 @@ export type Database = {
           category_hint?: string | null
           classification?: string
           confidence?: string
+          confirmed_separate?: boolean
           created_at?: string
           currency?: string | null
           description?: string | null
           document_id?: string
+          duplicate_confidence?: string | null
           duplicate_of?: string | null
+          duplicate_reason?: string | null
           id?: string
           imported_transaction_id?: string | null
           merchant?: string | null

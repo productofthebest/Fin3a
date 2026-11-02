@@ -107,26 +107,75 @@ export function duplicateSearchRange(dates: string[]): { from: string; toExclusi
   return { from, toExclusive };
 }
 
-/** Each existing transaction can be the duplicate candidate of at most one draft. */
-export function matchDuplicates(drafts: DupDraft[], txs: DupTx[]): Map<string, string> {
+export type DuplicateMatch = { txId: string; confidence: "exact" | "likely"; reason: string };
+
+const NOISE = new Set(["pos", "trf", "transfer", "nip", "web", "purchase", "payment", "debit", "credit", "to", "from", "for", "ref", "the", "ltd", "limited", "ng", "lagos", "via", "card"]);
+
+/** Normalises a transaction name: lowercase, strips punctuation, long digit runs and bank boilerplate words. */
+export function normalizeName(s: string | null | undefined): string {
+  if (!s) return "";
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .split(/\s+/)
+    .filter((w) => w && !NOISE.has(w) && !/^\d{4,}$/.test(w))
+    .join(" ");
+}
+
+/** Token overlap (Jaccard) between two normalised names, 0..1. */
+export function nameSimilarity(a: string | null | undefined, b: string | null | undefined): number {
+  const x = new Set(normalizeName(a).split(" ").filter(Boolean));
+  const y = new Set(normalizeName(b).split(" ").filter(Boolean));
+  if (x.size === 0 || y.size === 0) return 0;
+  let inter = 0;
+  for (const t of x) if (y.has(t)) inter++;
+  return inter / (x.size + y.size - inter);
+}
+
+const normRef = (s: string | null) => s?.replace(/\s+/g, "").toLowerCase() || null;
+
+/**
+ * Matches drafts to existing transactions by date, amount, name, type and currency.
+ * - exact: same day + same amount + (same reference or same normalised name)
+ * - likely: within the day window + same amount + (same reference or similar name)
+ * Same amount on a different date with an unrelated name is never a match.
+ * Each existing transaction backs at most one draft, so legitimate repeats (two 5,000 purchases) are preserved.
+ */
+export function findDuplicates(drafts: (DupDraft & { description?: string | null })[], txs: (DupTx & { description?: string | null })[]): Map<string, DuplicateMatch> {
   const used = new Set<string>();
-  const result = new Map<string, string>();
-  const norm = (s: string | null) => s?.trim().toLowerCase() || null;
-  for (const d of drafts) {
-    if (!d.txn_date || d.amount === null) continue;
-    const match = txs.find(
-      (tx) =>
-        !used.has(tx.id) &&
-        cents(Number(tx.amount)) === cents(Number(d.amount)) &&
-        tx.currency === d.currency &&
-        tx.type === d.type &&
-        Math.abs(day(tx.occurred_at) - day(d.txn_date!)) <= DUPLICATE_DAY_WINDOW * DAY &&
-        ((norm(d.reference) && norm(d.reference) === norm(tx.reference)) || (norm(d.merchant) && norm(d.merchant) === norm(tx.merchant))),
-    );
-    if (match) {
-      used.add(match.id);
-      result.set(d.id, match.id);
+  const result = new Map<string, DuplicateMatch>();
+  const name = (r: { merchant: string | null; description?: string | null }) => r.merchant || r.description || null;
+  const eligible = (d: DupDraft, tx: DupTx) =>
+    !used.has(tx.id) && cents(Number(tx.amount)) === cents(Number(d.amount)) && tx.currency === d.currency && tx.type === d.type;
+  // Pass 1: exact matches first so they claim their transaction before fuzzy ones.
+  for (const pass of ["exact", "likely"] as const) {
+    for (const d of drafts) {
+      if (result.has(d.id) || !d.txn_date || d.amount === null) continue;
+      let best: { tx: DupTx; score: number; reason: string } | null = null;
+      for (const tx of txs) {
+        if (!eligible(d, tx)) continue;
+        const gap = Math.abs(day(tx.occurred_at) - day(d.txn_date)) / DAY;
+        const refMatch = !!normRef(d.reference) && normRef(d.reference) === normRef(tx.reference);
+        const sim = nameSimilarity(name(d), name(tx));
+        if (pass === "exact") {
+          if (gap !== 0) continue;
+          if (refMatch) { best = { tx, score: 2, reason: "Same date, amount and transaction reference" }; break; }
+          if (sim === 1) { if (!best || best.score < 1) best = { tx, score: 1, reason: "Same date, amount and name" }; }
+        } else {
+          if (gap > DUPLICATE_DAY_WINDOW) continue;
+          if (refMatch || sim >= 0.5) {
+            const score = (refMatch ? 1 : sim) - gap * 0.1;
+            if (!best || score > best.score) best = { tx, score, reason: refMatch ? `Same amount and reference, ${gap} day(s) apart` : `Same amount, similar name, ${gap === 0 ? "same day" : `${gap} day(s) apart`}` };
+          }
+        }
+      }
+      if (best) { used.add(best.tx.id); result.set(d.id, { txId: best.tx.id, confidence: pass, reason: best.reason }); }
     }
   }
   return result;
+}
+
+/** Each existing transaction can be the duplicate candidate of at most one draft. */
+export function matchDuplicates(drafts: DupDraft[], txs: DupTx[]): Map<string, string> {
+  return new Map([...findDuplicates(drafts, txs)].map(([k, v]) => [k, v.txId]));
 }

@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { to: "/activity", label: "Activity" },
   { to: "/categories", label: "Categories" },
   { to: "/bills", label: "Bills" },
-  { to: "/documents", label: "Scan" },
   { to: "/assistant", label: "Assistant" },
   { to: "/analysis", label: "Analysis" },
   { to: "/planning", label: "Planning" },

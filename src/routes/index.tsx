@@ -63,7 +63,7 @@ function Landing() {
       </div>
 
       <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
-        Fin3a AI — a Top Floor product
+        © 2026 Fin3a AI. All rights reserved.
       </footer>
     </div>
   );

@@ -55,7 +55,14 @@ function AdminPage() {
   );
 }
 
-function AdminBody({ data }: { data: AiOverview }) {
+const DEFAULT_SETTINGS: AiOverview["settings"] = {
+  ai_enabled: false, daily_budget_usd: null, monthly_budget_usd: null,
+  user_daily_requests: 100, user_daily_scans: 20, user_monthly_scans: 200, warn_percent: 80, updated_at: "",
+};
+
+function AdminBody({ data: raw }: { data: AiOverview }) {
+  // A fresh database may have no settings row yet; treat that as "AI paused".
+  const data: AiOverview = { ...raw, settings: raw.settings ?? DEFAULT_SETTINGS, prices: raw.prices ?? [] };
   const s = data.settings;
   const dayUse = budgetUse(data.today.est_cost_usd, s.daily_budget_usd);
   const monthUse = budgetUse(data.month.est_cost_usd, s.monthly_budget_usd);
