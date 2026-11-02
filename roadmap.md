@@ -18,6 +18,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Mobile + desktop responsive pass; E2E verification (core flows verified in preview; responsive polish pass pending)
 
 ## Phase 2 — Universal Financial Scanner
+- [ ] Connect document vision extraction directly to the existing OpenAI key and verify authenticated scan/review without importing test records into the ledger
 - [ ] Scan/upload documents (statements, receipts, POS slips, teller receipts, cheques, transfers, invoices, bills)
 - [ ] Extract dates, amounts, merchants, line items; PDF/CSV/Excel/images
 - [ ] OCR, auto-categorization, duplicate detection, review-before-import screen
