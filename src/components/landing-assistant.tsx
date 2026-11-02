@@ -236,7 +236,7 @@ export function LandingAssistant() {
             </p>
           )}
 
-          <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex items-end gap-2">
+          <form onSubmit={(e) => { e.preventDefault(); send(input); }}>
             {/* Hidden Camera Input */}
             <input
               ref={cameraInputRef}
@@ -251,55 +251,60 @@ export function LandingAssistant() {
               }}
             />
 
-            <AssistantUploadMenu />
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-              placeholder="Ask about budgeting, saving, debt, or snap a bill…"
+              placeholder="Ask Fin3a about your finances…"
               rows={2}
               maxLength={2000}
-              className="min-h-16 resize-none rounded-2xl px-4 py-4 text-base"
+              className="w-full resize-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               aria-label="Your question"
             />
 
-            {/* Camera snap button */}
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              className="size-12 shrink-0 rounded-xl"
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={loading || recording || photoScanning}
-              aria-label="Take photo of receipt or bill"
-              title="Snap receipt or bill with camera"
-            >
-              <Camera className="size-4" />
-            </Button>
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-full border border-border px-1.5 py-1">
+                <AssistantUploadMenu />
+                <span className="pr-2 text-sm font-medium">Attach</span>
+              </div>
 
-            {/* Voice record button */}
-            <Button
-              type="button"
-              size="icon"
-              variant={recording ? "destructive" : "secondary"}
-              className="size-12 shrink-0 rounded-xl"
-              onClick={recording ? stopRecording : startRecording}
-              disabled={transcribing || loading || photoScanning}
-              aria-label={recording ? "Stop recording" : "Record voice"}
-            >
-              {recording ? <Square className="size-4" /> : <Mic className="size-4" />}
-            </Button>
+              {/* Camera snap button */}
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={loading || recording || photoScanning}
+                aria-label="Take photo of receipt or bill"
+                title="Snap receipt or bill with camera"
+                className="grid size-10 place-items-center rounded-full border border-border text-foreground transition hover:text-primary disabled:opacity-50"
+              >
+                <Camera className="size-4" />
+              </button>
 
-            {/* Send button */}
-            <Button
-              type="submit"
-              size="icon"
-              className="size-12 shrink-0 rounded-xl"
-              disabled={loading || !input.trim() || recording || photoScanning}
-              aria-label="Send"
-            >
-              {loading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            </Button>
+              <div className="ml-auto flex items-center gap-2">
+                {/* Voice record button */}
+                <button
+                  type="button"
+                  onClick={recording ? stopRecording : startRecording}
+                  disabled={transcribing || loading || photoScanning}
+                  aria-label={recording ? "Stop recording" : "Record voice"}
+                  className={`flex h-10 items-center gap-1.5 rounded-full border border-border px-3.5 text-sm font-medium transition hover:text-primary disabled:opacity-50 ${recording ? "border-destructive text-destructive" : ""}`}
+                >
+                  <span className="hidden sm:inline">{recording ? "Stop" : "Voice"}</span>
+                  {transcribing ? <Loader2 className="size-4 animate-spin" /> : recording ? <Square className="size-4" /> : <Mic className="size-4 text-muted-foreground" />}
+                </button>
+
+                {/* Send button */}
+                <button
+                  type="submit"
+                  disabled={loading || !input.trim() || recording || photoScanning}
+                  aria-label="Send"
+                  className="grid size-11 place-items-center rounded-full bg-gradient-to-br from-accent to-primary text-primary-foreground shadow-md transition hover:opacity-90 disabled:opacity-60"
+                >
+                  {loading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                </button>
+              </div>
+            </div>
+            <p className="mt-3 text-[11px] text-muted-foreground">Answers from your own records · not financial advice</p>
           </form>
         </div>
       </div>
