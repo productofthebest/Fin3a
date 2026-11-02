@@ -15,6 +15,8 @@ Started at the user's explicit request on November 2, 2026. This is not a Phase 
 - Stop document-row deletion when private-file removal fails; show retryable errors instead of falsely reporting deletion success.
 
 ## Remaining work / release blockers
+Verification after Step 1: **74 tests passed across 11 files**, including 9 new document/cache checks. Preview build reports OK. Signed-in browser verified disguised-PDF rejection before upload, dashboard loading, logout and redirect of a private page to sign-in; Scan page had no horizontal overflow at 390, 768 and 1280 px and no browser runtime errors. No financial records were written. These checks do not verify all pages, real statement extraction, failed storage deletion against the hosted service or cross-user persisted-data access.
+
 - Phase 4 saved-record reconciliation, forecasting/affordability/goals/insights and full original completion gate remain unfinished/unverified.
 - Atomic OTP send/attempt throttling and trusted proxy-IP handling need investigation and concurrency tests; real Termii delivery/verification still needs approved FIN3A sender ID, adequate credit and a real-number check.
 - Document import concurrency/idempotency, duplicate handling, currency/date/classification review, parse row/ZIP limits and AI request cost controls remain open.
