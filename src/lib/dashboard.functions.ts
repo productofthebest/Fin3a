@@ -1,3 +1,4 @@
+import { HISTORY_MAX_PAGE_SIZE, HISTORY_PAGE_SIZE, pageRange, sanitizeHistorySearch } from "./transaction-history";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -164,10 +165,52 @@ export const listTransactions = createServerFn({ method: "GET" })
       query = query.gte("occurred_at", start).lt("occurred_at", end);
     }
     if (data.type) query = query.eq("type", data.type);
-    if (data.search) query = query.or(`description.ilike.%${data.search}%,merchant.ilike.%${data.search}%`);
+    const term = sanitizeHistorySearch(data.search);
+    if (term) query = query.or(`description.ilike.%${term}%,merchant.ilike.%${term}%`);
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
     return (rows ?? []) as Transaction[];
+  });
+
+export const listTransactionPage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        page: z.number().int().min(1).max(100_000).default(1),
+        pageSize: z.number().int().min(1).max(HISTORY_MAX_PAGE_SIZE).default(HISTORY_PAGE_SIZE),
+        type: z.enum(["income", "expense"]).optional(),
+        categoryId: z.union([z.string().uuid(), z.literal("uncategorized")]).optional(),
+        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        search: z.string().max(120).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { from, to } = pageRange(data.page, data.pageSize);
+    let query = context.supabase
+      .from("transactions")
+      .select(`*, categories(${CATEGORY_SELECT})`, { count: "exact" })
+      .eq("user_id", context.userId)
+      .order("occurred_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to);
+    if (data.type) query = query.eq("type", data.type);
+    if (data.categoryId === "uncategorized") query = query.is("category_id", null);
+    else if (data.categoryId) query = query.eq("category_id", data.categoryId);
+    if (data.from) query = query.gte("occurred_at", data.from);
+    if (data.to) {
+      const next = new Date(`${data.to}T00:00:00Z`);
+      next.setUTCDate(next.getUTCDate() + 1);
+      query = query.lt("occurred_at", next.toISOString().slice(0, 10));
+    }
+    const term = sanitizeHistorySearch(data.search);
+    if (term) query = query.or(`description.ilike.%${term}%,merchant.ilike.%${term}%,reference.ilike.%${term}%`);
+    const { data: rows, error, count } = await query;
+    if (error) throw new Error("Could not load your transactions. Please try again.");
+    return { rows: (rows ?? []) as Transaction[], total: count ?? 0, page: data.page, pageSize: data.pageSize };
   });
 
 export const addTransaction = createServerFn({ method: "POST" })
