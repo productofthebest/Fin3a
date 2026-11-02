@@ -1,4 +1,4 @@
-// @vitest-environment node
+import { Blob } from "node:buffer";
 import { describe, expect, it } from "vitest";
 import { assertOwnedDocumentPath, documentUploadInput, MAX_DOCUMENT_BYTES, validateDocumentContent, validateDocumentMetadata } from "@/lib/document-security";
 
