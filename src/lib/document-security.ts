@@ -42,7 +42,7 @@ export function assertOwnedDocumentPath(path: string, userId: string) {
 }
 
 /** Check actual bytes before parsing or sending them to a paid provider. */
-export async function validateDocumentContent(file: Blob, metadata: { filename: string; mime_type: string; size_bytes: number }) {
+export async function validateDocumentContent(file: { readonly size: number; slice(start: number, end: number): { arrayBuffer(): Promise<ArrayBuffer> } }, metadata: { filename: string; mime_type: string; size_bytes: number }) {
   const extension = validateDocumentMetadata(metadata);
   if (file.size !== metadata.size_bytes || file.size <= 0 || file.size > MAX_DOCUMENT_BYTES) {
     throw new Error("The uploaded file size is invalid. Upload it again (maximum 15 MB).");
