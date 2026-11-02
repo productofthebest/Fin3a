@@ -92,6 +92,13 @@
       "when": 1793615474986,
       "tag": "0012_transaction_history_index",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793615958546,
+      "tag": "0013_ai_cost_management",
+      "breakpoints": true
     }
   ]
 }

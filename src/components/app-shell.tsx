@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { getIsAdmin } from "@/lib/admin.functions";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: settings } = useSuspenseQuery(settingsQuery());
+  const { data: isAdmin } = useQuery({ queryKey: ["admin", "is-admin"], queryFn: () => getIsAdmin(), staleTime: 300_000 });
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -69,6 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="hidden text-sm text-muted-foreground md:inline">{settings.display_name}</span>
             ) : null}
             <Link to="/security" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Phone</Link>
+            {isAdmin ? <Link to="/admin" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Admin</Link> : null}
             <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
               <LogOut className="size-4" />
             </Button>

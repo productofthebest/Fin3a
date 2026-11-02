@@ -29,6 +29,8 @@ function providerError(status: number, code?: string): string {
   return "OpenAI document scanning is unavailable right now. Please try again later.";
 }
 
+export const SCANNER_MODEL = "gpt-5-mini";
+
 /** Called only from the authenticated scanner handler; no credentials or documents are logged. */
 export async function extractDocumentWithOpenAI(input: {
   apiKey: string | undefined;
@@ -36,6 +38,7 @@ export async function extractDocumentWithOpenAI(input: {
   mimeType: string;
   filename: string;
   instructions: string;
+  onUsage?: (u: { input: number; cached: number; output: number }) => void;
 }) {
   if (!input.apiKey) throw new Error("Document scanning requires OPENAI_API_KEY in project secrets.");
   const bytes = new Uint8Array(input.buffer);
@@ -54,7 +57,7 @@ export async function extractDocumentWithOpenAI(input: {
       headers: { Authorization: `Bearer ${input.apiKey}`, "Content-Type": "application/json" },
       signal: AbortSignal.timeout(150_000),
       body: JSON.stringify({
-        model: "gpt-5-mini",
+        model: SCANNER_MODEL,
         store: false,
         instructions: input.instructions,
         input: [{ role: "user", content: [media, { type: "input_text", text: "Extract every printed transaction line from this document." }] }],
@@ -88,8 +91,10 @@ export async function extractDocumentWithOpenAI(input: {
   }
   const body = await response.json().catch(() => null) as {
     error?: { code?: string }; status?: string;
+    usage?: { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number } };
     output?: { content?: { type?: string; text?: string }[] }[];
   } | null;
+  input.onUsage?.({ input: body?.usage?.input_tokens ?? 0, cached: body?.usage?.input_tokens_details?.cached_tokens ?? 0, output: body?.usage?.output_tokens ?? 0 });
   if (!response.ok || body?.error) throw new Error(providerError(response.status, body?.error?.code));
   if (body?.status === "incomplete") {
     throw new Error("OpenAI could not finish the whole document. No partial scan was saved. Upload a shorter PDF or a CSV/Excel export.");

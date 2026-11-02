@@ -12,7 +12,7 @@ Single source of truth for every requirement, audit finding and approved task. U
 | Milestone | Status |
 |---|---|
 | Development complete | No |
-| Automated tests passed | Yes — 142/142 unit tests (2026-11-02) |
+| Automated tests passed | Yes — 146/146 unit tests (2026-11-02) |
 | Integration tests passed | No — no isolated test backend |
 | Real-world testing passed | No |
 | Security review passed | No — open findings (SEC rows) |
@@ -80,11 +80,12 @@ Single source of truth for every requirement, audit finding and approved task. U
 | SEC-04 | Role-spoofing in assistant conversation input | Not started | None | Deep-scan finding | — |
 | SEC-05 | Phone-code disruption protections review | Partial | Unit | — | Termii live |
 | SEC-06 | Full security review re-run after fixes | Not started | None | — | — |
-| COST-01 | Per-user AI and document-scan limits with notices | Partial | None | SEC-02 covers chat/voice only | Approval of admin role |
-| COST-02 | Admin AI usage monitoring (tokens, estimated cost, per user, failures) | Not started | None | — | Admin role; real pricing source |
-| COST-03 | Admin budgets, user limits, AI on/off switch | Not started | None | — | Admin role |
-| COST-04 | Skip re-scanning identical documents; no charge for system retries where possible | Partial | None | Content hash exists | — |
-| OPS-01 | Isolated staging backend with test accounts | Blocked | — | Draft used live database; stopped safely | Owner creates remixed project with own backend |
+| COST-01 | Per-user AI and document-scan limits with warnings | Code done | Unit + Workflow (admin page) | Daily requests 100, scans 20/day 200/month defaults; warning at 80% | Staging: hit limits for real |
+| COST-02 | Admin AI usage monitoring (tokens, estimated cost, per user, failures) | Code done | Workflow (empty data) | Admin page loads for owner; visitors denied | Owner enters official model prices; real usage |
+| COST-03 | Admin budgets, user limits, pause user, AI on/off switch | Code done | None (not toggled live) | Database re-checks admin role on every action | Staging toggle test |
+| COST-04 | Duplicate request protection; failed scans not counted toward scan limits | Code done | Unit | Same doc within a minute / same chat message rejected | Staging |
+| ADM-01 | Role-based admin; owner is first admin | Code done | Workflow | Owner sees Admin link and page | — |
+| OPS-01 | Isolated staging backend with test accounts | Blocked | — | Draft used live database; stopped safely | Owner creates remixed project with own backend (docs/staging-setup.md) |
 | OPS-02 | Notifications, account deletion, data export | Not started | None | — | — |
 | OPS-03 | Performance, accessibility, deployment checks | Not started | None | — | — |
 

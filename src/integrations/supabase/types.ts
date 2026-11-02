@@ -14,6 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_model_prices: {
+        Row: {
+          cached_input_per_mtok: number | null
+          input_per_mtok: number
+          model: string
+          output_per_mtok: number
+          source_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          cached_input_per_mtok?: number | null
+          input_per_mtok: number
+          model: string
+          output_per_mtok: number
+          source_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cached_input_per_mtok?: number | null
+          input_per_mtok?: number
+          model?: string
+          output_per_mtok?: number
+          source_note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_settings: {
+        Row: {
+          ai_enabled: boolean
+          daily_budget_usd: number | null
+          id: boolean
+          monthly_budget_usd: number | null
+          updated_at: string
+          updated_by: string | null
+          user_daily_requests: number
+          user_daily_scans: number
+          user_monthly_scans: number
+          warn_percent: number
+        }
+        Insert: {
+          ai_enabled?: boolean
+          daily_budget_usd?: number | null
+          id?: boolean
+          monthly_budget_usd?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          user_daily_requests?: number
+          user_daily_scans?: number
+          user_monthly_scans?: number
+          warn_percent?: number
+        }
+        Update: {
+          ai_enabled?: boolean
+          daily_budget_usd?: number | null
+          id?: boolean
+          monthly_budget_usd?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          user_daily_requests?: number
+          user_daily_scans?: number
+          user_monthly_scans?: number
+          warn_percent?: number
+        }
+        Relationships: []
+      }
       ai_usage_counters: {
         Row: {
           bucket: string
@@ -32,6 +98,87 @@ export type Database = {
           used?: number
           user_id?: string
           window_start?: string
+        }
+        Relationships: []
+      }
+      ai_usage_log: {
+        Row: {
+          cached_input_tokens: number | null
+          created_at: string
+          error_code: string | null
+          est_cost_usd: number | null
+          feature: string
+          finished_at: string | null
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          request_key: string | null
+          status: string
+          units: number
+          user_id: string
+        }
+        Insert: {
+          cached_input_tokens?: number | null
+          created_at?: string
+          error_code?: string | null
+          est_cost_usd?: number | null
+          feature: string
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          request_key?: string | null
+          status?: string
+          units?: number
+          user_id: string
+        }
+        Update: {
+          cached_input_tokens?: number | null
+          created_at?: string
+          error_code?: string | null
+          est_cost_usd?: number | null
+          feature?: string
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          request_key?: string | null
+          status?: string
+          units?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_user_limits: {
+        Row: {
+          blocked: boolean
+          daily_requests: number | null
+          daily_scans: number | null
+          monthly_scans: number | null
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blocked?: boolean
+          daily_requests?: number | null
+          daily_scans?: number | null
+          monthly_scans?: number | null
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blocked?: boolean
+          daily_requests?: number | null
+          daily_scans?: number | null
+          monthly_scans?: number | null
+          note?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -679,6 +826,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           created_at: string
@@ -714,8 +882,69 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_admin_overview: { Args: never; Returns: Json }
+      ai_admin_set_price: {
+        Args: {
+          _cached: number
+          _input: number
+          _model: string
+          _note: string
+          _output: number
+        }
+        Returns: undefined
+      }
+      ai_admin_set_user_limit: {
+        Args: {
+          _blocked: boolean
+          _daily: number
+          _note: string
+          _scans_daily: number
+          _scans_monthly: number
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      ai_admin_update_settings: {
+        Args: {
+          _daily: number
+          _enabled: boolean
+          _monthly: number
+          _scans_daily: number
+          _scans_monthly: number
+          _user_daily: number
+          _warn: number
+        }
+        Returns: undefined
+      }
+      ai_begin: {
+        Args: { _feature: string; _request_key: string; _units?: number }
+        Returns: Json
+      }
+      ai_finish: {
+        Args: {
+          _cached: number
+          _error?: string
+          _in: number
+          _model: string
+          _out: number
+          _status: string
+          _usage_id: string
+        }
+        Returns: undefined
+      }
+      ai_price_estimate: {
+        Args: { _cached: number; _in: number; _model: string; _out: number }
+        Returns: number
+      }
       consume_ai_quota: {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
         Returns: boolean
       }
       import_document_drafts: {
@@ -724,7 +953,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -851,6 +1080,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

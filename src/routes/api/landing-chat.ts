@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { consumeQuota, jsonError, verifyBearer } from "@/lib/api-auth.server";
+import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } from "@/lib/api-auth.server";
 
 // Homepage Fin3a AI: signed-in only, general guidance, no database reads of financial records.
 const MODEL = "gpt-5-mini";
@@ -35,6 +35,9 @@ export const Route = createFileRoute("/api/landing-chat")({
           return jsonError(429, "You've reached the hourly limit here. Open the Assistant in your dashboard to continue.");
         }
 
+        const usage = await beginAiUsage(auth.supabase, "landing_chat", null);
+        if (!usage.allowed) return jsonError(429, usage.message);
+
         const { streamText } = await import("ai");
         const { createOpenAI } = await import("@ai-sdk/openai");
         const openai = createOpenAI({ apiKey });
@@ -44,8 +47,10 @@ export const Route = createFileRoute("/api/landing-chat")({
           messages: parsed.data.messages,
           maxOutputTokens: 1200,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
+          onFinish: ({ totalUsage }) => finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
+          onError: () => finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
         });
-        return result.toTextStreamResponse();
+        return result.toTextStreamResponse(usage.warning ? { headers: { "x-ai-usage-warning": encodeURIComponent(usage.warning) } } : undefined);
       },
     },
   },
