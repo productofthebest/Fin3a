@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { FinDocument, TransactionDraft, TxType } from "./fin3a";
+import { assertOwnedDocumentPath, documentUploadInput, validateDocumentContent, validateDocumentMetadata } from "./document-security";
 
 const DOC_SELECT = "*";
 
@@ -377,17 +378,10 @@ export const listDocuments = createServerFn({ method: "GET" })
 
 export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z
-      .object({
-        filename: z.string().trim().min(1).max(255),
-        mime_type: z.string().trim().max(120),
-        size_bytes: z.number().int().positive(),
-        storage_path: z.string().trim().min(1).max(600),
-      })
-      .parse(input),
-  )
+  .inputValidator((input) => documentUploadInput.parse(input))
   .handler(async ({ data, context }) => {
+    assertOwnedDocumentPath(data.storage_path, context.userId);
+    validateDocumentMetadata(data);
     const fingerprint = await sha256Hex(`${data.filename}:${data.size_bytes}`);
     const docType = guessDocType(data.filename);
     const { data: row, error } = await context.supabase
@@ -442,6 +436,8 @@ export const analyzeDocument = createServerFn({ method: "POST" })
       .single();
     if (docError || !doc) throw new Error(docError?.message ?? "Document not found");
     const document = doc as FinDocument;
+    assertOwnedDocumentPath(document.storage_path, userId);
+    validateDocumentMetadata(document);
 
     const { data: settings } = await supabase
       .from("user_settings")
@@ -458,6 +454,7 @@ export const analyzeDocument = createServerFn({ method: "POST" })
         .download(document.storage_path);
       if (downloadError || !file) throw new Error(downloadError?.message ?? "Could not open the uploaded file");
 
+      await validateDocumentContent(file, document);
       const buffer = await file.arrayBuffer();
       const ext = document.filename.split(".").pop()?.toLowerCase() ?? "";
       const mime = document.mime_type.toLowerCase();
@@ -542,6 +539,7 @@ export const listDrafts = createServerFn({ method: "GET" })
       .from("transaction_drafts")
       .select("*")
       .eq("document_id", data.documentId)
+      .eq("user_id", context.userId)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     return (rows ?? []) as TransactionDraft[];
@@ -588,7 +586,8 @@ export const importDrafts = createServerFn({ method: "POST" })
       p_document_id: data.documentId,
     });
     if (error) throw new Error(error.message);
-    await context.supabase.from("documents").update({ status: "imported" }).eq("id", data.documentId);
+    const { error: statusError } = await context.supabase.from("documents").update({ status: "imported" }).eq("id", data.documentId).eq("user_id", context.userId);
+    if (statusError) throw new Error("Transactions were imported, but the document status could not be updated. Refresh before trying again.");
     return { imported: count ?? 0 };
   });
 
@@ -596,15 +595,17 @@ export const deleteDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ documentId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: doc } = await context.supabase
+    const { data: doc, error: readError } = await context.supabase
       .from("documents")
       .select("storage_path")
       .eq("id", data.documentId)
       .eq("user_id", context.userId)
-      .single();
-    if (doc) {
-      await context.supabase.storage.from("documents").remove([doc.storage_path]);
-    }
+      .maybeSingle();
+    if (readError) throw new Error("Could not check this document. Please try again.");
+    if (!doc) throw new Error("Document not found.");
+    assertOwnedDocumentPath(doc.storage_path, context.userId);
+    const { error: storageError } = await context.supabase.storage.from("documents").remove([doc.storage_path]);
+    if (storageError) throw new Error("Could not delete the private file. Nothing was removed from your document list; please try again.");
     const { error } = await context.supabase
       .from("documents")
       .delete()

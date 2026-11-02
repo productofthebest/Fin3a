@@ -47,11 +47,12 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [x] Add annual transportation, quarterly totals, missing year-on-year data, KWD projection precision, zero-balance runway and currency-isolation checks; 39 selected tests pass
 - [ ] Remaining feature implementation delegated to the separate Phase 4 draft; its saved-data changes require review/acceptance, and its live-connected database must not receive synthetic records
 - [ ] Finish and integrate the full Phase 4 draft into the main app when ready; real-data verification remains deferred, not an implementation blocker
-- [ ] Detailed test breakdown and final completion report; Phase 5 remains blocked until all Phase 4 checks pass
+- [ ] Detailed test breakdown and final Phase 4 completion report; Phase 5 started at the user's explicit request, without claiming this gate passed
 - [ ] Chat over the signed-in user's data; backend math + AI explanation
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
 ## Phase 5 — Testing, Launch, Growth
+- [x] Start Phase 5 incrementally at the user's explicit request: 65-check baseline, basic security scan, deep scan started; first account-cache/document-validation/deletion fixes; 74 regression checks and signed-in upload rejection/logout/responsive checks passed; this does not certify Phase 4 completion
 - [x] Review uploaded Phase 5 security/optimization and performance/QA/deployment specifications; queue after Phase 4 completion gate
 - [ ] Backend reliability and financial indexes; consistent error handling and pagination
 - [ ] Authentication/security review, user isolation and sensitive endpoint protections

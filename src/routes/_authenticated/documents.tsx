@@ -21,6 +21,7 @@ import { formatMoney } from "@/lib/fin3a";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { validateDocumentContent } from "@/lib/document-security";
 
 const docsQuery = () => queryOptions({ queryKey: ["documents"], queryFn: () => listDocuments() });
 const draftsQuery = (documentId: string) =>
@@ -64,6 +65,7 @@ function DocumentsPage() {
     }
     setBusy(true);
     try {
+      await validateDocumentContent(file, { filename: file.name, mime_type: file.type, size_bytes: file.size });
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id;
       if (!uid) throw new Error("Please sign in again.");
@@ -149,7 +151,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
     onSuccess: (r) => { toast.success(`${r.imported} transactions added to your ledger`); refresh(); qc.invalidateQueries(); },
     onError: (e: Error) => toast.error(e.message),
   });
-  const del = useMutation({ mutationFn: () => deleteDocument({ data: { documentId } }), onSuccess: () => { refresh(); onDeleted(); } });
+  const del = useMutation({ mutationFn: () => deleteDocument({ data: { documentId } }), onSuccess: () => { refresh(); onDeleted(); }, onError: (e: Error) => toast.error(e.message) });
   const rescan = useMutation({ mutationFn: () => analyzeDocument({ data: { documentId } }), onSuccess: refresh, onError: (e: Error) => { toast.error(e.message); refresh(); } });
 
   return (
