@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DOCUMENT_TYPES } from "./document-rules";
 
 const transactionSchema = z.object({
   txn_date: z.string().nullable(),
@@ -12,7 +13,7 @@ const transactionSchema = z.object({
   category_hint: z.string().nullable(),
   confidence: z.enum(["high", "medium", "low"]),
 });
-const extractionSchema = z.object({ transactions: z.array(transactionSchema) });
+const extractionSchema = z.object({ document_type: z.enum(DOCUMENT_TYPES).optional(), transactions: z.array(transactionSchema) });
 
 function providerError(status: number, code?: string): string {
   if (status === 401) return "OpenAI rejected the saved API key. Please check the key in project secrets.";
@@ -58,8 +59,8 @@ export async function extractDocumentWithOpenAI(input: {
         text: { format: {
           type: "json_schema", name: "document_transactions", strict: true,
           schema: {
-            type: "object", additionalProperties: false, required: ["transactions"],
-            properties: { transactions: { type: "array", items: {
+            type: "object", additionalProperties: false, required: ["document_type", "transactions"],
+            properties: { document_type: { type: "string", enum: DOCUMENT_TYPES, description: "Identify the actual document type from visible content, not its filename" }, transactions: { type: "array", items: {
               type: "object", additionalProperties: false,
               required: Object.keys(transactionSchema.shape),
               properties: {

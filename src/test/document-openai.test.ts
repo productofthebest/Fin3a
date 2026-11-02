@@ -36,6 +36,11 @@ describe("direct OpenAI document scanning", () => {
     });
   });
 
+  it("recognizes document type from extracted content without losing transaction review fields", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ output: [{ content: [{ type: "output_text", text: '{"document_type":"bill","transactions":[]}' }] }] })));
+    expect(await extractDocumentWithOpenAI(input)).toEqual({ document_type: "bill", transactions: [] });
+  });
+
   it("does not silently fall back when the OpenAI key is missing", async () => {
     const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
     await expect(extractDocumentWithOpenAI({ ...input, apiKey: undefined })).rejects.toThrow("OPENAI_API_KEY");
