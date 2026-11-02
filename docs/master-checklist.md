@@ -107,3 +107,10 @@ All migrations so far are additive (new tables/columns/indexes/functions). No de
 - Baseline: full existing suite rerun, 146/146 passed in 17 files. Real paid-request, scan, warning, budget and concurrency verification remains **not run**.
 - Security fix proposal must also restrict direct writes of assistant/system messages; merely reading persisted browser-writable history is insufficient. Existing untrusted history needs a conservative compatibility policy, without rewriting financial records.
 - Proposed implementation and test gates are presented in the approval plan; no requirement is certified complete by this review.
+
+## November 2 approved staging release review (14:38 UTC request)
+- Owner approved an exact ten-file promotion from staging and only three additive draft fields; no data, users or secrets may be copied.
+- Implementation: **not promoted**. Database: **unchanged**. Testing: read-only source compatibility review only; no uploads, paid calls or financial writes.
+- Blocker: staging's separate-transaction action clears the candidate and sets `confirmed_separate`, but the existing `import_document_drafts` function does not consult that field. It re-flags same-date/name/reference candidates; the unique import identity also prevents an identical legitimate repeat from being inserted. Three columns alone do not implement the promised import behavior.
+- Staging release report explicitly says signed-in upload/duplicate review was **not run**. Its automated-test and homepage-menu evidence does not satisfy the financial workflow gate.
+- Dependency: correct and verify the separate-transaction import behavior in isolated staging, then obtain approval for any additional import-function changes; do not silently broaden the three-column-only migration.
