@@ -64,7 +64,10 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [x] P2 (code): long PDFs split into 8-page parts (max 60 pages), locked/damaged PDF message, all-or-nothing scan. Real documents not yet verified — needs staging + sample files
 - [x] P3 (code): printed opening/closing/credit/debit totals checked in cents; duplicate window fixed (full ±3 days, one match per transaction). Reconciliation result not yet shown as its own badge on the Scan page
 - [ ] Final directive (Nov 2): complete Phases 1–5, staging environment, full test matrix, final report — do not declare launch-ready
-- [ ] P4: Full transaction-history pagination
+- [x] P4: Activity page pages through full history (50/page, no cap) with date range, category, type and safe search; history index added; signed-in check on owner account
+- [x] Statement totals badge on Scan page (Verified / Mismatch / Unable to verify)
+- [ ] OpenAI cost management (per-user/scan limits, admin monitoring, budgets, kill switch, token-based cost estimates) — approved brief, queued next
+- [ ] Isolated staging: BLOCKED — drafts share the live database; needs a separate project with its own backend (owner action)
 - [ ] P5: Verify spending, affordability, goals, runway calculations
 - [ ] Termii ready for FIN3A approval + wallet funding (not operational until a real OTP is verified)
 - [ ] Phase 4 full completion with documented assumptions (approved; follows priorities)
