@@ -60,6 +60,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
 ## Launch-readiness priorities (approved Nov 2; one at a time, report and wait between)
+- [ ] Apply the owner's explicitly approved November 2 staging release: exact ten-file allowlist and only three transaction_drafts columns; copy no data/users/secrets. Release review found that the existing import function re-flags same-date separate transactions and does not read confirmed_separate; resolve this blocker before promotion without expanding the approved database scope.
 - [ ] November 2 next priorities: prepare isolated staging, close assistant history trust vulnerability, implement missing monthly request caps and concurrency-safe budgets, then verify real requests/scans, 80% warnings, suspension/shutdown and concurrent enforcement. Production changes require a proposed-change report and explicit approval; no live financial records may be modified.
 - [x] P1: Homepage AI chat and voice-to-text require sign-in; atomic per-account hourly limits in the database (chat 20/h, voice 30/h), output cap; old public endpoints removed. Signed-out blocking verified; signed-in use not exercised (would spend OpenAI credit and write live rows)
 - [x] P2 (code): long PDFs split into 8-page parts (max 60 pages), locked/damaged PDF message, all-or-nothing scan. Real documents not yet verified — needs staging + sample files
