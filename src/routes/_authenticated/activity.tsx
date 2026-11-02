@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { categoriesQuery, settingsQuery, transactionsQuery } from "@/lib/queries";
+import { categoriesQuery, settingsQuery, transactionPageQuery } from "@/lib/queries";
+import { HISTORY_PAGE_SIZE, pageCount } from "@/lib/transaction-history";
 import {
   addTransaction,
   deleteTransaction,
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/activity")({
   loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());
     if (!settings?.onboarding_completed) throw redirect({ to: "/onboarding" });
-    await context.queryClient.ensureQueryData(transactionsQuery({}));
+    await context.queryClient.ensureQueryData(transactionPageQuery({ page: 1 }));
     await context.queryClient.ensureQueryData(categoriesQuery());
   },
   component: ActivityPage,
@@ -221,12 +222,27 @@ function ActivityPage() {
   const { data: settings } = useSuspenseQuery(settingsQuery());
   const [type, setType] = useState<"all" | TxType>("all");
   const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [page, setPage] = useState(1);
   const currency = settings?.currency ?? "USD";
+  const { data: categories } = useSuspenseQuery(categoriesQuery());
 
-  const filters: { type?: TxType; search?: string } = {};
-  if (type !== "all") filters.type = type;
-  if (search) filters.search = search;
-  const { data: transactions, isFetching } = useQuery(transactionsQuery(filters));
+  const filters = {
+    page,
+    ...(type !== "all" ? { type } : {}),
+    ...(categoryId !== "all" ? { categoryId } : {}),
+    ...(from ? { from } : {}),
+    ...(to ? { to } : {}),
+    ...(search.trim() ? { search: search.trim() } : {}),
+  };
+  const { data: result, isFetching } = useQuery(transactionPageQuery(filters));
+  const transactions = result?.rows;
+  const total = result?.total ?? 0;
+  const pages = pageCount(total, HISTORY_PAGE_SIZE);
+  const resetPage = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(1); };
+  const hasFilters = type !== "all" || categoryId !== "all" || from || to || search;
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTransaction({ data: { id } }),
@@ -255,7 +271,7 @@ function ActivityPage() {
             <button
               key={t}
               type="button"
-              onClick={() => setType(t)}
+              onClick={() => resetPage(setType)(t)}
               className={cn(
                 "rounded-md px-3 py-1.5 text-sm capitalize transition-colors",
                 type === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
@@ -267,11 +283,27 @@ function ActivityPage() {
         </div>
         <Input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => resetPage(setSearch)(e.target.value)}
           placeholder="Search description or merchant…"
           className="w-64"
           maxLength={120}
+          aria-label="Search transactions"
         />
+        <Select value={categoryId} onValueChange={resetPage(setCategoryId)}>
+          <SelectTrigger className="w-44" aria-label="Category"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value="uncategorized">Uncategorized</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input type="date" value={from} max={to || undefined} onChange={(e) => resetPage(setFrom)(e.target.value)} className="w-40" aria-label="From date" />
+        <Input type="date" value={to} min={from || undefined} onChange={(e) => resetPage(setTo)(e.target.value)} className="w-40" aria-label="To date" />
+        {hasFilters ? (
+          <Button variant="ghost" size="sm" onClick={() => { setType("all"); setSearch(""); setCategoryId("all"); setFrom(""); setTo(""); setPage(1); }}>Clear</Button>
+        ) : null}
       </div>
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
@@ -283,7 +315,7 @@ function ActivityPage() {
           </div>
         ) : !transactions || transactions.length === 0 ? (
           <p className="p-8 text-center text-sm text-muted-foreground">
-            Nothing here yet. Add your first transaction to see it on the dashboard.
+            {hasFilters ? "No transactions match these filters." : "Nothing here yet. Add your first transaction to see it on the dashboard."}
           </p>
         ) : (
           <ul className="divide-y divide-border">
@@ -327,6 +359,18 @@ function ActivityPage() {
           </ul>
         )}
       </div>
+      {total > 0 ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+          <span>
+            Showing {(page - 1) * HISTORY_PAGE_SIZE + 1}–{Math.min(page * HISTORY_PAGE_SIZE, total)} of {total.toLocaleString()}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1 || isFetching} onClick={() => setPage((p) => p - 1)}>Newer</Button>
+            <span>Page {page} of {pages}</span>
+            <Button variant="outline" size="sm" disabled={page >= pages || isFetching} onClick={() => setPage((p) => p + 1)}>Older</Button>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }

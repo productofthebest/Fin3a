@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS transactions_user_history_idx ON public.transactions (user_id, occurred_at DESC, created_at DESC, id);
