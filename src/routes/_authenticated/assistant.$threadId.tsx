@@ -113,9 +113,9 @@ function AssistantPage() {
               <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground"><Zap className="size-4" /></span>
               <span className="truncate text-lg font-bold tracking-tight">FIN3A</span>
             </Link>
-            <nav className="order-3 col-span-2 flex items-center gap-1 overflow-x-auto rounded-full border border-border bg-card px-2 py-1.5 shadow-sm md:order-none md:col-span-1 md:mx-auto">
+            <nav className="order-3 col-span-2 flex items-center gap-0 overflow-x-auto rounded-full border border-border bg-card px-2 py-1.5 shadow-sm md:order-none md:col-span-1 md:mx-auto">
               {PRIMARY_NAV.map((n) => (
-                <Link key={n.to} to={n.to} className="shrink-0 rounded-full px-3 py-1 text-xs text-foreground/80 hover:text-primary" activeProps={{ className: "text-primary font-medium" }}>
+                <Link key={n.to} to={n.to} className="shrink-0 rounded-full px-2.5 py-1 text-xs text-foreground/80 hover:text-primary" activeProps={{ className: "text-primary font-medium" }}>
                   {n.label}
                 </Link>
               ))}
