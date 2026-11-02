@@ -14,7 +14,9 @@ describe("direct OpenAI document scanning", () => {
     ] }));
     vi.stubGlobal("fetch", fetchMock);
     expect(await extractDocumentWithOpenAI(input)).toEqual({ transactions: [] });
-    const [url, request] = fetchMock.mock.calls[0];
+    const call = fetchMock.mock.calls[0];
+    if (!call) throw new Error("Expected an OpenAI request");
+    const [url, request] = call;
     expect(url).toBe("https://api.openai.com/v1/responses");
     expect(request.headers.Authorization).toBe("Bearer test-only-key");
     const body = JSON.parse(request.body);
@@ -27,7 +29,9 @@ describe("direct OpenAI document scanning", () => {
     const fetchMock = vi.fn().mockResolvedValue(Response.json({ output: [{ content: [{ type: "output_text", text: '{"transactions":[]}' }] }] }));
     vi.stubGlobal("fetch", fetchMock);
     await extractDocumentWithOpenAI({ ...input, mimeType: "application/pdf", filename: "statement.pdf" });
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body).input[0].content[0]).toEqual({
+    const call = fetchMock.mock.calls[0];
+    if (!call) throw new Error("Expected a PDF request");
+    expect(JSON.parse(call[1].body).input[0].content[0]).toEqual({
       type: "input_file", filename: "statement.pdf", file_data: "data:application/pdf;base64,AQID",
     });
   });
