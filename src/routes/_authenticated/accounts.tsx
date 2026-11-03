@@ -64,9 +64,9 @@ function Page() {
               </div>
             </div>
             <div className="mt-1 text-[11px] leading-4">
-              <p className="font-medium text-muted-foreground">Recent activity</p>
+              <p className="font-medium text-muted-foreground">Recent activity{account.recent.length === 0 ? ": No account transactions yet." : ""}</p>
               {account.recent.length === 0 ? (
-                <p className="text-muted-foreground">No account transactions yet.</p>
+                null
               ) : (
                 <ul className="space-y-0.5">
                   {account.recent.map((tx) => (
@@ -152,7 +152,7 @@ function Page() {
         <div ref={walletsRef} className="mt-4 grid items-start gap-4 sm:grid-cols-2">
           {data.cryptoAssets.map((asset) => (
             <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
-              <div className="flex min-w-0 flex-col gap-1 text-[11px] leading-[14px]">
+              <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
               <div className="flex min-w-0 items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="break-words text-xs font-medium">{asset.name}</p>
@@ -175,8 +175,8 @@ function Page() {
                   </div>
                 </div>
               ) : (
-                <p className="rounded-md bg-secondary px-2 py-1 text-muted-foreground">
-                  Provider not connected. Your address will appear once generated.
+                <p className="rounded-md bg-secondary px-2 py-0.5 text-muted-foreground">
+                  Provider not connected. Address not available yet.
                 </p>
               )}
               {asset.min_deposit != null ? (
