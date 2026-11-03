@@ -45,13 +45,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/dashboard" className="font-display text-lg font-semibold tracking-tight">
             Fin<span className="text-primary">3a</span>
           </Link>
-          <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex">
+          <nav className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto lg:flex">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors",
+                  "shrink-0 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                   (item.to === "/assistant" ? pathname.startsWith("/assistant") : pathname === item.to)
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground",
