@@ -25,11 +25,19 @@ export async function guestChatResponse(request: Request) {
   const admission = data as { allowed?: boolean; reason?: string; usage_id?: string; warning?: string } | null;
   if (error || !admission?.allowed || !admission.usage_id) return Response.json({ error: guestLimitMessage(admission?.reason) }, { status: error ? 503 : 429 });
   const usageId = admission.usage_id;
-  const query = publicQuestion.query;
+  // Company identity questions use the official Top Floor site retrieval, not a paid web search.
+  const { isCompanyIdentityQuestion } = await import("./topfloor");
+  const companyQuestion = isCompanyIdentityQuestion(parsed.data.message);
+  const query = companyQuestion ? null : publicQuestion.query;
   let webReserved = false;
   let searchInput: number | undefined;
   let searchOutput: number | undefined;
   let evidence = "";
+  let companyBlock = "";
+  if (companyQuestion) {
+    const { companyIdentityBlock, getTopFloorKnowledge } = await import("./topfloor-knowledge.server");
+    companyBlock = companyIdentityBlock(await getTopFloorKnowledge(request.signal));
+  }
   let sources: import("./web-access").WebSource[] = [];
   const finish = async (ok: boolean, input?: number, output?: number) => {
     if (webReserved) {
@@ -57,7 +65,7 @@ export async function guestChatResponse(request: Request) {
     const { createOpenAI } = await import("@ai-sdk/openai");
     const result = streamText({
       model: createOpenAI({ apiKey }).responses(GUEST_MODEL),
-      system: GUEST_INSTRUCTIONS + evidence,
+      system: GUEST_INSTRUCTIONS + companyBlock + evidence,
       messages: [{ role: "user", content: parsed.data.message }],
       maxOutputTokens: GUEST_MAX_OUTPUT,
       maxRetries: 0,
