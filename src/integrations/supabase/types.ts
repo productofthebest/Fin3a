@@ -777,6 +777,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_counters: {
+        Row: {
+          bucket: string
+          used: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          used?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          used?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       recurring_bills: {
         Row: {
           active: boolean
