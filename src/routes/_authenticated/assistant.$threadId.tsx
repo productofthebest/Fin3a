@@ -410,6 +410,63 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
         </div>
       )}
 
+      {qrCard ? (
+        <div className="mt-4 flex gap-2">
+          <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
+          <div className="min-w-0 flex-1 rounded-2xl border border-accent/40 bg-card p-4 text-sm shadow-sm">
+            {qrCard.kind === "request" ? (
+              <>
+                <p className="font-medium">I've detected a Fin3a payment request.</p>
+                {qrCard.details.status === "open" && !qrCard.details.isOwn ? (
+                  <div className="mt-2 space-y-1 text-muted-foreground">
+                    <p>Recipient: <span className="font-medium text-foreground">{qrCard.details.recipientName}</span></p>
+                    <p>Amount: <span className="font-medium text-foreground">{formatQrAmount(qrCard.details.amount ?? null, qrCard.details.currency ?? "NGN")}</span></p>
+                    {qrCard.details.description ? <p>For: <span className="text-foreground">{qrCard.details.description}</span></p> : null}
+                    <p>Reference: FIN3A payment request</p>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-muted-foreground">
+                    {qrCard.details.isOwn ? "This is your own payment request." : `This request is ${qrCard.details.status}.`}
+                  </p>
+                )}
+                <div className="mt-3 flex gap-2">
+                  {qrCard.details.status === "open" && !qrCard.details.isOwn && qrCard.details.requestId ? (
+                    <Button asChild size="sm"><Link to="/pay/qr/$requestId" params={{ requestId: qrCard.details.requestId }}>Review Payment</Link></Button>
+                  ) : null}
+                  <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
+                </div>
+              </>
+            ) : qrCard.kind === "profile" ? (
+              <>
+                <p className="font-medium">I've detected a Fin3a payment profile.</p>
+                <p className="mt-2 text-muted-foreground">Account: <span className="font-mono text-primary">{qrCard.fin3aId}</span></p>
+                <div className="mt-3 flex gap-2">
+                  <Button asChild size="sm"><Link to="/pay/$fin3aId" params={{ fin3aId: qrCard.fin3aId }}>Review Payment</Button></Link>
+                  <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
+                </div>
+              </>
+            ) : qrCard.kind === "external" ? (
+              <>
+                <p className="font-medium">This is an external QR code, not a Fin3a payment.</p>
+                <p className="mt-2 break-all rounded-md bg-secondary p-2 text-xs text-muted-foreground">{qrCard.url}</p>
+                <p className="mt-2 text-xs text-muted-foreground">I won't open it automatically. Only visit links you trust.</p>
+                <div className="mt-3 flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => void navigator.clipboard.writeText(qrCard.url).then(() => toast.success("Link copied"))}>Copy link</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-medium">I couldn't read a Fin3a payment from that QR code.</p>
+                <p className="mt-2 text-muted-foreground">It may be damaged or not a payment code. No payment was created.</p>
+                <Button variant="ghost" size="sm" className="mt-3" onClick={() => setQrCard(null)}>Dismiss</Button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
+      {qrScanOpen ? <QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /> : null}
+
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
         className="mt-7 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
