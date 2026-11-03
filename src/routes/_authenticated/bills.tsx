@@ -1,8 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { BanknoteArrowDown, Plus, Trash2 } from "lucide-react";
+import { BanknoteArrowDown, Globe, Layers, Plus, Receipt, Smartphone, Trash2, Tv, Wifi, Zap } from "lucide-react";
 import type { Frequency } from "@/lib/fin3a";
 
 import { AppShell } from "@/components/app-shell";
@@ -33,8 +33,49 @@ import { pageMeta } from "@/lib/page-meta";
 
 const FREQUENCIES: Frequency[] = ["weekly", "monthly", "quarterly", "yearly"];
 
+const PAYMENT_CATEGORIES = [
+  { id: "airtime", name: "Airtime", icon: Smartphone },
+  { id: "data", name: "Data", icon: Wifi },
+  { id: "electricity", name: "Electricity", icon: Zap },
+  { id: "cable", name: "Cable TV", icon: Tv },
+  { id: "internet", name: "Internet", icon: Globe },
+  { id: "tax", name: "Tax", icon: Receipt },
+] as const;
+
+function BillPaymentServices() {
+  const [selected, setSelected] = useState<(typeof PAYMENT_CATEGORIES)[number] | null>(null);
+  return (
+    <section className="mt-6" aria-labelledby="bill-payment-heading">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="bill-payment-heading" className="font-display text-xl font-semibold">Pay bills</h2>
+        <span className="text-xs text-muted-foreground">NGN wallet · Payments unavailable</span>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {PAYMENT_CATEGORIES.map((category) => (
+          <Button key={category.id} variant="outline" className="h-auto min-w-0 flex-col gap-3 whitespace-normal bg-card px-3 py-5" onClick={() => setSelected(category)} aria-label={`Select ${category.name}`}>
+            <category.icon className="text-primary" aria-hidden="true" />
+            <span>{category.name}</span>
+          </Button>
+        ))}
+      </div>
+      <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>{selected?.name} payment</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Flutterwave bill payments are not connected. Providers and packages are unavailable until merchant support and funding are verified.</p>
+          <p className="text-sm font-medium">No payment will be processed and your NGN wallet will not be charged.</p>
+          <DialogFooter><Button variant="outline" onClick={() => setSelected(null)}>Close</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <section className="mt-8 border-t border-border pt-6" aria-labelledby="bill-history-heading">
+        <h2 id="bill-history-heading" className="font-display text-xl font-semibold">Bills history</h2>
+        <p className="mt-3 text-sm text-muted-foreground">Payment history is unavailable until Flutterwave is connected. Recurring bill records below are not confirmed wallet payments.</p>
+      </section>
+    </section>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/bills")({
-  head: () => pageMeta("Bills", "Manage your recurring bills and payment records in Fin3a."),
+  head: () => pageMeta("Bills", "View Nigerian bill payment availability and manage recurring bills in Fin3a."),
   ssr: false,
   loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());
@@ -233,12 +274,21 @@ function BillsPage() {
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Bills</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Money that leaves on a schedule — rent, power, subscriptions.
+            Utilities, subscriptions and recurring payments.
           </p>
+        </div>
+        <Button asChild variant="outline"><Link to="/categories"><Layers className="size-4" /> Manage categories</Link></Button>
+      </div>
+
+      <BillPaymentServices />
+
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+        <div>
+          <h2 className="font-display text-xl font-semibold">Recurring bills</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Manual expense records only — recording a payment does not send money or debit your wallet.</p>
         </div>
         <AddBillDialog currency={currency} />
       </div>
-
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="font-display text-xl">All bills</CardTitle>
@@ -273,7 +323,7 @@ function BillsPage() {
                     disabled={!bill.active || payMut.isPending}
                     onClick={() => payMut.mutate(bill.id)}
                   >
-                    <BanknoteArrowDown className="size-4" /> Paid
+                    <BanknoteArrowDown className="size-4" /> Record payment
                   </Button>
                   <Button
                     variant="ghost"

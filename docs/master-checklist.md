@@ -21,7 +21,7 @@ Single source of truth for every requirement, audit finding and approved task. U
 | Ready for public launch | No |
 
 ## Phase 1 — Foundation
-Bills payment brief (3 Nov 2026): **Impl: Not started; Test: baseline Unit only (190/190 regressions pass).** No Flutterwave integration, connector or credential found; all six categories (Airtime/Data/Electricity/Cable TV/Internet/Tax) remain unconnected with no verified providers/API tests. Existing recurring records are bookkeeping, not wallet payments. Evidence and dependencies: `docs/bills-payment-readiness.md`. Scoped live UI approval, isolated sandbox, merchant funding/settlement/enablement evidence and approved financial reconciliation design required. No application/database/financial changes or publication.
+Bills payment brief (3 Nov 2026): **Impl: presentation done; payments not started. Test: signed-in UI workflow + 190/190 Unit regressions; build OK.** One receipt Bills link replaces Categories; category management retained, six service dialogs honestly unavailable, recurring form opens and Bills reloads. Desktop/tablet/phone (1280/768/393px) inspected without overflow/runtime errors. No Flutterwave integration, connector or credential found; all six categories remain unconnected with no verified providers/API tests. Existing recurring records are bookkeeping, not wallet payments. Evidence/dependencies: `docs/bills-payment-readiness.md`. Payments need isolated sandbox, verified merchant funding/settlement/enablement and separate financial design approval. Presentation only; no database/financial changes or publication. Saved recurring writes not re-tested.
 
 | Ref | Requirement | Impl | Test | Evidence | Dependencies |
 |---|---|---|---|---|---|
