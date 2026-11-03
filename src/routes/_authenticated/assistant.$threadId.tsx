@@ -332,6 +332,10 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
         <div className="mt-4 max-h-[60vh] min-h-[300px] space-y-4 overflow-y-auto rounded-2xl border border-border bg-card/70 p-4 sm:p-5">
           {messages.map((m) => {
             const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+            const sources = m.parts
+              .filter((p) => p.type === "source-url")
+              .map((p) => ({ url: (p as { url?: string }).url ?? "", title: (p as { title?: string }).title ?? "" }))
+              .filter((s) => s.url);
             return m.role === "user" ? (
               <div key={m.id} className="flex justify-end">
                 <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-primary-foreground">{text}</div>
@@ -341,6 +345,21 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
                 <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
                 <div className="min-w-0 flex-1 space-y-2 text-sm leading-relaxed text-foreground [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_table]:w-full [&_table]:text-xs [&_th]:border-b [&_th]:border-border [&_th]:py-1 [&_th]:text-left [&_td]:border-b [&_td]:border-border/50 [&_td]:py-1 [&_code]:rounded [&_code]:bg-secondary [&_code]:px-1">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+                  {sources.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {sources.map((s) => (
+                        <a
+                          key={s.url}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-border bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-primary"
+                        >
+                          {s.title || s.url.replace(/^https?:\/\//, "").split("/")[0]}
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );
