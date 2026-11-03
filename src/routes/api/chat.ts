@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { beginAiUsage, finishAiUsage } from "@/lib/api-auth.server";
+import { publicSearchQuery } from "@/lib/web-access";
 
 const MODEL = "gpt-5-mini";
 const HOURLY_LIMIT = 40;
@@ -122,6 +123,28 @@ export const Route = createFileRoute("/api/chat")({
         const { streamText, convertToModelMessages } = await import("ai");
         const { createOpenAI } = await import("@ai-sdk/openai");
         const openai = createOpenAI({ apiKey: openaiKey });
+        const { finishWeb, reserveWeb, searchPublicInformation, webEvidence } = await import("@/lib/web-access.server");
+        const query = publicSearchQuery(userText);
+        let evidence = "";
+        let sources: import("@/lib/web-access").WebSource[] = [];
+        let webInput: number | undefined;
+        let webOutput: number | undefined;
+        if (query) {
+          if (!(await reserveWeb(supabase, usage.usageId, false))) {
+            await finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "web_budget");
+            return json(429, "Web search is unavailable within the current spending allowance.");
+          }
+          try {
+            const web = await searchPublicInformation(query, openaiKey, request.signal);
+            evidence = webEvidence(web.text);
+            sources = web.sources;
+            webInput = web.input;
+            webOutput = web.output;
+          } catch {
+            await finishWeb(supabase, usage.usageId, false, false);
+            return json(503, "Web search could not be completed. Please try again later.");
+          }
+        }
 
         // Only the last 30 text turns are sent, stripped to plain text.
         const history = body.messages.slice(-30).map((m) => ({
@@ -132,18 +155,23 @@ export const Route = createFileRoute("/api/chat")({
 
         const result = streamText({
           model: openai.responses(MODEL),
-          system: `${ASSISTANT_INSTRUCTIONS}\n\nUSER FINANCIAL SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
+          system: `${ASSISTANT_INSTRUCTIONS}${evidence}\nWithout public web evidence do not claim live information.\n\nUSER FINANCIAL SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
           messages: await convertToModelMessages(history),
-          tools: { web_search: openai.tools.webSearch({ searchContextSize: "low" }) },
+          maxOutputTokens: 1200,
+          maxRetries: 0,
           abortSignal: request.signal,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
-          onFinish: ({ totalUsage }) => finishAiUsage(supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
-          onError: () => finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
+          onFinish: ({ totalUsage }) => query
+            ? finishWeb(supabase, usage.usageId, false, true, webInput !== undefined && totalUsage.inputTokens !== undefined ? webInput + totalUsage.inputTokens : undefined, webOutput !== undefined && totalUsage.outputTokens !== undefined ? webOutput + totalUsage.outputTokens : undefined)
+            : finishAiUsage(supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
+          onError: () => query ? finishWeb(supabase, usage.usageId, false, false) : finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
+          onAbort: () => query ? finishWeb(supabase, usage.usageId, false, false) : finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "aborted"),
         });
 
         return result.toUIMessageStreamResponse({
           ...(usage.warning ? { headers: { "x-ai-usage-warning": encodeURIComponent(usage.warning) } } : {}),
           originalMessages: history,
+          messageMetadata: ({ part }) => part.type === "start" ? { webSources: sources } : undefined,
           generateMessageId: () => crypto.randomUUID(),
           onError: (err) => {
             console.error("assistant stream error", err);
