@@ -4,6 +4,7 @@ Product: AI-first personal finance platform under Top Floor.
 Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with NGN/USD ledgers, crypto deposit addresses, Breet planned). Still excluded: trading/exchange features. Never fake addresses or simulated transactions.
 
 ## Phase 1 — Foundation (current)
+- [x] Bills cleanup (17:57 UTC): removed Add bill control and currency-style Bills navigation icon; signed-in desktop/tablet/phone checks pass, 190/190 regressions and preview build OK; records unchanged.
 - [x] Nov 3 Bills presentation increment approved: Categories removed from main navigation, one receipt-icon Bills entry, category management retained on Bills, six selectable service cards with unavailable states and distinct recurring tracking. Verification recorded in docs/bills-payment-readiness.md; no backend or financial changes.
 - [ ] Bills payment processing, merchant catalog, verified history/receipts and AI payment-history extensions: blocked on absent Flutterwave credentials/integration, merchant prefunding/settlement verification, isolated sandbox and separate financial design approval; no live debits or publication authorized.
 - [x] Fin3a Admin audit and five-stage plan approved; Phase 1 verification contract prepared in docs/admin-phase1-verification.md; 170/170 baseline tests passed, no customer changes.

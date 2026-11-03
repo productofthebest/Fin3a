@@ -21,6 +21,7 @@ Single source of truth for every requirement, audit finding and approved task. U
 | Ready for public launch | No |
 
 ## Phase 1 — Foundation
+Latest Bills override (17:57 UTC): Add bill button/form entry removed and Bills navigation symbol removed. Signed-in 1280/768/393px checks confirm both absent, category access and six service choices preserved, reload works, no overflow/runtime errors. 190/190 regressions pass, preview build OK; no record changes or publication.
 Bills payment brief (3 Nov 2026): **Impl: presentation done; payments not started. Test: signed-in UI workflow + 190/190 Unit regressions; build OK.** One receipt Bills link replaces Categories; category management retained, six service dialogs honestly unavailable, recurring form opens and Bills reloads. Desktop/tablet/phone (1280/768/393px) inspected without overflow/runtime errors. No Flutterwave integration, connector or credential found; all six categories remain unconnected with no verified providers/API tests. Existing recurring records are bookkeeping, not wallet payments. Evidence/dependencies: `docs/bills-payment-readiness.md`. Payments need isolated sandbox, verified merchant funding/settlement/enablement and separate financial design approval. Presentation only; no database/financial changes or publication. Saved recurring writes not re-tested.
 
 | Ref | Requirement | Impl | Test | Evidence | Dependencies |
