@@ -94,7 +94,7 @@ function Page() {
           includeSelf,
           participants: participants.map((p) => ({
             userId: p.user_id,
-            customAmount: mode === "custom" ? Number(p.customAmount) : undefined,
+            ...(mode === "custom" ? { customAmount: Number(p.customAmount) } : {}),
           })),
         },
       });
@@ -264,7 +264,7 @@ function Page() {
           <div className="mt-3 space-y-4">
             {data.created.map((bill) => {
               const shares = data.participantsByBill[bill.id] ?? [];
-              const progress = billProgress(shares);
+              const progress = billProgress(shares as { amount: number; status: "pending" | "paid"; is_creator: boolean }[]);
               return (
                 <div key={bill.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-2">
