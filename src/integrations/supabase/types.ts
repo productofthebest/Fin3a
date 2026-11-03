@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_ledger: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          kind: string
+          provider: string | null
+          provider_ref: string | null
+          reference: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          currency: string
+          id?: string
+          kind: string
+          provider?: string | null
+          provider_ref?: string | null
+          reference?: string | null
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kind?: string
+          provider?: string | null
+          provider_ref?: string | null
+          reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_ledger_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounts: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_guest_usage: {
         Row: {
           created_at: string
@@ -340,6 +414,68 @@ export type Database = {
           currency?: string
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      crypto_addresses: {
+        Row: {
+          address: string
+          asset_id: string
+          created_at: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          asset_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          asset_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crypto_addresses_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "crypto_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crypto_assets: {
+        Row: {
+          active: boolean
+          id: string
+          min_deposit: number | null
+          name: string
+          network: string
+          symbol: string
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          min_deposit?: number | null
+          name: string
+          network: string
+          symbol: string
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          min_deposit?: number | null
+          name?: string
+          network?: string
+          symbol?: string
         }
         Relationships: []
       }
