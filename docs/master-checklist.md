@@ -168,6 +168,7 @@ All migrations so far are additive (new tables/columns/indexes/functions). No de
 - Baseline: **181/181 automated tests passed**, tsgo clean, build OK (3 Nov 2026). Two test bills cancelled after verification; one failed-transfer audit row retained intentionally. Not claimed complete for real money: no funded account exists until a provider is connected.
 
 ## QRP — QR Payments, Scanner & AI Camera Detection (added 3 Nov 2026)
+Dashboard layout update (3 Nov): implementation verified signed in at 1280×1800 and 393×706. Greeting starts beneath shared navigation; conversation selector and New action are immediately above/right of the composer, with questions below. Both viewports have no horizontal page overflow. Conversation selection verified using an existing empty thread; no paid AI request or financial-record changes. Regression suite: 190/190 passed; preview build OK. AI response verification not repeated for this presentation-only change.
 | Ref | Requirement | Impl | Test | Evidence | Dependencies |
 |---|---|---|---|---|---|
 | QRP-01 | QR icon in top nav after phone, before logout, tooltip "Scan or Receive Payment", responsive | Done | Signed-in workflow | Icon present in header (aria-label verified), links to /accounts/qr | None |
