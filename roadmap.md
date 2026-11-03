@@ -4,7 +4,7 @@ Product: AI-first personal finance platform under Top Floor.
 Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with NGN/USD ledgers, crypto deposit addresses, Breet planned). Still excluded: trading/exchange features. Never fake addresses or simulated transactions.
 
 ## Phase 1 — Foundation (current)
-- [ ] Dashboard replies inside the question-bar chat box like the homepage: presentation implemented; verify existing signed-in conversation and regressions.
+- [x] Dashboard replies inside the question-bar chat box like the homepage: saved signed-in conversation verified at 1280/768/393px, no page overflow or runtime errors; 200/200 tests pass, preview build OK. No paid requests, financial writes or publication.
 - [x] Company identity integration (3 Nov): assistant answers ownership/Top Floor questions from server-retrieved topfloorr.com content (6h cache, home + 4 pages) across dashboard, signed-in homepage and guest chat; verified owner-stated facts only, no paid web search, no fabricated corporate details; site retrieval confirmed live.
 - [x] Bills cleanup (17:57 UTC): removed Add bill control and currency-style Bills navigation icon; signed-in desktop/tablet/phone checks pass, 190/190 regressions and preview build OK; records unchanged.
 - [x] Nov 3 Bills presentation increment approved: Categories removed from main navigation, one receipt-icon Bills entry, category management retained on Bills, six selectable service cards with unavailable states and distinct recurring tracking. Verification recorded in docs/bills-payment-readiness.md; no backend or financial changes.
