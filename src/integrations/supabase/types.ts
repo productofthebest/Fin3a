@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_guest_usage: {
+        Row: {
+          created_at: string
+          est_cost_usd: number | null
+          id: string
+          input_tokens: number | null
+          network_hash: string
+          output_tokens: number | null
+          reserved_usd: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          est_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          network_hash: string
+          output_tokens?: number | null
+          reserved_usd?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          est_cost_usd?: number | null
+          id?: string
+          input_tokens?: number | null
+          network_hash?: string
+          output_tokens?: number | null
+          reserved_usd?: number
+          status?: string
+        }
+        Relationships: []
+      }
       ai_model_prices: {
         Row: {
           cached_input_per_mtok: number | null
@@ -939,6 +972,11 @@ export type Database = {
           _status: string
           _usage_id: string
         }
+        Returns: undefined
+      }
+      ai_guest_begin: { Args: { _network_hash: string }; Returns: Json }
+      ai_guest_finish: {
+        Args: { _id: string; _input: number; _ok: boolean; _output: number }
         Returns: undefined
       }
       ai_price_estimate: {
