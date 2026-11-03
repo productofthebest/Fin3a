@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminOverviewRouteImport } from './routes/_authenticated/admin-overview'
 import { Route as AuthenticatedAnalysisRouteImport } from './routes/_authenticated/analysis'
 import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
@@ -68,6 +69,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminOverviewRoute =
+  AuthenticatedAdminOverviewRouteImport.update({
+    id: '/admin-overview',
+    path: '/admin-overview',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAnalysisRoute = AuthenticatedAnalysisRouteImport.update({
   id: '/analysis',
   path: '/analysis',
@@ -163,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/accounts': typeof AuthenticatedAccountsRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-overview': typeof AuthenticatedAdminOverviewRoute
   '/analysis': typeof AuthenticatedAnalysisRoute
   '/bills': typeof AuthenticatedBillsRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -188,6 +196,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof AuthenticatedAccountsRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-overview': typeof AuthenticatedAdminOverviewRoute
   '/analysis': typeof AuthenticatedAnalysisRoute
   '/bills': typeof AuthenticatedBillsRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -215,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin-overview': typeof AuthenticatedAdminOverviewRoute
   '/_authenticated/analysis': typeof AuthenticatedAnalysisRoute
   '/_authenticated/bills': typeof AuthenticatedBillsRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/activity'
     | '/admin'
+    | '/admin-overview'
     | '/analysis'
     | '/bills'
     | '/categories'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/activity'
     | '/admin'
+    | '/admin-overview'
     | '/analysis'
     | '/bills'
     | '/categories'
@@ -293,6 +305,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts'
     | '/_authenticated/activity'
     | '/_authenticated/admin'
+    | '/_authenticated/admin-overview'
     | '/_authenticated/analysis'
     | '/_authenticated/bills'
     | '/_authenticated/categories'
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-overview': {
+      id: '/_authenticated/admin-overview'
+      path: '/admin-overview'
+      fullPath: '/admin-overview'
+      preLoaderRoute: typeof AuthenticatedAdminOverviewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/analysis': {
@@ -500,6 +520,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminOverviewRoute: typeof AuthenticatedAdminOverviewRoute
   AuthenticatedAnalysisRoute: typeof AuthenticatedAnalysisRoute
   AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
   AuthenticatedCategoriesRoute: typeof AuthenticatedCategoriesRoute
@@ -519,6 +540,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminOverviewRoute: AuthenticatedAdminOverviewRoute,
   AuthenticatedAnalysisRoute: AuthenticatedAnalysisRoute,
   AuthenticatedBillsRoute: AuthenticatedBillsRoute,
   AuthenticatedCategoriesRoute: AuthenticatedCategoriesRoute,
