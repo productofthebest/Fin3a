@@ -37,8 +37,10 @@ function Page() {
   const [currency, setCurrency] = useState<SplitCurrency>("NGN");
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
+  const [payUrl, setPayUrl] = useState("");
 
   useEffect(() => {
+    setPayUrl(window.location.href);
     void supabase.auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user)));
   }, []);
 
