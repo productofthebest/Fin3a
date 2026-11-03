@@ -85,7 +85,10 @@ export const Route = createFileRoute("/api/chat")({
         if (userText.length > 4000) return json(400, "Message is too long (max 4,000 characters).");
         const publicQuestion = homepageSearchQuestion(userText);
         if (publicQuestion.error) return json(400, publicQuestion.error);
-        const query = publicQuestion.query;
+        // Company identity questions use the official Top Floor site retrieval, not a paid web search.
+        const { isCompanyIdentityQuestion } = await import("@/lib/topfloor");
+        const companyQuestion = isCompanyIdentityQuestion(userText);
+        const query = companyQuestion ? null : publicQuestion.query;
 
         // Rate limit: user messages in the last hour.
         const since = new Date(Date.now() - 3600_000).toISOString();
@@ -131,6 +134,11 @@ export const Route = createFileRoute("/api/chat")({
         let sources: import("@/lib/web-access").WebSource[] = [];
         let webInput: number | undefined;
         let webOutput: number | undefined;
+        let companyBlock = "";
+        if (companyQuestion) {
+          const { companyIdentityBlock, getTopFloorKnowledge } = await import("@/lib/topfloor-knowledge.server");
+          companyBlock = companyIdentityBlock(await getTopFloorKnowledge(request.signal));
+        }
         if (query) {
           if (!(await reserveWeb(supabase, usage.usageId, false))) {
             await finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "web_budget");
@@ -157,7 +165,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const result = streamText({
           model: openai.responses(MODEL),
-          system: `${ASSISTANT_INSTRUCTIONS}${evidence}\nWithout public web evidence do not claim live information.\n\nUSER FINANCIAL SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
+          system: `${ASSISTANT_INSTRUCTIONS}${companyBlock}${evidence}\nWithout public web evidence do not claim live information.\n\nUSER FINANCIAL SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
           messages: await convertToModelMessages(history),
           maxOutputTokens: 1200,
           maxRetries: 0,

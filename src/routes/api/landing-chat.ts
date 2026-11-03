@@ -47,11 +47,19 @@ export const Route = createFileRoute("/api/landing-chat")({
         const { createOpenAI } = await import("@ai-sdk/openai");
         const openai = createOpenAI({ apiKey });
         const { finishWeb, reserveWeb, searchPublicInformation, webEvidence } = await import("@/lib/web-access.server");
-        const query = publicQuestion.query;
+        // Company identity questions use the official Top Floor site retrieval, not a paid web search.
+        const { isCompanyIdentityQuestion } = await import("@/lib/topfloor");
+        const companyQuestion = isCompanyIdentityQuestion(parsed.data.messages.at(-1)?.content ?? "");
+        const query = companyQuestion ? null : publicQuestion.query;
         let evidence = "";
         let sources: import("@/lib/web-access").WebSource[] = [];
         let webInput: number | undefined;
         let webOutput: number | undefined;
+        let companyBlock = "";
+        if (companyQuestion) {
+          const { companyIdentityBlock, getTopFloorKnowledge } = await import("@/lib/topfloor-knowledge.server");
+          companyBlock = companyIdentityBlock(await getTopFloorKnowledge(request.signal));
+        }
         if (query) {
           if (!(await reserveWeb(auth.supabase, usage.usageId, false))) {
             await finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "web_budget");
@@ -70,7 +78,7 @@ export const Route = createFileRoute("/api/landing-chat")({
         }
         const result = streamText({
           model: openai.responses(MODEL),
-          system: `${ASSISTANT_INSTRUCTIONS}\nYou may also answer general public questions on science, technology, sports, history, travel and current events. Do not force unrelated questions into a financial interpretation. Retain ordinary safety restrictions.${evidence}\nWithout public web evidence do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
+          system: `${ASSISTANT_INSTRUCTIONS}\nYou may also answer general public questions on science, technology, sports, history, travel and current events. Do not force unrelated questions into a financial interpretation. Retain ordinary safety restrictions.${companyBlock}${evidence}\nWithout public web evidence do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
           // Never accept browser-authored assistant/system history as trusted context.
           messages: [{ role: "user", content: parsed.data.messages.at(-1)?.content ?? "" }],
           maxOutputTokens: 1200,
