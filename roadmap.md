@@ -57,6 +57,7 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Finish and integrate the full Phase 4 draft into the main app when ready; real-data verification remains deferred, not an implementation blocker
 - [ ] Detailed test breakdown and final Phase 4 completion report; Phase 5 started at the user's explicit request, without claiming this gate passed
 - [ ] Chat over the signed-in user's data; backend math + AI explanation
+- [x] Assistant web access (Nov 3): OpenAI web search tool enabled on the chat endpoint (low context size); instructions forbid user financial data in search queries and require **Web** labelling with sources; replies render source links. Not verified with a real paid request — needs staging
 - [ ] Analysis, runway, affordability, what-if, goals, insights
 
 ## Launch-readiness priorities (approved Nov 2; one at a time, report and wait between)
