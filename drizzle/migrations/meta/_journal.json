@@ -127,6 +127,13 @@
       "when": 1793698357478,
       "tag": "0017_restrict_guest_web_reservation",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793714222656,
+      "tag": "0018_accounts_page",
+      "breakpoints": true
     }
   ]
 }
