@@ -28,6 +28,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  /* Top Floor brand gold sampled from the owner's TOP FLOOR logo (gold "F"). */
+  --color-topfloor-gold: #f0bc55;
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
