@@ -86,7 +86,7 @@ function Page() {
       await createBill({
         data: {
           title,
-          note: note || undefined,
+          ...(note ? { note } : {}),
           totalAmount: Number(totalAmount),
           currency,
           deadline: deadline || null,
