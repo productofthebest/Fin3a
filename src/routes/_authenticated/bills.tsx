@@ -2,13 +2,12 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { BanknoteArrowDown, Globe, Layers, Plus, Receipt, Smartphone, Trash2, Tv, Wifi, Zap } from "lucide-react";
-import type { Frequency } from "@/lib/fin3a";
+import { BanknoteArrowDown, Globe, Layers, Receipt, Smartphone, Trash2, Tv, Wifi, Zap } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { addBill, deleteBill, recordBillPayment, toggleBillActive } from "@/lib/bills.functions";
+import { deleteBill, recordBillPayment, toggleBillActive } from "@/lib/bills.functions";
 import { billsQuery, categoriesQuery, settingsQuery } from "@/lib/queries";
-import { formatMoney, FREQUENCY_LABELS, today } from "@/lib/fin3a";
+import { formatMoney, FREQUENCY_LABELS } from "@/lib/fin3a";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,21 +16,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { pageMeta } from "@/lib/page-meta";
-
-const FREQUENCIES: Frequency[] = ["weekly", "monthly", "quarterly", "yearly"];
 
 const PAYMENT_CATEGORIES = [
   { id: "airtime", name: "Airtime", icon: Smartphone },
@@ -85,149 +72,6 @@ export const Route = createFileRoute("/_authenticated/bills")({
   },
   component: BillsPage,
 });
-
-function AddBillDialog({ currency }: { currency: string }) {
-  const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    amount: "",
-    frequency: "monthly" as Frequency,
-    next_due_date: today(),
-    category_id: "",
-    notes: "",
-  });
-  const { data: categories } = useSuspenseQuery(categoriesQuery());
-  const expenseCategories = categories.filter((c) => c.kind === "expense");
-
-  const addMut = useMutation({
-    mutationFn: () =>
-      addBill({
-        data: {
-          name: form.name,
-          amount: Number(form.amount),
-          frequency: form.frequency,
-          next_due_date: form.next_due_date,
-          category_id: form.category_id || null,
-          notes: form.notes || undefined,
-        },
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bills"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success("Bill added");
-      setOpen(false);
-      setForm((f) => ({ ...f, name: "", amount: "", notes: "" }));
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to add bill"),
-  });
-
-  function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const amount = Number(form.amount);
-    if (!form.name.trim() || !Number.isFinite(amount) || amount <= 0) {
-      toast.error("Enter a name and a valid amount");
-      return;
-    }
-    addMut.mutate();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" /> Add bill
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>New recurring bill</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="bill-name">Name</Label>
-            <Input
-              id="bill-name"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="e.g. Electricity"
-              maxLength={120}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="bill-amount">Amount ({currency})</Label>
-              <Input
-                id="bill-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                placeholder="0.00"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Frequency</Label>
-              <Select
-                value={form.frequency}
-                onValueChange={(v) => setForm((f) => ({ ...f, frequency: v as Frequency }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FREQUENCIES.map((freq) => (
-                    <SelectItem key={freq} value={freq}>
-                      {FREQUENCY_LABELS[freq]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Next due</Label>
-              <Input
-                type="date"
-                value={form.next_due_date}
-                onChange={(e) => setForm((f) => ({ ...f, next_due_date: e.target.value }))}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Category</Label>
-              <Select
-                value={form.category_id || "none"}
-                onValueChange={(v) => setForm((f) => ({ ...f, category_id: v === "none" ? "" : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Uncategorized</SelectItem>
-                  {expenseCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.icon} {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit" disabled={addMut.isPending} className="w-full">
-              {addMut.isPending ? "Saving…" : "Save bill"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function BillsPage() {
   const queryClient = useQueryClient();
@@ -287,7 +131,6 @@ function BillsPage() {
           <h2 className="font-display text-xl font-semibold">Recurring bills</h2>
           <p className="mt-1 text-sm text-muted-foreground">Manual expense records only — recording a payment does not send money or debit your wallet.</p>
         </div>
-        <AddBillDialog currency={currency} />
       </div>
       <Card className="mt-6">
         <CardHeader>
@@ -296,7 +139,7 @@ function BillsPage() {
         <CardContent>
           {bills.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No bills yet. Add rent, utilities or subscriptions so they're never a surprise.
+              No recurring bills yet.
             </p>
           ) : (
             <ul className="divide-y divide-border">
