@@ -6,15 +6,15 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  ArrowRight, Bell, Camera, ChevronDown, FileText, History, Loader2, LogOut, MessageSquarePlus, Mic,
-  PiggyBank, QrCode, Search, Send, Settings, Square, Target, Trash2, TrendingUp, Wallet, Zap,
+  ArrowRight, Bell, Camera, FileText, Loader2, LogOut, MessageSquarePlus, Mic,
+  PiggyBank, QrCode, Search, Send, Settings, Square, Target, TrendingUp, Wallet, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AssistantUploadMenu } from "@/components/assistant-upload-menu";
 import { AssistantComposerFrame } from "@/components/assistant-composer-frame";
 import { supabase } from "@/integrations/supabase/client";
-import { createThread, deleteThread, getThreadMessages, listThreads } from "@/lib/assistant.functions";
+import { createThread, getThreadMessages } from "@/lib/assistant.functions";
 import { analyzeDocument, createDocument } from "@/lib/documents.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
 import { settingsQuery } from "@/lib/queries";
@@ -25,9 +25,6 @@ import { logQrScan, resolveQrRequest, type QrRequestDetails } from "@/lib/qr-pay
 import { formatQrAmount, parseScannedQr } from "@/lib/qr-payments";
 import { cn } from "@/lib/utils";
 import { metadataWebSources, safeWebSources } from "@/lib/web-access";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import robot from "@/assets/fin3a-robot.png";
 
 
@@ -52,8 +49,6 @@ const PRIMARY_NAV = [
   { to: "/documents", label: "Scan" },
 ] as const;
 
-const threadsQuery = { queryKey: ["chat-threads"], queryFn: () => listThreads() };
-
 export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
   ssr: false,
   head: () => ({
@@ -67,7 +62,6 @@ export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
     ],
   }),
   loader: async ({ params, context }) => {
-    await context.queryClient.ensureQueryData(threadsQuery);
     return getThreadMessages({ data: { threadId: params.threadId } });
   },
   component: AssistantPage,
@@ -84,7 +78,6 @@ function AssistantPage() {
   const loaded = Route.useLoaderData();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: threads = [] } = useQuery(threadsQuery);
   const { data: settings } = useQuery(settingsQuery());
   const { data: isAdmin } = useQuery({ queryKey: ["admin", "is-admin"], queryFn: () => getIsAdmin(), staleTime: 300_000 });
   const name = settings?.display_name?.trim();
@@ -94,11 +87,6 @@ function AssistantPage() {
     await qc.invalidateQueries({ queryKey: ["chat-threads"] });
     navigate({ to: "/assistant/$threadId", params: { threadId: t.id } });
   }
-  async function removeThread(id: string) {
-    await deleteThread({ data: { threadId: id } });
-    await qc.invalidateQueries({ queryKey: ["chat-threads"] });
-    if (id === threadId) navigate({ to: "/assistant" });
-  }
   async function handleSignOut() {
     await qc.cancelQueries();
     qc.clear();
@@ -107,27 +95,8 @@ function AssistantPage() {
     await navigate({ to: "/auth", replace: true });
   }
 
-  const current = threads.find((t) => t.id === threadId);
-
   const conversationControls = (
           <div className="order-2 mt-3 flex min-w-0 items-center justify-end gap-2" aria-label="Conversation controls">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex min-w-0 max-w-[60%] items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground">
-                <History className="size-3.5 shrink-0" /><span className="truncate">{current?.title ?? "Conversations"}</span><ChevronDown className="size-3 shrink-0" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="theme-lavender max-h-80 w-72 overflow-y-auto">
-                {threads.map((t) => (
-                  <div key={t.id} className="flex items-center gap-1">
-                    <DropdownMenuItem asChild className={cn("flex-1 truncate", t.id === threadId && "bg-secondary")}>
-                      <Link to="/assistant/$threadId" params={{ threadId: t.id }}><span className="truncate">{t.title}</span></Link>
-                    </DropdownMenuItem>
-                    <Button variant="ghost" size="icon" type="button" aria-label="Delete conversation" onClick={() => removeThread(t.id)} className="size-7 text-muted-foreground hover:text-destructive">
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Button type="button" size="sm" onClick={newThread} className="h-8 shrink-0 gap-1.5 rounded-full px-3 text-xs">
               <MessageSquarePlus className="size-3.5" /> New
             </Button>
