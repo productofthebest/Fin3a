@@ -7,13 +7,14 @@ import { AssistantUploadMenu } from "@/components/assistant-upload-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { authenticationIntent, type AuthMethod } from "@/lib/auth-options";
 import { supabase } from "@/integrations/supabase/client";
+import { safeWebSources, type WebSource } from "@/lib/web-access";
 
 async function accessToken() {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? null;
 }
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; sources?: WebSource[] };
 
 const SUGGESTIONS = [
   "How much should I keep as an emergency fund?",
@@ -73,6 +74,8 @@ export function LandingAssistant() {
       }
       const usageWarning = res.headers.get("x-ai-usage-warning");
       if (usageWarning) setWarning(decodeURIComponent(usageWarning));
+      const sourcesHeader = res.headers.get("x-fin3a-web-sources");
+      const sources: WebSource[] = sourcesHeader ? safeWebSources(JSON.parse(decodeURIComponent(sourcesHeader))) : [];
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let acc = "";
@@ -80,7 +83,7 @@ export function LandingAssistant() {
         const { done, value } = await reader.read();
         if (done) break;
         acc += decoder.decode(value, { stream: true });
-        setMessages([...history, { role: "assistant", content: acc }]);
+        setMessages([...history, { role: "assistant", content: acc, sources }]);
       }
       if (!acc.trim()) throw new Error("No answer came back. Please try again.");
     } catch (e) {
@@ -179,6 +182,7 @@ export function LandingAssistant() {
             <div key={i} className={m.role === "user" ? "flex justify-end" : ""}>
               <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm ${m.role === "user" ? "rounded-tr-sm bg-primary text-primary-foreground" : "rounded-tl-sm bg-muted/50"}`}>
                 {m.content || <span className="flex items-center gap-2 text-muted-foreground"><Loader2 className="size-3.5 animate-spin" />Thinking…</span>}
+                {m.sources && m.sources.length > 0 && <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-2">{m.sources.map((s) => <a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer" className="max-w-full break-words text-xs text-primary underline">{s.title}</a>)}</div>}
               </div>
             </div>
           ))}

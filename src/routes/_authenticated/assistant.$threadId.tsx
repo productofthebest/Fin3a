@@ -19,6 +19,7 @@ import { getIsAdmin } from "@/lib/admin.functions";
 import { settingsQuery } from "@/lib/queries";
 import { AppShell } from "@/components/app-shell";
 import { cn } from "@/lib/utils";
+import { metadataWebSources, safeWebSources } from "@/lib/web-access";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -332,10 +333,10 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
         <div className="mt-4 max-h-[60vh] min-h-[300px] space-y-4 overflow-y-auto rounded-2xl border border-border bg-card/70 p-4 sm:p-5">
           {messages.map((m) => {
             const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
-            const sources = m.parts
+            const sources = safeWebSources([...m.parts
               .filter((p) => p.type === "source-url")
               .map((p) => ({ url: (p as { url?: string }).url ?? "", title: (p as { title?: string }).title ?? "" }))
-              .filter((s) => s.url);
+              .filter((s) => s.url), ...metadataWebSources(m.metadata)]);
             return m.role === "user" ? (
               <div key={m.id} className="flex justify-end">
                 <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-primary-foreground">{text}</div>

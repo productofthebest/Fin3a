@@ -24,6 +24,7 @@ export type Database = {
           output_tokens: number | null
           reserved_usd: number
           status: string
+          web_reserved_usd: number
         }
         Insert: {
           created_at?: string
@@ -34,6 +35,7 @@ export type Database = {
           output_tokens?: number | null
           reserved_usd?: number
           status?: string
+          web_reserved_usd?: number
         }
         Update: {
           created_at?: string
@@ -44,6 +46,7 @@ export type Database = {
           output_tokens?: number | null
           reserved_usd?: number
           status?: string
+          web_reserved_usd?: number
         }
         Relationships: []
       }
@@ -150,6 +153,8 @@ export type Database = {
           status: string
           units: number
           user_id: string
+          web_cost_usd: number | null
+          web_reserved_usd: number
         }
         Insert: {
           cached_input_tokens?: number | null
@@ -166,6 +171,8 @@ export type Database = {
           status?: string
           units?: number
           user_id: string
+          web_cost_usd?: number | null
+          web_reserved_usd?: number
         }
         Update: {
           cached_input_tokens?: number | null
@@ -182,6 +189,8 @@ export type Database = {
           status?: string
           units?: number
           user_id?: string
+          web_cost_usd?: number | null
+          web_reserved_usd?: number
         }
         Relationships: []
       }
@@ -982,6 +991,20 @@ export type Database = {
       ai_price_estimate: {
         Args: { _cached: number; _in: number; _model: string; _out: number }
         Returns: number
+      }
+      ai_web_finish: {
+        Args: {
+          _guest: boolean
+          _id: string
+          _input: number
+          _ok: boolean
+          _output: number
+        }
+        Returns: undefined
+      }
+      ai_web_reserve: {
+        Args: { _guest: boolean; _id: string }
+        Returns: boolean
       }
       consume_ai_quota: {
         Args: { _bucket: string; _limit: number; _window_seconds: number }

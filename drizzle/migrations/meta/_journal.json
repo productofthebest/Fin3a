@@ -113,6 +113,20 @@
       "when": 1793697689584,
       "tag": "0015_guest_homepage_ai_admission",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793698251501,
+      "tag": "0016_bounded_web_usage",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793698357478,
+      "tag": "0017_restrict_guest_web_reservation",
+      "breakpoints": true
     }
   ]
 }
