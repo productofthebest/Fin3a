@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Loader2, ShieldAlert } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { AdminShell } from "@/components/admin-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,15 +44,15 @@ function AdminPage() {
     );
   }
   return (
-    <AppShell>
+    <AdminShell section="ai">
       <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">AI usage</h1>
       <p className="mt-1 text-sm text-muted-foreground">Usage counts and estimated OpenAI spend. Times are UTC. No financial records are shown here.</p>
-      {overview.isLoading || !overview.data ? (
+      {overview.isError ? <p role="alert" className="mt-6 text-destructive">Could not load AI usage. Reload this page to try again.</p> : overview.isLoading || !overview.data ? (
         <Loader2 className="mx-auto mt-10 size-6 animate-spin text-muted-foreground" />
       ) : (
         <AdminBody data={overview.data} />
       )}
-    </AppShell>
+    </AdminShell>
   );
 }
 
