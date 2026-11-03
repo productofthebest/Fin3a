@@ -1,8 +1,8 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { BanknoteArrowDown, Globe, Layers, Receipt, Smartphone, Trash2, Tv, Wifi, Zap } from "lucide-react";
+import { BanknoteArrowDown, Globe, Receipt, Smartphone, Trash2, Tv, Wifi, Zap } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { deleteBill, recordBillPayment, toggleBillActive } from "@/lib/bills.functions";
@@ -121,7 +121,6 @@ function BillsPage() {
             Utilities, subscriptions and recurring payments.
           </p>
         </div>
-        <Button asChild variant="outline"><Link to="/categories"><Layers className="size-4" /> Manage categories</Link></Button>
       </div>
 
       <BillPaymentServices />
