@@ -649,6 +649,42 @@ export type Database = {
           },
         ]
       }
+      internal_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          from_user_id: string
+          id: string
+          idempotency_key: string
+          reference: string | null
+          status: string
+          to_user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          from_user_id: string
+          id?: string
+          idempotency_key: string
+          reference?: string | null
+          status?: string
+          to_user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          from_user_id?: string
+          id?: string
+          idempotency_key?: string
+          reference?: string | null
+          status?: string
+          to_user_id?: string
+        }
+        Relationships: []
+      }
       merchant_rules: {
         Row: {
           category_id: string | null
@@ -833,6 +869,102 @@ export type Database = {
           savings_contribution?: number
           spending_change?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      split_bill_participants: {
+        Row: {
+          amount: number
+          bill_id: string
+          created_at: string
+          id: string
+          is_creator: boolean
+          last_reminder_at: string | null
+          paid_at: string | null
+          reminder_count: number
+          status: string
+          transfer_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bill_id: string
+          created_at?: string
+          id?: string
+          is_creator?: boolean
+          last_reminder_at?: string | null
+          paid_at?: string | null
+          reminder_count?: number
+          status?: string
+          transfer_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string
+          created_at?: string
+          id?: string
+          is_creator?: boolean
+          last_reminder_at?: string | null
+          paid_at?: string | null
+          reminder_count?: number
+          status?: string
+          transfer_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "split_bill_participants_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "split_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "split_bill_participants_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "internal_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      split_bills: {
+        Row: {
+          created_at: string
+          creator_id: string
+          currency: string
+          deadline: string | null
+          id: string
+          note: string | null
+          status: string
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          currency: string
+          deadline?: string | null
+          id?: string
+          note?: string | null
+          status?: string
+          title: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          currency?: string
+          deadline?: string | null
+          id?: string
+          note?: string | null
+          status?: string
+          title?: string
+          total_amount?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1039,6 +1171,7 @@ export type Database = {
           created_at: string
           currency: string
           display_name: string | null
+          fin3a_id: string | null
           id: string
           onboarding_completed: boolean
           updated_at: string
@@ -1048,6 +1181,7 @@ export type Database = {
           created_at?: string
           currency?: string
           display_name?: string | null
+          fin3a_id?: string | null
           id?: string
           onboarding_completed?: boolean
           updated_at?: string
@@ -1057,6 +1191,7 @@ export type Database = {
           created_at?: string
           currency?: string
           display_name?: string | null
+          fin3a_id?: string | null
           id?: string
           onboarding_completed?: boolean
           updated_at?: string
@@ -1069,6 +1204,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_split_overview: { Args: never; Returns: Json }
       ai_admin_overview: { Args: never; Returns: Json }
       ai_admin_set_price: {
         Args: {
@@ -1146,6 +1282,24 @@ export type Database = {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
       }
+      execute_internal_transfer: {
+        Args: {
+          _amount: number
+          _currency: string
+          _from_user: string
+          _idempotency_key: string
+          _reference: string
+          _to_user: string
+        }
+        Returns: string
+      }
+      get_public_share_profile: {
+        Args: { _fin3a_id: string }
+        Returns: {
+          display_name: string
+          fin3a_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1156,6 +1310,32 @@ export type Database = {
       import_document_drafts: {
         Args: { p_document_id: string }
         Returns: number
+      }
+      lookup_recipient: {
+        Args: { _identifier: string }
+        Returns: {
+          display_name: string
+          fin3a_id: string
+          user_id: string
+        }[]
+      }
+      pay_split_share: {
+        Args: { _idempotency_key: string; _participant_id: string }
+        Returns: string
+      }
+      send_split_reminder: {
+        Args: { _participant_id: string }
+        Returns: undefined
+      }
+      transfer_internal: {
+        Args: {
+          _amount: number
+          _currency: string
+          _idempotency_key: string
+          _reference?: string
+          _to_user: string
+        }
+        Returns: string
       }
     }
     Enums: {
