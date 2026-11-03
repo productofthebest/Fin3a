@@ -134,3 +134,10 @@ All migrations so far are additive (new tables/columns/indexes/functions). No de
 - Import compatibility: **failed source review**. The separate-transaction action still sets `confirmed_separate`, but `0008_phase4_scanner.sql` still reflags exact candidates without consulting that field and retains the conflicting content-based unique identity. The three approved columns cannot repair this contract.
 - Workflow evidence: **not run**. Staging's release report still states no signed-in upload/duplicate workflow was tested; pure matcher tests do not establish successful ledger insertion, retry safety or concurrent import enforcement.
 - Saved outcome: release remains **not promoted**, not complete. Required dependency: correct and verify explicit override, stable separate-draft identity, retry adds zero, ordinary duplicates withheld and concurrent import safety in staging; additional database-function changes need explicit scope approval. Production application/database unchanged; no deployment.
+
+## ACC — Accounts page (added 3 Nov 2026)
+- ACC-01 Accounts page with NGN/USD balance cards (available/pending/total) and recent activity — BUILT, verified signed-in on desktop and mobile; balances derive from verified ledger entries only (4 automated tests).
+- ACC-02 Crypto Addresses section (USDT TRC20/ERC20, USDC ERC20, BTC, ETH) with network warning and minimum deposits — BUILT as disabled placeholders; no addresses shown until a real provider is connected. NOT COMPLETE: needs Breet credentials, webhook signature verification, idempotency and end-to-end transaction testing.
+- ACC-03 Deposit/Withdraw/Transfer actions — DISABLED by design until provider connected; View transaction history links to Activity.
+- ACC-04 Navigation: Accounts placed after Dashboard; desktop menu spacing fixed so all items fit.
+- Note: owner reversed the no-crypto rule on 3 Nov 2026; trading/exchange features remain excluded.
