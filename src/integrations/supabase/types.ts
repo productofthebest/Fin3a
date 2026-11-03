@@ -777,6 +777,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_counters: {
+        Row: {
+          bucket: string
+          used: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          used?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          used?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       recurring_bills: {
         Row: {
           active: boolean
@@ -1282,6 +1303,10 @@ export type Database = {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
       }
+      consume_rate_limit: {
+        Args: { _bucket: string; _limit: number; _window_seconds: number }
+        Returns: boolean
+      }
       execute_internal_transfer: {
         Args: {
           _amount: number
@@ -1291,7 +1316,7 @@ export type Database = {
           _reference: string
           _to_user: string
         }
-        Returns: string
+        Returns: Json
       }
       get_public_share_profile: {
         Args: { _fin3a_id: string }
@@ -1311,6 +1336,10 @@ export type Database = {
         Args: { p_document_id: string }
         Returns: number
       }
+      is_split_participant: {
+        Args: { _bill_id: string; _user_id: string }
+        Returns: boolean
+      }
       lookup_recipient: {
         Args: { _identifier: string }
         Returns: {
@@ -1321,7 +1350,7 @@ export type Database = {
       }
       pay_split_share: {
         Args: { _idempotency_key: string; _participant_id: string }
-        Returns: string
+        Returns: Json
       }
       send_split_reminder: {
         Args: { _participant_id: string }
@@ -1343,7 +1372,7 @@ export type Database = {
           _reference?: string
           _to_user: string
         }
-        Returns: string
+        Returns: Json
       }
     }
     Enums: {

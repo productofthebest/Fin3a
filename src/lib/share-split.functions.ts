@@ -179,12 +179,14 @@ export const paySplitShare = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { participantId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { data: transferId, error } = await context.supabase.rpc("pay_split_share", {
+    const { data: result, error } = await context.supabase.rpc("pay_split_share", {
       _participant_id: data.participantId,
       _idempotency_key: crypto.randomUUID(),
     });
     if (error) throw new Error(error.message);
-    return { transferId };
+    const outcome = result as { id: string; status: string; reason?: string };
+    if (outcome.status !== "completed") throw new Error(outcome.reason ?? "Payment failed");
+    return { transferId: outcome.id };
   });
 
 export const sendSplitReminder = createServerFn({ method: "POST" })
@@ -202,7 +204,7 @@ export const sendTransfer = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!SPLIT_CURRENCIES.includes(data.currency)) throw new Error("Unsupported currency");
     if (!Number.isFinite(data.amount) || data.amount <= 0) throw new Error("Enter a valid amount");
-    const { data: transferId, error } = await context.supabase.rpc("transfer_internal", {
+    const { data: result, error } = await context.supabase.rpc("transfer_internal", {
       _to_user: data.toUserId,
       _currency: data.currency,
       _amount: data.amount,
@@ -210,7 +212,9 @@ export const sendTransfer = createServerFn({ method: "POST" })
       ...(data.reference?.trim() ? { _reference: data.reference.trim() } : {}),
     });
     if (error) throw new Error(error.message);
-    return { transferId };
+    const outcome = result as { id: string; status: string; reason?: string };
+    if (outcome.status !== "completed") throw new Error(outcome.reason ?? "Payment failed");
+    return { transferId: outcome.id };
   });
 
 // Public pay page: name and Fin3a ID only, via the publishable key (no session).

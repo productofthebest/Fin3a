@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 const splitQuery = () =>
   queryOptions({ queryKey: ["accounts", "split-bills"], queryFn: () => getSplitBills(), staleTime: 15_000 });
 
-export const Route = createFileRoute("/_authenticated/accounts/split")({
+export const Route = createFileRoute("/_authenticated/accounts_/split")({
   head: () => pageMeta("Split bill", "Create shared expenses, split them with other Fin3a users and collect payments."),
   loader: ({ context }) => context.queryClient.ensureQueryData(splitQuery()),
   component: Page,

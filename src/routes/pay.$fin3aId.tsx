@@ -37,8 +37,10 @@ function Page() {
   const [currency, setCurrency] = useState<SplitCurrency>("NGN");
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
+  const [payUrl, setPayUrl] = useState("");
 
   useEffect(() => {
+    setPayUrl(window.location.href);
     void supabase.auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user)));
   }, []);
 
@@ -87,9 +89,11 @@ function Page() {
         <p className="text-xs text-muted-foreground">Pay</p>
         <h1 className="mt-1 font-display text-2xl font-bold">{profile.display_name ?? "Fin3a user"}</h1>
         <p className="mt-1 font-mono text-sm text-primary">{profile.fin3a_id}</p>
-        <div className="mx-auto mt-5 inline-block rounded-xl border border-border bg-white p-4">
-          <QRCode value={window.location.href} size={140} />
-        </div>
+        {payUrl ? (
+          <div className="mx-auto mt-5 inline-block rounded-xl border border-border bg-white p-4">
+            <QRCode value={payUrl} size={140} />
+          </div>
+        ) : null}
       </section>
 
       {signedIn === null ? (

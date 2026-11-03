@@ -12,7 +12,7 @@ import { pageMeta } from "@/lib/page-meta";
 const shareQuery = () =>
   queryOptions({ queryKey: ["accounts", "share-profile"], queryFn: () => getShareProfile(), staleTime: 60_000 });
 
-export const Route = createFileRoute("/_authenticated/accounts/share")({
+export const Route = createFileRoute("/_authenticated/accounts_/share")({
   head: () => pageMeta("Share account", "Share your Fin3a account ID and payment link so other Fin3a users can pay you."),
   loader: ({ context }) => context.queryClient.ensureQueryData(shareQuery()),
   component: Page,

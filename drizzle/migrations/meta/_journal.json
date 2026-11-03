@@ -148,6 +148,34 @@
       "when": 1793718887272,
       "tag": "0020_split_participant_directory",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793719737707,
+      "tag": "0021_fix_split_bills_rls_recursion",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793719852095,
+      "tag": "0022_payment_rate_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793719919226,
+      "tag": "0023_payment_rate_limit_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793719996740,
+      "tag": "0024_persist_failed_transfers",
+      "breakpoints": true
     }
   ]
 }
