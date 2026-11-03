@@ -31,6 +31,11 @@ export function safeWebSources(sources: WebSource[]): WebSource[] {
   }).slice(0, 8);
 }
 
+export function metadataWebSources(metadata: unknown): WebSource[] {
+  if (!metadata || typeof metadata !== "object" || !("webSources" in metadata) || !Array.isArray(metadata.webSources)) return [];
+  return safeWebSources(metadata.webSources.filter((s): s is WebSource => !!s && typeof s === "object" && typeof s.url === "string" && typeof s.title === "string"));
+}
+
 export function webCost(input: number, output: number, calls: number) {
   if (![input, output, calls].every((n) => Number.isInteger(n) && n >= 0) || calls > WEB_MAX_CALLS) return null;
   return (input * 0.25 + output * 2) / 1_000_000 + calls * WEB_CALL_USD;

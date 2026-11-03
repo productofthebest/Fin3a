@@ -189,7 +189,7 @@ export const Route = createFileRoute("/api/chat")({
                 user_id: userId,
                 message_id: responseMessage.id || crypto.randomUUID(),
                 role: "assistant",
-                parts: [{ type: "text", text }],
+                parts: [{ type: "text", text }, ...sources.map((s) => ({ type: "source-url", sourceId: s.url, url: s.url, title: s.title }))],
               },
               { onConflict: "thread_id,message_id" },
             );
