@@ -4,6 +4,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
+import { useEffect, useRef } from "react";
+import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
@@ -20,6 +22,18 @@ const fmt = (currency: string, amount: number) =>
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
+  const splitRef = useRef<HTMLAnchorElement>(null);
+  const walletsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const reference = splitRef.current;
+    const wallets = walletsRef.current;
+    if (!reference || !wallets) return;
+    const sync = () => wallets.style.setProperty("--wallet-reference-height", `${reference.getBoundingClientRect().height}px`);
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(reference);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <AppShell>
@@ -28,31 +42,35 @@ function Page() {
 
       <div className="mt-6 grid gap-4">
         {data.accounts.map((account) => (
-          <section key={account.id} className="min-w-0 rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5" aria-label={`${account.currency} balance card`}>
+          <div key={account.id} className="grid min-w-0">
+          <div className="col-start-1 row-start-1"><AssistantComposerSizeReference /></div>
+          <section className="col-start-1 row-start-1 min-w-0 rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5" aria-label={`${account.currency} balance card`}>
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold">{account.currency} Account</h2>
+              <h2 className="font-display text-sm font-semibold">{account.currency} Account</h2>
               <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{account.currency}</span>
             </div>
-            <p className="mt-3 break-all font-display text-3xl font-bold">{fmt(account.currency, account.balance.available)}</p>
-            <p className="text-xs text-muted-foreground">Available balance</p>
-            <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-3 py-1">
-                <p className="text-xs text-muted-foreground">Pending Balance</p>
+            <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
+            <p className="break-all font-display text-xl font-bold">{fmt(account.currency, account.balance.available)}</p>
+            <p className="text-[11px] text-muted-foreground">Available balance</p>
+            </div>
+            <div className="mt-1 grid grid-cols-2 gap-3 text-[11px]">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1">
+                <p className="text-muted-foreground">Pending Balance</p>
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.pending)}</p>
               </div>
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-3 py-1">
-                <p className="text-xs text-muted-foreground">Total Balance</p>
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1">
+                <p className="text-muted-foreground">Total Balance</p>
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-xs font-medium text-muted-foreground">Recent activity</p>
+            <div className="mt-1 text-[11px] leading-4">
+              <p className="font-medium text-muted-foreground">Recent activity{account.recent.length === 0 ? ": No account transactions yet." : ""}</p>
               {account.recent.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">No account transactions yet.</p>
+                null
               ) : (
-                <ul className="mt-2 space-y-1.5">
+                <ul className="space-y-0.5">
                   {account.recent.map((tx) => (
-                    <li key={tx.id} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+                    <li key={tx.id} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
                       <span className="break-words capitalize text-muted-foreground">{tx.kind.replace("_", " ")} · {tx.status}</span>
                       <span className="min-w-0 break-all font-medium">{fmt(tx.currency, tx.amount)}</span>
                     </li>
@@ -61,6 +79,7 @@ function Page() {
               )}
             </div>
           </section>
+          </div>
         ))}
       </div>
 
@@ -79,6 +98,7 @@ function Page() {
         </Link>
         <Link
           to="/accounts/split"
+          ref={splitRef}
           className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:bg-secondary/50"
         >
           <Users className="mt-0.5 size-5 shrink-0 text-primary" />
@@ -129,14 +149,14 @@ function Page() {
             permanently lose your funds.
           </p>
         </div>
-        <div className="mt-4 grid items-start gap-4 sm:grid-cols-2">
+        <div ref={walletsRef} className="mt-4 grid items-start gap-4 sm:grid-cols-2">
           {data.cryptoAssets.map((asset) => (
-            <div key={asset.id} className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
-              <div className="flex min-w-0 flex-col gap-3">
+            <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
+              <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
               <div className="flex min-w-0 items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="break-words font-medium">{asset.name}</p>
-                  <p className="break-words text-xs text-muted-foreground">
+                  <p className="break-words text-xs font-medium">{asset.name}</p>
+                  <p className="break-words text-muted-foreground">
                     {asset.symbol} · {asset.network}
                   </p>
                 </div>
@@ -144,8 +164,8 @@ function Page() {
               </div>
               {asset.address ? (
                 <div>
-                  <p className="break-all rounded-md bg-secondary p-2 font-mono text-xs">{asset.address.address}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <p className="break-all rounded-md bg-secondary px-2 py-1 font-mono text-[11px]">{asset.address.address}</p>
+                  <div className="mt-1 flex flex-wrap gap-2">
                     <button type="button" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
                       <Copy className="size-3" /> Copy
                     </button>
@@ -155,13 +175,12 @@ function Page() {
                   </div>
                 </div>
               ) : (
-                <p className="rounded-md bg-secondary p-2 text-xs text-muted-foreground">
-                  Deposit address not available yet — the crypto provider is not connected. No address is shown until a
-                  real one is generated for your account.
+                <p className="rounded-md bg-secondary px-2 py-0.5 text-muted-foreground">
+                  Provider not connected. Address not available yet.
                 </p>
               )}
               {asset.min_deposit != null ? (
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="text-muted-foreground">
                   Minimum deposit: {asset.min_deposit} {asset.symbol}
                 </p>
               ) : null}
