@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { beginAiUsage, finishAiUsage } from "@/lib/api-auth.server";
-import { publicSearchQuery } from "@/lib/web-access";
+import { homepageSearchQuestion } from "@/lib/homepage-web";
 
 const MODEL = "gpt-5-mini";
 const HOURLY_LIMIT = 40;
@@ -83,6 +83,9 @@ export const Route = createFileRoute("/api/chat")({
         const userText = textOf(last.parts).trim();
         if (last.role !== "user" || !userText) return json(400, "Message is empty.");
         if (userText.length > 4000) return json(400, "Message is too long (max 4,000 characters).");
+        const publicQuestion = homepageSearchQuestion(userText);
+        if (publicQuestion.error) return json(400, publicQuestion.error);
+        const query = publicQuestion.query;
 
         // Rate limit: user messages in the last hour.
         const since = new Date(Date.now() - 3600_000).toISOString();
@@ -124,7 +127,6 @@ export const Route = createFileRoute("/api/chat")({
         const { createOpenAI } = await import("@ai-sdk/openai");
         const openai = createOpenAI({ apiKey: openaiKey });
         const { finishWeb, reserveWeb, searchPublicInformation, webEvidence } = await import("@/lib/web-access.server");
-        const query = publicSearchQuery(userText);
         let evidence = "";
         let sources: import("@/lib/web-access").WebSource[] = [];
         let webInput: number | undefined;
@@ -135,7 +137,7 @@ export const Route = createFileRoute("/api/chat")({
             return json(429, "Web search is unavailable within the current spending allowance.");
           }
           try {
-            const web = await searchPublicInformation(query, openaiKey, request.signal);
+            const web = await searchPublicInformation(query, openaiKey, request.signal, true);
             evidence = webEvidence(web.text);
             sources = web.sources;
             webInput = web.input;

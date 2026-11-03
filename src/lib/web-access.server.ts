@@ -12,7 +12,7 @@ export async function finishWeb(client: SupabaseClient<Database>, id: string, gu
   if (error) console.error("Web usage finalization failed");
 }
 
-/** Dashboard supplies fixed templates; homepage supplies a validated public question, never stored context/history. */
+/** Homepage and Dashboard supply a validated public question, never stored context/history. */
 export async function searchPublicInformation(query: string, apiKey: string, signal: AbortSignal, generalTopics = false) {
   const { generateText } = await import("ai");
   const { createOpenAI } = await import("@ai-sdk/openai");
