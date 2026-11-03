@@ -1,7 +1,7 @@
 # Fin3a AI — Roadmap
 
 Product: AI-first personal finance platform under Top Floor.
-Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
+Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with NGN/USD ledgers, crypto deposit addresses, Breet planned). Still excluded: trading/exchange features. Never fake addresses or simulated transactions.
 
 ## Phase 1 — Foundation (current)
 - [x] Dual phone/email authentication screens, registration, recovery and responsive validation tests
@@ -95,3 +95,6 @@ Excluded forever: stablecoins, crypto, wallets, trading, payment processing.
 - [ ] Deployment/environment/HTTPS/redirect/provider/storage/backup checks and operational documentation
 - [ ] Truthful Phase 5 completion report; do not declare readiness with critical unresolved issues
 - [ ] Reports, notifications, CSV export, data deletion, QA, beta
+- [x] Accounts page: NGN/USD ledger accounts, derived balances, crypto address section (provider not connected), nav placement after Dashboard
+- [ ] Breet API integration: real credentials, webhook signature verification, idempotency, end-to-end transaction testing before claiming complete
+- [ ] Enable Deposit/Withdraw/Transfer actions once provider connected
