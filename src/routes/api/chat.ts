@@ -134,6 +134,7 @@ export const Route = createFileRoute("/api/chat")({
           model: openai.responses(MODEL),
           system: `${ASSISTANT_INSTRUCTIONS}\n\nUSER FINANCIAL SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
           messages: await convertToModelMessages(history),
+          tools: { web_search: openai.tools.webSearch({ searchContextSize: "low" }) },
           abortSignal: request.signal,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
           onFinish: ({ totalUsage }) => finishAiUsage(supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
