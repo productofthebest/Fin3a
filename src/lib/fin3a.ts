@@ -24,6 +24,7 @@ export interface Transaction {
   occurred_at: string;
   status: TxStatus;
   source: string;
+  currency?: string | null;
   recurring_bill_id: string | null;
   notes: string | null;
   created_at: string;

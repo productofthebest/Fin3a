@@ -18,9 +18,11 @@ import { dashboardQuery, settingsQuery } from "@/lib/queries";
 import { formatMoney, MONTH_NAMES } from "@/lib/fin3a";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { RecordCurrencySelect } from "@/components/record-currency-select";
 import { pageMeta } from "@/lib/page-meta";
 
 const searchSchema = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
   offset: z.coerce.number().int().min(-24).max(0).optional(),
 });
 
@@ -64,8 +66,8 @@ function SummaryCard({ label, value, className }: { label: string; value: string
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { offset = 0 } = Route.useSearch();
-  const { data } = useSuspenseQuery(dashboardQuery(offset));
+  const { offset = 0, currency: selectedCurrency } = Route.useSearch();
+  const { data } = useSuspenseQuery(dashboardQuery(offset, selectedCurrency));
   const currency = data.currency;
 
   const months = data.months.map((m) => ({
@@ -90,7 +92,7 @@ function DashboardPage() {
             size="icon"
             aria-label="Previous month"
             disabled={offset <= -24}
-            onClick={() => navigate({ to: "/spending", search: { offset: offset - 1 } })}
+            onClick={() => navigate({ to: "/spending", search: { offset: offset - 1, currency } })}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -100,13 +102,14 @@ function DashboardPage() {
             size="icon"
             aria-label="Next month"
             disabled={offset >= 0}
-            onClick={() => navigate({ to: "/spending", search: { offset: offset + 1 } })}
+            onClick={() => navigate({ to: "/spending", search: { offset: offset + 1, currency } })}
           >
             <ChevronRight className="size-4" />
           </Button>
         </div>
       </div>
 
+      <div className="mt-4"><RecordCurrencySelect value={currency} currencies={data.currencies} onChange={currency => navigate({ to: "/spending", search: { offset, currency } })} /></div>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="Recorded net cash flow" value={formatMoney(data.availableFunds, currency)} />
         <SummaryCard label="Pending" value={formatMoney(data.pendingAmount, currency)} />
@@ -197,8 +200,7 @@ function DashboardPage() {
           <CardContent className="space-y-4">
             {data.categoryBreakdown.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No spending recorded this month yet. Add your first transaction from the Activity
-                page.
+                No spending recorded in this currency this month.
               </p>
             ) : (
               data.categoryBreakdown.map((c) => (
@@ -244,7 +246,7 @@ function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-medium">{formatMoney(Number(bill.amount), currency)}</span>
+                    <span className="text-sm font-medium">{`${Number(bill.amount).toLocaleString()} · Currency unconfirmed`}</span>
                   </li>
                 ))}
               </ul>

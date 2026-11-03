@@ -8,7 +8,9 @@ import { AppShell } from "@/components/app-shell";
 import { categoriesQuery, settingsQuery, transactionPageQuery } from "@/lib/queries";
 import { HISTORY_PAGE_SIZE, pageCount } from "@/lib/transaction-history";
 import { deleteTransaction } from "@/lib/dashboard.functions";
-import { formatMoney, TX_STATUS_LABELS, type TxType } from "@/lib/fin3a";
+import { recordMoney, recordCurrencies } from "@/lib/record-currencies";
+import { RecordCurrencySelect } from "@/components/record-currency-select";
+import { TX_STATUS_LABELS, type TxType } from "@/lib/fin3a";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,11 +46,12 @@ function ActivityPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
-  const currency = settings?.currency ?? "USD";
+  const [currency, setCurrency] = useState("all");
   const { data: categories } = useSuspenseQuery(categoriesQuery());
 
   const filters = {
     page,
+    ...(currency !== "all" ? { currency } : {}),
     ...(type !== "all" ? { type } : {}),
     ...(categoryId !== "all" ? { categoryId } : {}),
     ...(from ? { from } : {}),
@@ -60,7 +63,7 @@ function ActivityPage() {
   const total = result?.total ?? 0;
   const pages = pageCount(total, HISTORY_PAGE_SIZE);
   const resetPage = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(1); };
-  const hasFilters = type !== "all" || categoryId !== "all" || from || to || search;
+  const hasFilters = currency !== "all" || type !== "all" || categoryId !== "all" || from || to || search;
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTransaction({ data: { id } }),
@@ -83,6 +86,7 @@ function ActivityPage() {
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
+        <RecordCurrencySelect value={currency} currencies={["all", ...recordCurrencies(settings?.currency ?? "USD", transactions ?? [])]} onChange={resetPage(setCurrency)} />
         <div className="flex gap-1 rounded-lg bg-muted p-1">
           {(["all", "income", "expense"] as const).map((t) => (
             <button
@@ -119,7 +123,7 @@ function ActivityPage() {
         <Input type="date" value={from} max={to || undefined} onChange={(e) => resetPage(setFrom)(e.target.value)} className="w-40" aria-label="From date" />
         <Input type="date" value={to} min={from || undefined} onChange={(e) => resetPage(setTo)(e.target.value)} className="w-40" aria-label="To date" />
         {hasFilters ? (
-          <Button variant="ghost" size="sm" onClick={() => { setType("all"); setSearch(""); setCategoryId("all"); setFrom(""); setTo(""); setPage(1); }}>Clear</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setCurrency("all"); setType("all"); setSearch(""); setCategoryId("all"); setFrom(""); setTo(""); setPage(1); }}>Clear</Button>
         ) : null}
       </div>
 
@@ -161,7 +165,7 @@ function ActivityPage() {
                   )}
                 >
                   {tx.type === "income" ? "+" : "−"}
-                  {formatMoney(Number(tx.amount), currency)}
+                  {recordMoney(Number(tx.amount), tx.currency)}
                 </span>
                 <Button
                   variant="ghost"

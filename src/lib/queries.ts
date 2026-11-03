@@ -11,10 +11,10 @@ export const settingsQuery = () =>
     queryFn: () => getSettings(),
   });
 
-export const dashboardQuery = (offset: number) =>
+export const dashboardQuery = (offset: number, currency?: string) =>
   queryOptions({
-    queryKey: ["dashboard", offset],
-    queryFn: () => getDashboard({ data: { offset } }),
+    queryKey: ["dashboard", offset, currency ?? "preferred"],
+    queryFn: () => getDashboard({ data: { offset, currency } }),
   });
 
 export const transactionsQuery = (filters: { type?: "income" | "expense"; search?: string } = {}) =>
@@ -23,7 +23,7 @@ export const transactionsQuery = (filters: { type?: "income" | "expense"; search
     queryFn: () => listTransactions({ data: filters }),
   });
 
-export type HistoryFilters = { page: number; type?: "income" | "expense"; categoryId?: string; from?: string; to?: string; search?: string };
+export type HistoryFilters = { page: number; currency?: string; type?: "income" | "expense"; categoryId?: string; from?: string; to?: string; search?: string };
 export const transactionPageQuery = (f: HistoryFilters) =>
   queryOptions({
     queryKey: ["transactions", "page", f],
