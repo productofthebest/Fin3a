@@ -203,6 +203,39 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
   const [scanningPhoto, setScanningPhoto] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // QR payment detection state — detection never pays; it only shows a review card.
+  const [qrScanOpen, setQrScanOpen] = useState(false);
+  const [qrCard, setQrCard] = useState<
+    | { kind: "request"; details: QrRequestDetails }
+    | { kind: "profile"; fin3aId: string }
+    | { kind: "external"; url: string }
+    | { kind: "invalid" }
+    | null
+  >(null);
+
+  async function handleQrScan(text: string) {
+    const parsed = parseScannedQr(text);
+    if (parsed.kind === "fin3a_request") {
+      setQrScanOpen(false);
+      try {
+        const details = await resolveQrRequest({ data: { requestId: parsed.requestId } });
+        setQrCard({ kind: "request", details });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Could not read this payment request");
+      }
+    } else if (parsed.kind === "fin3a_profile") {
+      setQrScanOpen(false);
+      void logQrScan({ data: { kind: "fin3a_profile", detail: parsed.fin3aId } });
+      setQrCard({ kind: "profile", fin3aId: parsed.fin3aId });
+    } else if (parsed.kind === "external") {
+      void logQrScan({ data: { kind: "external", detail: parsed.url } });
+      setQrCard({ kind: "external", url: parsed.url });
+    } else {
+      void logQrScan({ data: { kind: "invalid" } });
+      setQrCard({ kind: "invalid" });
+    }
+  }
+
   async function handleCameraCapture(file: File) {
     if (file.size > 15 * 1024 * 1024) {
       toast.error("Image file is larger than 15 MB.");
