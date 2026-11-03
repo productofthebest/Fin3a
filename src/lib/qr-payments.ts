@@ -32,10 +32,11 @@ export function parseScannedQr(raw: string): ScannedQr {
 
   // Path-only payloads (e.g. generated in tests or copied without origin).
   const pathMatch = text.match(/^\/pay\/(qr\/)?([A-Za-z0-9-]+)\/?$/);
-  if (pathMatch) {
+  const pathId = pathMatch?.[2];
+  if (pathMatch && pathId) {
     return pathMatch[1]
-      ? { kind: "fin3a_request", requestId: pathMatch[2] }
-      : { kind: "fin3a_profile", fin3aId: pathMatch[2].toUpperCase() };
+      ? { kind: "fin3a_request", requestId: pathId }
+      : { kind: "fin3a_profile", fin3aId: pathId.toUpperCase() };
   }
 
   let url: URL;
@@ -49,11 +50,12 @@ export function parseScannedQr(raw: string): ScannedQr {
   }
 
   const segments = url.pathname.split("/").filter(Boolean);
-  if (segments[0] === "pay" && segments.length === 2 && FIN3A_ID_RE.test(segments[1].toUpperCase())) {
-    return { kind: "fin3a_profile", fin3aId: segments[1].toUpperCase() };
+  const [seg0, seg1, seg2] = segments;
+  if (seg0 === "pay" && segments.length === 2 && seg1 && FIN3A_ID_RE.test(seg1.toUpperCase())) {
+    return { kind: "fin3a_profile", fin3aId: seg1.toUpperCase() };
   }
-  if (segments[0] === "pay" && segments[1] === "qr" && segments.length === 3 && UUID_RE.test(segments[2])) {
-    return { kind: "fin3a_request", requestId: segments[2] };
+  if (seg0 === "pay" && seg1 === "qr" && segments.length === 3 && seg2 && UUID_RE.test(seg2)) {
+    return { kind: "fin3a_request", requestId: seg2 };
   }
   return { kind: "external", url: text.slice(0, 300) };
 }

@@ -108,7 +108,12 @@ function Page() {
     setCreating(true);
     try {
       const { requestId } = await createQrRequest({
-        data: { amount: parsedAmount, currency, description: description.trim() || undefined, expiresInMinutes: expiry },
+        data: {
+          amount: parsedAmount,
+          currency,
+          ...(description.trim() ? { description: description.trim() } : {}),
+          expiresInMinutes: expiry,
+        },
       });
       setNewRequestId(requestId);
       setAmount("");

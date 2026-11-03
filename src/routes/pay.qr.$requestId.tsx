@@ -42,7 +42,7 @@ function Page() {
     setBusy(true);
     try {
       const { transferId } = await payQrRequest({
-        data: { requestId, amount: details?.amount != null ? undefined : Number(amount) },
+        data: details?.amount != null ? { requestId } : { requestId, amount: Number(amount) },
       });
       setPaidTransferId(transferId);
     } catch (e) {

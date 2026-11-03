@@ -23,7 +23,8 @@ export const createQrRequest = createServerFn({ method: "POST" })
       throw new Error("Enter a valid amount");
     }
     const { data: id, error } = await context.supabase.rpc("create_qr_request", {
-      _amount: data.amount,
+      // SQL accepts NULL (payer chooses amount); the generated type marks it required.
+      _amount: data.amount as number,
       _currency: data.currency,
       ...(data.description?.trim() ? { _description: data.description.trim() } : {}),
       ...(data.expiresInMinutes ? { _expires_in_minutes: data.expiresInMinutes } : {}),
@@ -38,7 +39,7 @@ export const resolveQrRequest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc("resolve_qr_request", { _request_id: data.requestId });
     if (error) throw new Error(error.message);
-    return result as QrRequestDetails;
+    return result as unknown as QrRequestDetails;
   });
 
 export const payQrRequest = createServerFn({ method: "POST" })
@@ -50,7 +51,8 @@ export const payQrRequest = createServerFn({ method: "POST" })
     }
     const { data: result, error } = await context.supabase.rpc("pay_qr_request", {
       _request_id: data.requestId,
-      _amount: data.amount ?? null,
+      // SQL accepts NULL for fixed-amount requests; the generated type marks it required.
+      _amount: (data.amount ?? null) as number,
       _idempotency_key: crypto.randomUUID(),
     });
     if (error) throw new Error(error.message);
