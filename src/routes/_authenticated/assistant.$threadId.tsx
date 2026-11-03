@@ -6,7 +6,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  ArrowRight, Bell, Camera, FileText, Loader2, LogOut, MessageSquarePlus, Mic,
+  ArrowRight, Bell, Camera, FileText, Loader2, LogOut, Mic,
   PiggyBank, QrCode, Search, Send, Settings, Square, Target, TrendingUp, Wallet, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -95,20 +95,12 @@ function AssistantPage() {
     await navigate({ to: "/auth", replace: true });
   }
 
-  const conversationControls = (
-          <div className="order-2 mt-3 flex min-w-0 items-center justify-end gap-2" aria-label="Conversation controls">
-            <Button type="button" size="sm" onClick={newThread} className="h-8 shrink-0 gap-1.5 rounded-full px-3 text-xs">
-              <MessageSquarePlus className="size-3.5" /> New
-            </Button>
-          </div>
-  );
-
   return (
     <AppShell>
     <div className="mx-auto max-w-6xl pb-8 sm:pb-10">
 
           {loaded ? (
-            <ChatWindow key={threadId} threadId={threadId} initialMessages={loaded.messages as UIMessage[]} name={name} conversationControls={conversationControls} />
+            <ChatWindow key={threadId} threadId={threadId} initialMessages={loaded.messages as UIMessage[]} name={name} />
           ) : (
             <div className="mt-8 rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">Conversation not found.</div>
           )}
@@ -117,7 +109,7 @@ function AssistantPage() {
   );
 }
 
-function ChatWindow({ threadId, initialMessages, name, conversationControls }: { threadId: string; initialMessages: UIMessage[]; name?: string | undefined; conversationControls: ReactNode }) {
+function ChatWindow({ threadId, initialMessages, name }: { threadId: string; initialMessages: UIMessage[]; name?: string | undefined }) {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -396,7 +388,6 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
       ) : null}
       {qrScanOpen ? <QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /> : null}
 
-      {conversationControls}
       <div className={cn("order-2 mt-2 min-w-0", !empty && "overflow-hidden rounded-[22px] border border-accent/40 bg-card shadow-[var(--shadow-lavender)]")} aria-label="Fin3a assistant chat">
       {!empty ? (
         <div ref={chatScrollRef} role="log" aria-label="Fin3a conversation" className="max-h-[420px] min-h-[220px] space-y-4 overflow-y-auto overscroll-contain px-4 py-6 sm:px-5">
