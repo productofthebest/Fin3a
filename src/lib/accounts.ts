@@ -51,7 +51,7 @@ export interface AccountActivityRow extends LedgerEntry {
 // currency, never references or provider details.
 export function summarizeAccountActivity(rows: readonly AccountActivityRow[], today: string) {
   const month = today.slice(0, 7);
-  const out: Record<string, { balance: AccountBalance; thisMonth: Record<LedgerKind, { count: number; completedTotal: number }>; pendingCount: number; failedCount: number; totalEntries: number }> = {};
+  const out = {} as Record<AccountCurrency, { balance: AccountBalance; thisMonth: Record<LedgerKind, { count: number; completedTotal: number }>; pendingCount: number; failedCount: number; totalEntries: number }>;
   for (const c of ACCOUNT_CURRENCIES) {
     const list = rows.filter((r) => r.currency === c);
     const thisMonth = { deposit: { count: 0, completedTotal: 0 }, withdrawal: { count: 0, completedTotal: 0 }, transfer_in: { count: 0, completedTotal: 0 }, transfer_out: { count: 0, completedTotal: 0 } };
