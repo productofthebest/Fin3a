@@ -57,9 +57,6 @@ function Landing() {
           <Zap className="size-4 fill-primary" />
           Powered by Top Floor
         </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Better decisions. A stronger tomorrow.
-        </p>
       </div>
 
       <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
