@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { createThread, listThreads } from "@/lib/assistant.functions";
+import { createThread } from "@/lib/assistant.functions";
 import { settingsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/assistant/")({
@@ -17,8 +17,7 @@ export const Route = createFileRoute("/_authenticated/assistant/")({
   loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());
     if (!settings?.onboarding_completed) throw redirect({ to: "/onboarding" });
-    const threads = await listThreads();
-    const target = threads[0] ?? (await createThread());
+    const target = await createThread();
     throw redirect({ to: "/assistant/$threadId", params: { threadId: target.id }, replace: true });
   },
 });
