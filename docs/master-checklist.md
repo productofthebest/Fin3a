@@ -169,6 +169,7 @@ All migrations so far are additive (new tables/columns/indexes/functions). No de
 
 ## QRP — QR Payments, Scanner & AI Camera Detection (added 3 Nov 2026)
 Account panel sizing (3 Nov): both NGN and USD panels use the assistant composer's full content width, stacked vertically. Signed-in measurement: each panel and composer 1104px at 1280px desktop, 361px at 393px phone; no horizontal overflow. Screenshots inspected, 190/190 regression tests pass, preview build OK. No financial writes or provider calls; money-movement verification remains unchanged.
+Account panel sizing update (3 Nov, owner decision): NGN and USD panels now sit side by side, together filling the composer/search-bar width (sm:grid-cols-2). Verified signed in at 1280px desktop (side by side) and 393px phone (stacked, each panel = composer width); no overflow, balances untouched.
 Dashboard layout update (3 Nov): implementation verified signed in at 1280×1800 and 393×706. Greeting starts beneath shared navigation; conversation selector and New action are immediately above/right of the composer, with questions below. Both viewports have no horizontal page overflow. Conversation selection verified using an existing empty thread; no paid AI request or financial-record changes. Regression suite: 190/190 passed; preview build OK. AI response verification not repeated for this presentation-only change.
 | Ref | Requirement | Impl | Test | Evidence | Dependencies |
 |---|---|---|---|---|---|
