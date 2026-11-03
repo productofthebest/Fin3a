@@ -26,7 +26,7 @@ function Page() {
       <h1 className="font-display text-3xl font-bold">Accounts</h1>
       <p className="mt-2 text-sm text-muted-foreground">Your NGN and USD balances, activity and deposit addresses</p>
 
-      <div className="mt-6 grid grid-cols-1 gap-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {data.accounts.map((account) => (
           <section key={account.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
