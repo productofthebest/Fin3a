@@ -10,6 +10,7 @@ import {
   type Transaction,
 } from "./fin3a";
 import { calculateTotals, completedRecords, roundMoney, validFinancialDate } from "./financial-calculations";
+import { recordCurrencies } from "./record-currencies";
 import { ownedFinancialRecords } from "./financial-records.server";
 
 const CATEGORY_SELECT = "id, name, icon";
@@ -20,6 +21,7 @@ function monthStart(offset: number): string {
 
 export interface DashboardData {
   currency: string;
+  currencies: string[];
   months: { key: string; label: string; income: number; spending: number }[];
   selectedMonth: { key: string; label: string; income: number; spending: number; offset: number };
   categoryBreakdown: { name: string; icon: string; total: number }[];
@@ -32,7 +34,7 @@ export interface DashboardData {
 
 export const getDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ offset: z.number().int().min(-24).max(0).default(0) }).parse(input))
+  .inputValidator((input) => z.object({ offset: z.number().int().min(-24).max(0).default(0), currency: z.string().regex(/^[A-Z]{3}$/).optional() }).parse(input))
   .handler(async ({ data, context }): Promise<DashboardData> => {
     const { supabase, userId } = context;
     const today = new Date().toISOString().slice(0, 10);
@@ -57,7 +59,9 @@ export const getDashboard = createServerFn({ method: "GET" })
     if (settingsError) throw new Error(settingsError.message);
     if (billsError) throw new Error(billsError.message);
 
-    const currency = settings?.currency ?? "USD";
+    const currencies = recordCurrencies(settings?.currency ?? "USD", allTransactions);
+    const currency = data.currency ?? settings?.currency ?? "USD";
+    if (!currencies.includes(currency)) throw new Error("Choose an available record currency.");
     const transactions = completedRecords(allTransactions.filter(t=>t.occurred_at>=from && t.occurred_at<end), currency, today);
 
     // Monthly cash-flow buckets for the nine-month window.
@@ -115,6 +119,7 @@ export const getDashboard = createServerFn({ method: "GET" })
 
     return {
       currency,
+      currencies,
       months: months.map((m) => ({ ...m, income: roundMoney(m.income, currency), spending: roundMoney(m.spending, currency), label: m.key.slice(5) })),
       selectedMonth: { ...selectedMonth, income: roundMoney(selectedMonth.income, currency), spending: roundMoney(selectedMonth.spending, currency) },
       categoryBreakdown,
@@ -180,6 +185,7 @@ export const listTransactionPage = createServerFn({ method: "GET" })
         page: z.number().int().min(1).max(100_000).default(1),
         pageSize: z.number().int().min(1).max(HISTORY_MAX_PAGE_SIZE).default(HISTORY_PAGE_SIZE),
         type: z.enum(["income", "expense"]).optional(),
+        currency: z.string().regex(/^[A-Z]{3}$/).optional(),
         categoryId: z.union([z.string().uuid(), z.literal("uncategorized")]).optional(),
         from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -198,6 +204,7 @@ export const listTransactionPage = createServerFn({ method: "GET" })
       .order("id", { ascending: false })
       .range(from, to);
     if (data.type) query = query.eq("type", data.type);
+    if (data.currency) query = query.eq("currency", data.currency);
     if (data.categoryId === "uncategorized") query = query.is("category_id", null);
     else if (data.categoryId) query = query.eq("category_id", data.categoryId);
     if (data.from) query = query.gte("occurred_at", data.from);

@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { PlanningWorkspace } from "@/components/planning-workspace";
 import { planningQuery } from "./planning";
+import { z } from "zod";
+import { RecordCurrencySelect } from "@/components/record-currency-select";
 import { pageMeta } from "@/lib/page-meta";
-export const Route=createFileRoute("/_authenticated/goals")({head:()=>pageMeta("Financial goals","Track your Fin3a savings targets, recorded progress and estimated goal contributions."),loader:({context})=>context.queryClient.ensureQueryData(planningQuery()),errorComponent:()=> <div className="p-8"><p role="alert">Saved goals become available when this draft is accepted.</p><Link to="/analysis" className="text-primary">Return to analysis</Link></div>,notFoundComponent:()=> <p>Goals not found.</p>,component:Page});
-function Page(){const {data}=useSuspenseQuery(planningQuery());return <AppShell><h1 className="font-display text-3xl font-bold">Financial goals</h1><p className="mt-2 text-sm text-muted-foreground">{data.currency} · Recorded progress and estimated contributions</p><PlanningWorkspace data={data} view="goals"/></AppShell>;}
+export const Route=createFileRoute("/_authenticated/goals")({validateSearch:z.object({currency:z.string().regex(/^[A-Z]{3}$/).optional()}),loaderDeps:({search})=>search,head:()=>pageMeta("Financial goals","Track your Fin3a savings targets, recorded progress and estimated goal contributions."),loader:({context,deps})=>context.queryClient.ensureQueryData(planningQuery(deps.currency)),errorComponent:()=> <div className="p-8"><p role="alert">Saved goals become available when this draft is accepted.</p><Link to="/analysis" className="text-primary">Return to analysis</Link></div>,notFoundComponent:()=> <p>Goals not found.</p>,component:Page});
+function Page(){const navigate=useNavigate();const {currency}=Route.useSearch();const {data}=useSuspenseQuery(planningQuery(currency));return <AppShell><h1 className="font-display text-3xl font-bold">Financial goals</h1><p className="mt-2 text-sm text-muted-foreground">{data.currency} · Recorded progress and estimated contributions</p><div className="mt-4"><RecordCurrencySelect value={data.currency} currencies={data.currencies} onChange={currency=>navigate({to:"/goals",search:{currency}})}/></div><PlanningWorkspace key={data.currency} data={data} view="goals"/></AppShell>;}
