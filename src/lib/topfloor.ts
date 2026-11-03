@@ -6,7 +6,7 @@ const IDENTITY_PATTERNS = [
   /\btopfloorr?\b/i,
   /who (?:owns?|founded|created|made|built|is behind|runs?) (?:fin3a|this app|this)/i,
   /(?:owner|founder|parent company|company) (?:of|behind) (?:fin3a|this app)/i,
-  /is fin3a (?:independent|owned|a (?:subsidiary|product|brand))/i,
+  /is fin3a (?:an? )?(?:independent|owned|subsidiary|product|brand)/i,
   /fin3a.{0,50}(?:owned|ownership|parent|subsidiary)/i,
   /(?:what|which) company (?:is )?(?:behind|owns?) (?:fin3a|this)/i,
 ];
