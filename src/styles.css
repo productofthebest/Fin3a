@@ -169,3 +169,16 @@
   font-family: "Manrope", "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 .theme-lavender h1, .theme-lavender h2 { font-family: "Manrope", "DM Sans", sans-serif; }
+
+/* Wallet dimensions come from the rendered Split Bill reference, including wrapping. */
+.wallet-sized-card {
+  width: min(100%, var(--wallet-card-width, 100%));
+  height: var(--wallet-card-height, auto);
+  padding: var(--wallet-card-padding, calc(var(--spacing) * 5));
+  border-radius: var(--wallet-card-radius, var(--radius-xl));
+}
+.wallet-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wallet-card-gap, calc(var(--spacing) * 3));
+}

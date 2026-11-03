@@ -4,6 +4,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
+import { useEffect, useRef } from "react";
+import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
@@ -20,20 +22,44 @@ const fmt = (currency: string, amount: number) =>
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
+  const splitCardRef = useRef<HTMLAnchorElement>(null);
+  const cryptoGridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const reference = splitCardRef.current;
+    const grid = cryptoGridRef.current;
+    if (!reference || !grid) return;
+    const sync = () => {
+      const size = reference.getBoundingClientRect();
+      const style = getComputedStyle(reference);
+      grid.style.setProperty("--wallet-card-width", `${size.width}px`);
+      grid.style.setProperty("--wallet-card-height", `${size.height}px`);
+      grid.style.setProperty("--wallet-card-padding", style.padding);
+      grid.style.setProperty("--wallet-card-radius", style.borderRadius);
+      grid.style.setProperty("--wallet-card-gap", style.gap);
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(reference);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <AppShell>
       <h1 className="font-display text-3xl font-bold">Accounts</h1>
       <p className="mt-2 text-sm text-muted-foreground">Your NGN and USD balances, activity and deposit addresses</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4">
         {data.accounts.map((account) => (
-          <section key={account.id} className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <section key={account.id} className="relative min-w-0" aria-label={`${account.currency} balance card`}>
+            <AssistantComposerSizeReference />
+            <div className="absolute inset-0 overflow-hidden rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5">
+            <div className="h-full min-w-0 overflow-y-auto overscroll-contain" tabIndex={0} role="region" aria-label={`${account.currency} balance and activity`}>
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold">{account.currency} Account</h2>
               <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{account.currency}</span>
             </div>
-            <p className="mt-3 font-display text-3xl font-bold">{fmt(account.currency, account.balance.available)}</p>
+            <p className="mt-3 break-all font-display text-3xl font-bold">{fmt(account.currency, account.balance.available)}</p>
             <p className="text-xs text-muted-foreground">Available balance</p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg border border-border/70 p-3">
@@ -60,6 +86,8 @@ function Page() {
                 </ul>
               )}
             </div>
+            </div>
+            </div>
           </section>
         ))}
       </div>
@@ -79,6 +107,7 @@ function Page() {
         </Link>
         <Link
           to="/accounts/split"
+          ref={splitCardRef}
           className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:bg-secondary/50"
         >
           <Users className="mt-0.5 size-5 shrink-0 text-primary" />
@@ -129,11 +158,12 @@ function Page() {
             permanently lose your funds.
           </p>
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div ref={cryptoGridRef} className="wallet-card-grid mt-4 grid gap-4 sm:grid-cols-2">
           {data.cryptoAssets.map((asset) => (
-            <div key={asset.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
+            <div key={asset.id} className="wallet-sized-card min-w-0 overflow-hidden border border-border bg-card shadow-sm" aria-label={`${asset.name} wallet card`}>
+              <div className="wallet-card-content h-full min-w-0 overflow-y-auto overscroll-contain" tabIndex={0} role="region" aria-label={`${asset.name} wallet details`}>
+              <div className="flex min-w-0 items-center justify-between gap-3">
+                <div className="min-w-0">
                   <p className="font-medium">{asset.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {asset.symbol} · {asset.network}
@@ -142,7 +172,7 @@ function Page() {
                 <span className="rounded-md bg-secondary px-2 py-1 text-xs font-medium">{asset.symbol}</span>
               </div>
               {asset.address ? (
-                <div className="mt-3">
+                <div>
                   <p className="break-all rounded-md bg-secondary p-2 font-mono text-xs">{asset.address.address}</p>
                   <div className="mt-2 flex gap-2">
                     <button type="button" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
@@ -154,7 +184,7 @@ function Page() {
                   </div>
                 </div>
               ) : (
-                <p className="mt-3 rounded-md bg-secondary p-2 text-xs text-muted-foreground">
+                <p className="rounded-md bg-secondary p-2 text-xs text-muted-foreground">
                   Deposit address not available yet — the crypto provider is not connected. No address is shown until a
                   real one is generated for your account.
                 </p>
@@ -164,6 +194,7 @@ function Page() {
                   Minimum deposit: {asset.min_deposit} {asset.symbol}
                 </p>
               ) : null}
+              </div>
             </div>
           ))}
         </div>

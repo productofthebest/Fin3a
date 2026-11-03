@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 
 import { AssistantUploadMenu } from "@/components/assistant-upload-menu";
+import { AssistantComposerFrame } from "@/components/assistant-composer-frame";
 import { supabase } from "@/integrations/supabase/client";
 import { createThread, deleteThread, getThreadMessages, listThreads } from "@/lib/assistant.functions";
 import { analyzeDocument, createDocument } from "@/lib/documents.functions";
@@ -467,9 +468,9 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
       {qrScanOpen ? <QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /> : null}
 
       {conversationControls}
-      <form
+      <AssistantComposerFrame
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="order-2 mt-2 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
+        className="order-2 mt-2"
       >
         <input
           ref={cameraInputRef}
@@ -536,7 +537,7 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
           </div>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">Answers from your own records · not financial advice</p>
-      </form>
+      </AssistantComposerFrame>
     </section>
   );
 }
