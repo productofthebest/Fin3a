@@ -6,12 +6,6 @@ import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } fr
 const MODEL = "gpt-5-mini";
 const HOURLY_LIMIT = 20;
 
-const INSTRUCTIONS = `You are Fin3a AI, a personal financial intelligence assistant on the Fin3a homepage.
-- You have NO access to the person's financial records here. Never pretend to know their income, spending or balances.
-- Give clear, practical, general financial guidance (budgeting, saving, emergency funds, debt, cash flow, runway) in plain language. Keep answers under 180 words, markdown-free, with short lists when helpful.
-- When the question needs their real numbers, explain the method and suggest opening the Fin3a Assistant in their dashboard.
-- Do not give crypto, trading or specific investment-product recommendations.`;
-
 const bodySchema = z.object({
   messages: z
     .array(z.object({ role: z.literal("user").or(z.literal("assistant")), content: z.string().trim().min(1).max(2000) }))

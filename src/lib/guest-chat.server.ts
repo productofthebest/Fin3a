@@ -23,7 +23,7 @@ export async function guestChatResponse(request: Request) {
   const usageId = admission.usage_id;
   const finish = async (ok: boolean, input?: number, output?: number) => {
     // Null counts keep the reservation rather than turning an uncertain paid request into zero cost.
-    const { error: finishError } = await supabaseAdmin.rpc("ai_guest_finish", { _id: usageId, _ok: ok, _input: input ?? null, _output: output ?? null });
+    const { error: finishError } = await supabaseAdmin.rpc("ai_guest_finish", { _id: usageId, _ok: ok, _input: input ?? -1, _output: output ?? -1 });
     if (finishError) console.error("Guest AI usage finalization failed");
   };
   try {
