@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
@@ -109,14 +109,8 @@ function AssistantPage() {
 
   const current = threads.find((t) => t.id === threadId);
 
-  return (
-    <AppShell>
-    <div className="px-0 py-2">
-      <div className="mx-auto max-w-6xl">
-        <div className="mx-auto max-w-6xl px-4 pb-8 pt-6 sm:px-6 sm:pb-10">
-
-          {/* Conversations */}
-          <div className="mt-5 flex items-center justify-end gap-2">
+  const conversationControls = (
+          <div className="order-2 mt-3 flex min-w-0 items-center justify-end gap-2" aria-label="Conversation controls">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex min-w-0 max-w-[60%] items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground">
                 <History className="size-3.5 shrink-0" /><span className="truncate">{current?.title ?? "Conversations"}</span><ChevronDown className="size-3 shrink-0" />
@@ -127,31 +121,34 @@ function AssistantPage() {
                     <DropdownMenuItem asChild className={cn("flex-1 truncate", t.id === threadId && "bg-secondary")}>
                       <Link to="/assistant/$threadId" params={{ threadId: t.id }}><span className="truncate">{t.title}</span></Link>
                     </DropdownMenuItem>
-                    <button type="button" aria-label="Delete conversation" onClick={() => removeThread(t.id)} className="rounded p-1.5 text-muted-foreground hover:text-destructive">
+                    <Button variant="ghost" size="icon" type="button" aria-label="Delete conversation" onClick={() => removeThread(t.id)} className="size-7 text-muted-foreground hover:text-destructive">
                       <Trash2 className="size-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <button type="button" onClick={newThread} className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
+            <Button type="button" size="sm" onClick={newThread} className="h-8 shrink-0 gap-1.5 rounded-full px-3 text-xs">
               <MessageSquarePlus className="size-3.5" /> New
-            </button>
+            </Button>
           </div>
+  );
+
+  return (
+    <AppShell>
+    <div className="mx-auto max-w-6xl pb-8 sm:pb-10">
 
           {loaded ? (
-            <ChatWindow key={threadId} threadId={threadId} initialMessages={loaded.messages as UIMessage[]} name={name} />
+            <ChatWindow key={threadId} threadId={threadId} initialMessages={loaded.messages as UIMessage[]} name={name} conversationControls={conversationControls} />
           ) : (
             <div className="mt-8 rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">Conversation not found.</div>
           )}
-        </div>
-      </div>
     </div>
     </AppShell>
   );
 }
 
-function ChatWindow({ threadId, initialMessages, name }: { threadId: string; initialMessages: UIMessage[]; name?: string | undefined }) {
+function ChatWindow({ threadId, initialMessages, name, conversationControls }: { threadId: string; initialMessages: UIMessage[]; name?: string | undefined; conversationControls: ReactNode }) {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -469,9 +466,10 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
       ) : null}
       {qrScanOpen ? <QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /> : null}
 
+      {conversationControls}
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="order-2 mt-4 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
+        className="order-2 mt-2 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
       >
         <input
           ref={cameraInputRef}
