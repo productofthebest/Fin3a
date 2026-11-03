@@ -4,8 +4,6 @@ import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
-import { useEffect, useRef } from "react";
-import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
@@ -22,27 +20,6 @@ const fmt = (currency: string, amount: number) =>
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
-  const splitCardRef = useRef<HTMLAnchorElement>(null);
-  const cryptoGridRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const reference = splitCardRef.current;
-    const grid = cryptoGridRef.current;
-    if (!reference || !grid) return;
-    const sync = () => {
-      const size = reference.getBoundingClientRect();
-      const style = getComputedStyle(reference);
-      grid.style.setProperty("--wallet-card-width", `${size.width}px`);
-      grid.style.setProperty("--wallet-card-height", `${size.height}px`);
-      grid.style.setProperty("--wallet-card-padding", style.padding);
-      grid.style.setProperty("--wallet-card-radius", style.borderRadius);
-      grid.style.setProperty("--wallet-card-gap", style.gap);
-    };
-    sync();
-    const observer = new ResizeObserver(sync);
-    observer.observe(reference);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <AppShell>
@@ -51,10 +28,7 @@ function Page() {
 
       <div className="mt-6 grid gap-4">
         {data.accounts.map((account) => (
-          <section key={account.id} className="relative min-w-0" aria-label={`${account.currency} balance card`}>
-            <AssistantComposerSizeReference />
-            <div className="absolute inset-0 overflow-hidden rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5">
-            <div className="h-full min-w-0 overflow-y-auto overscroll-contain" tabIndex={0} role="region" aria-label={`${account.currency} balance and activity`}>
+          <section key={account.id} className="min-w-0 rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5" aria-label={`${account.currency} balance card`}>
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-semibold">{account.currency} Account</h2>
               <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{account.currency}</span>
@@ -63,11 +37,11 @@ function Page() {
             <p className="text-xs text-muted-foreground">Available balance</p>
             <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
               <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-3 py-1">
-                <p className="text-xs text-muted-foreground">Pending</p>
+                <p className="text-xs text-muted-foreground">Pending Balance</p>
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.pending)}</p>
               </div>
               <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-3 py-1">
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">Total Balance</p>
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
               </div>
             </div>
@@ -78,15 +52,13 @@ function Page() {
               ) : (
                 <ul className="mt-2 space-y-1.5">
                   {account.recent.map((tx) => (
-                    <li key={tx.id} className="flex items-center justify-between text-sm">
-                      <span className="capitalize text-muted-foreground">{tx.kind.replace("_", " ")} · {tx.status}</span>
-                      <span className="font-medium">{fmt(tx.currency, tx.amount)}</span>
+                    <li key={tx.id} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+                      <span className="break-words capitalize text-muted-foreground">{tx.kind.replace("_", " ")} · {tx.status}</span>
+                      <span className="min-w-0 break-all font-medium">{fmt(tx.currency, tx.amount)}</span>
                     </li>
                   ))}
                 </ul>
               )}
-            </div>
-            </div>
             </div>
           </section>
         ))}
@@ -107,7 +79,6 @@ function Page() {
         </Link>
         <Link
           to="/accounts/split"
-          ref={splitCardRef}
           className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:bg-secondary/50"
         >
           <Users className="mt-0.5 size-5 shrink-0 text-primary" />
@@ -158,23 +129,23 @@ function Page() {
             permanently lose your funds.
           </p>
         </div>
-        <div ref={cryptoGridRef} className="wallet-card-grid mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid items-start gap-4 sm:grid-cols-2">
           {data.cryptoAssets.map((asset) => (
-            <div key={asset.id} className="wallet-sized-card min-w-0 overflow-hidden border border-border bg-card shadow-sm" aria-label={`${asset.name} wallet card`}>
-              <div className="wallet-card-content h-full min-w-0 overflow-y-auto overscroll-contain" tabIndex={0} role="region" aria-label={`${asset.name} wallet details`}>
+            <div key={asset.id} className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
+              <div className="flex min-w-0 flex-col gap-3">
               <div className="flex min-w-0 items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-medium">{asset.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="break-words font-medium">{asset.name}</p>
+                  <p className="break-words text-xs text-muted-foreground">
                     {asset.symbol} · {asset.network}
                   </p>
                 </div>
-                <span className="rounded-md bg-secondary px-2 py-1 text-xs font-medium">{asset.symbol}</span>
+                <span className="shrink-0 rounded-md bg-secondary px-2 py-1 text-xs font-medium">{asset.symbol}</span>
               </div>
               {asset.address ? (
                 <div>
                   <p className="break-all rounded-md bg-secondary p-2 font-mono text-xs">{asset.address.address}</p>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <button type="button" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
                       <Copy className="size-3" /> Copy
                     </button>
