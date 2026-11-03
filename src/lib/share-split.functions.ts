@@ -88,8 +88,8 @@ export const createSplitBill = createServerFn({ method: "POST" })
     if (data.mode === "equal") {
       const count = uniqueIds.length + (data.includeSelf ? 1 : 0);
       const cents = equalSplit(totalCents, count);
-      uniqueIds.forEach((id, i) => shares.push({ userId: id, amountCents: cents[i], isCreator: false }));
-      if (data.includeSelf) shares.push({ userId, amountCents: cents[count - 1], isCreator: true });
+      uniqueIds.forEach((id, i) => shares.push({ userId: id, amountCents: cents[i]!, isCreator: false }));
+      if (data.includeSelf) shares.push({ userId, amountCents: cents[count - 1]!, isCreator: true });
     } else {
       for (const p of data.participants) {
         if (p.userId === userId) continue;
@@ -207,7 +207,7 @@ export const sendTransfer = createServerFn({ method: "POST" })
       _currency: data.currency,
       _amount: data.amount,
       _idempotency_key: crypto.randomUUID(),
-      _reference: data.reference?.trim() || null,
+      ...(data.reference?.trim() ? { _reference: data.reference.trim() } : {}),
     });
     if (error) throw new Error(error.message);
     return { transferId };
