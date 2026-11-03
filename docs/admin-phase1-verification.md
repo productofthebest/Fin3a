@@ -2,6 +2,14 @@
 
 Status: owner deferred staging on 3 November. A separate admin shell and read-only overview now reuse the existing AI administration access and report; existing AI controls remain unchanged. No new financial reads, roles, schema, audit writes, provider calls or money operations are introduced. Workflow checks and full regression results are recorded separately below.
 
+## Staging-deferred increment evidence
+
+- Implementation: `/admin-overview` and shared admin sidebar; `/admin` retains existing AI controls and URL. Financial/customer/provider metrics remain unavailable, not invented zeros. The existing AI RPC rechecks admin authorization in the database; no broader privilege is introduced.
+- Automated: 170/170 tests across 22 files passed; preview build OK.
+- Workflow: guest redirected to sign-in; requesting owner restored through managed authentication and loaded the real AI report, refreshed, collapsed/restored sidebar and opened existing AI controls without changing settings. Desktop and 768px tablet screenshots checked; no tablet overflow or page errors.
+- Evidence: `/tmp/browser/admin-overview/check_admin.py` and desktop/tablet captures (temporary); observed 5 requests today, 10 this month, 7 unpriced requests and $0.0472 partial estimated spend. Estimates are not full provider invoices; guest/search fee coverage remains uncertified.
+- Deferred: separate admin sign-in, five delegated roles, append-only audit, customer directory, full-history wallet totals, role/cross-account security testing and provider/financial operations. These are not certified complete. No production financial records, schema, settings or credentials changed; no paid calls or publication.
+
 ## Isolation check (3 November 2026)
 
 The surface inventory reports the current main project and an existing draft called `Fin3a staging tests`. That draft explicitly uses **the project's live database**. It is not an isolated test environment and must not receive test users, role assignments, audit rows or financial records.
