@@ -53,10 +53,9 @@ function Landing() {
       <LandingAssistant />
 
       <div className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:px-6">
-        <p className="flex items-center gap-2 text-sm font-medium text-primary">
+        <p className="flex items-center gap-2 text-sm font-medium text-topfloor-gold">
           <Zap className="size-4 fill-topfloor-gold" />
-          <span className="text-topfloor-gold">Powered by</span>{" "}
-          <span className="text-topfloor-gold">Top Floor</span>
+          Powered by Top Floor
         </p>
       </div>
 
