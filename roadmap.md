@@ -85,6 +85,7 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 - [ ] Isolated staging backend for test data (needed for real end-to-end tests)
 
 ## Phase 5 — Testing, Launch, Growth
+- [x] Dashboard spacing and conversation controls (Nov 3): removed redundant top/side spacing; selector and New sit right-aligned above composer. Signed-in desktop and 393×706 phone verified; 190 tests pass. No paid request or financial writes.
 - [x] Start Phase 5 incrementally at the user's explicit request: 65-check baseline, basic security scan, deep scan started; first account-cache/document-validation/deletion fixes; 74 regression checks and signed-in upload rejection/logout/responsive checks passed; this does not certify Phase 4 completion
 - [x] Review uploaded Phase 5 security/optimization and performance/QA/deployment specifications; queue after Phase 4 completion gate
 - [ ] Backend reliability and financial indexes; consistent error handling and pagination
