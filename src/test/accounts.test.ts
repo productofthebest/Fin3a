@@ -44,3 +44,18 @@ describe("computeAccountBalance", () => {
     expect(balance.total).toBe(1800);
   });
 });
+
+import { summarizeAccountActivity } from "@/lib/accounts";
+describe("summarizeAccountActivity", () => {
+  it("counts only this month and excludes pending from available", () => {
+    const s = summarizeAccountActivity([
+      { kind: "deposit", status: "completed", amount: 5000, currency: "NGN", created_at: "2026-11-02T10:00:00Z" },
+      { kind: "deposit", status: "pending", amount: 2000, currency: "NGN", created_at: "2026-11-02T11:00:00Z" },
+      { kind: "withdrawal", status: "completed", amount: 1000, currency: "NGN", created_at: "2026-10-30T10:00:00Z" },
+    ], "2026-11-03");
+    expect(s.NGN.balance.available).toBe(4000);
+    expect(s.NGN.thisMonth.deposit).toEqual({ count: 2, completedTotal: 5000 });
+    expect(s.NGN.pendingCount).toBe(1);
+    expect(s.USD.totalEntries).toBe(0);
+  });
+});

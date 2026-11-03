@@ -41,3 +41,32 @@ export function computeAccountBalance(entries: readonly LedgerEntry[]): AccountB
 
 export const ACCOUNT_CURRENCIES = ["NGN", "USD"] as const;
 export type AccountCurrency = (typeof ACCOUNT_CURRENCIES)[number];
+
+export interface AccountActivityRow extends LedgerEntry {
+  currency: string;
+  created_at: string;
+}
+
+// Aggregate-only activity summary for the AI assistant: totals and counts per
+// currency, never references or provider details.
+export function summarizeAccountActivity(rows: readonly AccountActivityRow[], today: string) {
+  const month = today.slice(0, 7);
+  const out: Record<string, { balance: AccountBalance; thisMonth: Record<LedgerKind, { count: number; completedTotal: number }>; pendingCount: number; failedCount: number; totalEntries: number }> = {};
+  for (const c of ACCOUNT_CURRENCIES) {
+    const list = rows.filter((r) => r.currency === c);
+    const thisMonth = { deposit: { count: 0, completedTotal: 0 }, withdrawal: { count: 0, completedTotal: 0 }, transfer_in: { count: 0, completedTotal: 0 }, transfer_out: { count: 0, completedTotal: 0 } };
+    for (const r of list) {
+      if (r.created_at.slice(0, 7) !== month) continue;
+      thisMonth[r.kind].count++;
+      if (r.status === "completed") thisMonth[r.kind].completedTotal += r.amount;
+    }
+    out[c] = {
+      balance: computeAccountBalance(list),
+      thisMonth,
+      pendingCount: list.filter((r) => r.status === "pending").length,
+      failedCount: list.filter((r) => r.status === "failed").length,
+      totalEntries: list.length,
+    };
+  }
+  return out;
+}
