@@ -95,14 +95,6 @@ function AssistantPage() {
     await navigate({ to: "/auth", replace: true });
   }
 
-  const conversationControls = (
-          <div className="order-2 mt-3 flex min-w-0 items-center justify-end gap-2" aria-label="Conversation controls">
-            <Button type="button" size="sm" onClick={newThread} className="h-8 shrink-0 gap-1.5 rounded-full px-3 text-xs">
-              <MessageSquarePlus className="size-3.5" /> New
-            </Button>
-          </div>
-  );
-
   return (
     <AppShell>
     <div className="mx-auto max-w-6xl pb-8 sm:pb-10">
