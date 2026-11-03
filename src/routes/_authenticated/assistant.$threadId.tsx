@@ -503,6 +503,16 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
           >
             {scanningPhoto ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
           </button>
+          <button
+            type="button"
+            onClick={() => setQrScanOpen(true)}
+            disabled={busy}
+            aria-label="Scan a payment QR code"
+            title="Scan a payment QR code"
+            className="grid size-10 place-items-center rounded-full border border-border text-foreground hover:text-primary disabled:opacity-50"
+          >
+            <QrCode className="size-4" />
+          </button>
           <div className="ml-auto flex items-center gap-2">
             <button
               type="button"
