@@ -471,7 +471,7 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
 
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="order-2 mt-7 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
+        className="order-2 mt-4 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
       >
         <input
           ref={cameraInputRef}
