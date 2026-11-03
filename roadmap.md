@@ -101,3 +101,4 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 - [x] Accounts page: NGN/USD ledger accounts, derived balances, crypto address section (provider not connected), nav placement after Dashboard
 - [ ] Breet API integration: real credentials, webhook signature verification, idempotency, end-to-end transaction testing before claiming complete
 - [ ] Enable Deposit/Withdraw/Transfer actions once provider connected
+- [ ] Share Account & Split Bill (Nov 3 brief; owner approved full internal transfers + lookup by phone/Fin3a ID/email on live app): shareable Fin3a ID, public pay page with QR, atomic internal transfers with idempotency, split bills with equal/custom splits, reminders, admin monitoring. In progress — not complete until tested end-to-end.
