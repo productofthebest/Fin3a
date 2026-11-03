@@ -347,8 +347,8 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
             </div>
           </div>
 
+          <h2 className="order-1 mt-8 text-[15px] font-medium">Try Asking Fin3a.</h2>
           <div className="order-3">
-          <h2 className="mt-8 text-[15px] font-medium">Try Asking Fin3a.</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {SUGGESTIONS.map((s) => (
               <button
