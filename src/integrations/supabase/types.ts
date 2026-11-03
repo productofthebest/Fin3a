@@ -1316,7 +1316,7 @@ export type Database = {
           _reference: string
           _to_user: string
         }
-        Returns: string
+        Returns: Json
       }
       get_public_share_profile: {
         Args: { _fin3a_id: string }
@@ -1350,7 +1350,7 @@ export type Database = {
       }
       pay_split_share: {
         Args: { _idempotency_key: string; _participant_id: string }
-        Returns: string
+        Returns: Json
       }
       send_split_reminder: {
         Args: { _participant_id: string }
@@ -1372,7 +1372,7 @@ export type Database = {
           _reference?: string
           _to_user: string
         }
-        Returns: string
+        Returns: Json
       }
     }
     Enums: {

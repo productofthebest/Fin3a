@@ -169,6 +169,13 @@
       "when": 1793719919226,
       "tag": "0023_payment_rate_limit_table",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793719996740,
+      "tag": "0024_persist_failed_transfers",
+      "breakpoints": true
     }
   ]
 }
