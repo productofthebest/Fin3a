@@ -136,6 +136,18 @@ All migrations so far are additive (new tables/columns/indexes/functions). No de
 - Saved outcome: release remains **not promoted**, not complete. Required dependency: correct and verify explicit override, stable separate-draft identity, retry adds zero, ordinary duplicates withheld and concurrent import safety in staging; additional database-function changes need explicit scope approval. Production application/database unchanged; no deployment.
 
 ## ACC — Accounts page (added 3 Nov 2026)
+## ADM — Financial administration audit (3 Nov 2026)
+| Ref | Requirement | Impl | Test | Evidence | Dependencies |
+|---|---|---|---|---|---|
+| ADM-02 | Separate admin sign-in, workspace and five backend-enforced roles | Not started | None | Current admin covers AI only; existing RPCs check admin; separate role model absent | Plan and rollout approval; isolated permission verification |
+| ADM-03 | Executive customer/financial/operations overview | Not started | Source/schema audit | Live schema inspected read-only; provider/KYC/treasury/revenue/savings sources absent | Complete ledger coverage and authoritative sources |
+| ADM-04 | Customer directory, wallet history and restrictions | Not started | Source audit | Existing accounts query truncates at 200 rows; AI pause is not account suspension | Permission model; full-history balance fix; restriction enforcement |
+| ADM-05 | Breet/Flutterwave and verified webhook monitoring | Not started | Source/schema audit | No provider API calls, webhook intake or settlement/event tables found; key presence is not connectivity | Approved test services, credentials, signature/idempotency verification |
+| ADM-06 | Unified payments, treasury, double-entry and provider reconciliation | Not started | Source/schema audit | Current account ledger is single-entry; statement reconciliation is unrelated | Approved additive ledger design and isolated financial verification |
+| ADM-07 | Savings, revenue, compliance, audit and settings | Not started | Source/schema audit | Goals are not interest-bearing savings; no authoritative revenue/KYC/audit records | Approved business rules and authoritative integrations |
+- Audit baseline: **170/170 automated tests passed across 22 files on 3 Nov 2026**. Effective table privileges and ownership policies inspected read-only; no runtime permission/provider certification. Application code, production settings, financial records and credentials unchanged; no paid requests or publication. Plan awaiting review. Staging has been deleted and must be re-established before privileged/financial verification.
+
+## ACC — Accounts page details
 - ACC-01 Accounts page with NGN/USD balance cards (available/pending/total) and recent activity — BUILT, verified signed-in on desktop and mobile; balances derive from verified ledger entries only (4 automated tests).
 - ACC-02 Crypto Addresses section (USDT TRC20/ERC20, USDC ERC20, BTC, ETH) with network warning and minimum deposits — BUILT as disabled placeholders; no addresses shown until a real provider is connected. NOT COMPLETE: needs Breet credentials, webhook signature verification, idempotency and end-to-end transaction testing.
 - ACC-03 Deposit/Withdraw/Transfer actions — DISABLED by design until provider connected; View transaction history links to Activity.
