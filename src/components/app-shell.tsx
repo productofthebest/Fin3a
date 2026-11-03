@@ -13,9 +13,9 @@ import { Button } from "@/components/ui/button";
 const NAV_ITEMS = [
   { to: "/assistant", label: "Dashboard" },
   { to: "/accounts", label: "Accounts" },
+  { to: "/bills", label: "Bills" },
   { to: "/spending", label: "Spending" },
   { to: "/activity", label: "Activity" },
-  { to: "/bills", label: "Bills" },
   { to: "/analysis", label: "Analysis" },
   { to: "/planning", label: "Planning" },
   { to: "/goals", label: "Goals" },
