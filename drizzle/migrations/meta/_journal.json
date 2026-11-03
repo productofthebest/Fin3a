@@ -190,6 +190,13 @@
       "when": 1793721089193,
       "tag": "0026_qr_rate_limit_buckets",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793729937776,
+      "tag": "0027_import_confirmed_separate",
+      "breakpoints": true
     }
   ]
 }
