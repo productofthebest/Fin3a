@@ -176,6 +176,20 @@
       "when": 1793719996740,
       "tag": "0024_persist_failed_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793720763553,
+      "tag": "0025_qr_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793721089193,
+      "tag": "0026_qr_rate_limit_buckets",
+      "breakpoints": true
     }
   ]
 }

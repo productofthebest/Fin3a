@@ -49,6 +49,24 @@ export const getAdminSplitOverview = createServerFn({ method: "GET" })
     return JSON.parse(JSON.stringify(data)) as SplitOverview;
   });
 
+export interface QrOverview {
+  scans: number;
+  requests: number;
+  paid: number;
+  pending: number;
+  failed: number;
+  valueByCurrency: Record<string, number>;
+  suspicious: number;
+}
+
+export const getAdminQrOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("admin_qr_overview");
+    if (error) throw new Error(error.message.includes("Not authorized") ? "Administrator access required." : "Could not load QR payment figures.");
+    return JSON.parse(JSON.stringify(data)) as QrOverview;
+  });
+
 const money = z.number().min(0).max(1_000_000).nullable();
 
 export const updateAiSettings = createServerFn({ method: "POST" })

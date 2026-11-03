@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getIsAdmin } from "@/lib/admin.functions";
-import { LogOut } from "lucide-react";
+import { LogOut, QrCode } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -72,6 +72,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             ) : null}
             <Link to="/security" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Phone</Link>
             {isAdmin ? <Link to="/admin" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Admin</Link> : null}
+            <Link
+              to="/accounts/qr"
+              title="Scan or Receive Payment"
+              aria-label="Scan or Receive Payment"
+              className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <QrCode className="size-4" />
+            </Link>
             <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
               <LogOut className="size-4" />
             </Button>

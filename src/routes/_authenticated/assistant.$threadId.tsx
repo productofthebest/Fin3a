@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   ArrowRight, Bell, Camera, ChevronDown, FileText, History, Loader2, LogOut, MessageSquarePlus, Mic,
-  PiggyBank, Search, Send, Settings, Square, Target, Trash2, TrendingUp, Wallet, Zap,
+  PiggyBank, QrCode, Search, Send, Settings, Square, Target, Trash2, TrendingUp, Wallet, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +18,10 @@ import { analyzeDocument, createDocument } from "@/lib/documents.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
 import { settingsQuery } from "@/lib/queries";
 import { AppShell } from "@/components/app-shell";
+import { QrScanner } from "@/components/qr-scanner";
+import { Button } from "@/components/ui/button";
+import { logQrScan, resolveQrRequest, type QrRequestDetails } from "@/lib/qr-payments.functions";
+import { formatQrAmount, parseScannedQr } from "@/lib/qr-payments";
 import { cn } from "@/lib/utils";
 import { metadataWebSources, safeWebSources } from "@/lib/web-access";
 import {
@@ -199,6 +203,39 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
   const [scanningPhoto, setScanningPhoto] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // QR payment detection state — detection never pays; it only shows a review card.
+  const [qrScanOpen, setQrScanOpen] = useState(false);
+  const [qrCard, setQrCard] = useState<
+    | { kind: "request"; details: QrRequestDetails }
+    | { kind: "profile"; fin3aId: string }
+    | { kind: "external"; url: string }
+    | { kind: "invalid" }
+    | null
+  >(null);
+
+  async function handleQrScan(text: string) {
+    const parsed = parseScannedQr(text);
+    if (parsed.kind === "fin3a_request") {
+      setQrScanOpen(false);
+      try {
+        const details = await resolveQrRequest({ data: { requestId: parsed.requestId } });
+        setQrCard({ kind: "request", details });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Could not read this payment request");
+      }
+    } else if (parsed.kind === "fin3a_profile") {
+      setQrScanOpen(false);
+      void logQrScan({ data: { kind: "fin3a_profile", detail: parsed.fin3aId } });
+      setQrCard({ kind: "profile", fin3aId: parsed.fin3aId });
+    } else if (parsed.kind === "external") {
+      void logQrScan({ data: { kind: "external", detail: parsed.url } });
+      setQrCard({ kind: "external", url: parsed.url });
+    } else {
+      void logQrScan({ data: { kind: "invalid" } });
+      setQrCard({ kind: "invalid" });
+    }
+  }
+
   async function handleCameraCapture(file: File) {
     if (file.size > 15 * 1024 * 1024) {
       toast.error("Image file is larger than 15 MB.");
@@ -373,6 +410,63 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
         </div>
       )}
 
+      {qrCard ? (
+        <div className="mt-4 flex gap-2">
+          <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
+          <div className="min-w-0 flex-1 rounded-2xl border border-accent/40 bg-card p-4 text-sm shadow-sm">
+            {qrCard.kind === "request" ? (
+              <>
+                <p className="font-medium">I've detected a Fin3a payment request.</p>
+                {qrCard.details.status === "open" && !qrCard.details.isOwn ? (
+                  <div className="mt-2 space-y-1 text-muted-foreground">
+                    <p>Recipient: <span className="font-medium text-foreground">{qrCard.details.recipientName}</span></p>
+                    <p>Amount: <span className="font-medium text-foreground">{formatQrAmount(qrCard.details.amount ?? null, qrCard.details.currency ?? "NGN")}</span></p>
+                    {qrCard.details.description ? <p>For: <span className="text-foreground">{qrCard.details.description}</span></p> : null}
+                    <p>Reference: FIN3A payment request</p>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-muted-foreground">
+                    {qrCard.details.isOwn ? "This is your own payment request." : `This request is ${qrCard.details.status}.`}
+                  </p>
+                )}
+                <div className="mt-3 flex gap-2">
+                  {qrCard.details.status === "open" && !qrCard.details.isOwn && qrCard.details.requestId ? (
+                    <Button asChild size="sm"><Link to="/pay/qr/$requestId" params={{ requestId: qrCard.details.requestId }}>Review Payment</Link></Button>
+                  ) : null}
+                  <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
+                </div>
+              </>
+            ) : qrCard.kind === "profile" ? (
+              <>
+                <p className="font-medium">I've detected a Fin3a payment profile.</p>
+                <p className="mt-2 text-muted-foreground">Account: <span className="font-mono text-primary">{qrCard.fin3aId}</span></p>
+                <div className="mt-3 flex gap-2">
+                  <Button asChild size="sm"><Link to="/pay/$fin3aId" params={{ fin3aId: qrCard.fin3aId }}>Review Payment</Link></Button>
+                  <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
+                </div>
+              </>
+            ) : qrCard.kind === "external" ? (
+              <>
+                <p className="font-medium">This is an external QR code, not a Fin3a payment.</p>
+                <p className="mt-2 break-all rounded-md bg-secondary p-2 text-xs text-muted-foreground">{qrCard.url}</p>
+                <p className="mt-2 text-xs text-muted-foreground">I won't open it automatically. Only visit links you trust.</p>
+                <div className="mt-3 flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => void navigator.clipboard.writeText(qrCard.url).then(() => toast.success("Link copied"))}>Copy link</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-medium">I couldn't read a Fin3a payment from that QR code.</p>
+                <p className="mt-2 text-muted-foreground">It may be damaged or not a payment code. No payment was created.</p>
+                <Button variant="ghost" size="sm" className="mt-3" onClick={() => setQrCard(null)}>Dismiss</Button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
+      {qrScanOpen ? <QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /> : null}
+
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
         className="mt-7 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
@@ -408,6 +502,16 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
             className="grid size-10 place-items-center rounded-full border border-border text-foreground hover:text-primary disabled:opacity-50"
           >
             {scanningPhoto ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setQrScanOpen(true)}
+            disabled={busy}
+            aria-label="Scan a payment QR code"
+            title="Scan a payment QR code"
+            className="grid size-10 place-items-center rounded-full border border-border text-foreground hover:text-primary disabled:opacity-50"
+          >
+            <QrCode className="size-4" />
           </button>
           <div className="ml-auto flex items-center gap-2">
             <button

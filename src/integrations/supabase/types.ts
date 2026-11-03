@@ -777,6 +777,75 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_payment_requests: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          owner_user_id: string
+          paid_at: string | null
+          paid_by: string | null
+          status: string
+          transfer_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          owner_user_id: string
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          transfer_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          owner_user_id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          status?: string
+          transfer_id?: string | null
+        }
+        Relationships: []
+      }
+      qr_scan_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          request_id: string | null
+          scanner_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind: string
+          request_id?: string | null
+          scanner_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          request_id?: string | null
+          scanner_user_id?: string | null
+        }
+        Relationships: []
+      }
       rate_limit_counters: {
         Row: {
           bucket: string
@@ -1225,6 +1294,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_qr_overview: { Args: never; Returns: Json }
       admin_split_overview: { Args: never; Returns: Json }
       ai_admin_overview: { Args: never; Returns: Json }
       ai_admin_set_price: {
@@ -1307,6 +1377,15 @@ export type Database = {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
       }
+      create_qr_request: {
+        Args: {
+          _amount: number
+          _currency: string
+          _description?: string
+          _expires_in_minutes?: number
+        }
+        Returns: string
+      }
       execute_internal_transfer: {
         Args: {
           _amount: number
@@ -1340,6 +1419,10 @@ export type Database = {
         Args: { _bill_id: string; _user_id: string }
         Returns: boolean
       }
+      log_qr_scan: {
+        Args: { _detail?: string; _kind: string }
+        Returns: undefined
+      }
       lookup_recipient: {
         Args: { _identifier: string }
         Returns: {
@@ -1348,10 +1431,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      pay_qr_request: {
+        Args: { _amount: number; _idempotency_key: string; _request_id: string }
+        Returns: Json
+      }
       pay_split_share: {
         Args: { _idempotency_key: string; _participant_id: string }
         Returns: Json
       }
+      resolve_qr_request: { Args: { _request_id: string }; Returns: Json }
       send_split_reminder: {
         Args: { _participant_id: string }
         Returns: undefined
