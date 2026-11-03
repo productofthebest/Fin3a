@@ -152,7 +152,7 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const { messages, sendMessage, status, stop, error } = useChat({
     id: threadId,
@@ -180,7 +180,10 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
   const busy = status === "submitted" || status === "streaming";
 
   useEffect(() => { inputRef.current?.focus(); }, []);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, status]);
+  useEffect(() => {
+    const chat = chatScrollRef.current;
+    chat?.scrollTo({ top: chat.scrollHeight });
+  }, [messages, status]);
 
   function send(text: string) {
     const t = text.trim();
@@ -365,49 +368,7 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
           </div>
           </div>
         </>
-      ) : (
-        <div className="mt-4 max-h-[60vh] min-h-[300px] space-y-4 overflow-y-auto rounded-2xl border border-border bg-card/70 p-4 sm:p-5">
-          {messages.map((m) => {
-            const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
-            const sources = safeWebSources([...m.parts
-              .filter((p) => p.type === "source-url")
-              .map((p) => ({ url: (p as { url?: string }).url ?? "", title: (p as { title?: string }).title ?? "" }))
-              .filter((s) => s.url), ...metadataWebSources(m.metadata)]);
-            return m.role === "user" ? (
-              <div key={m.id} className="flex justify-end">
-                <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-primary-foreground">{text}</div>
-              </div>
-            ) : (
-              <div key={m.id} className="flex gap-2">
-                <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
-                <div className="min-w-0 flex-1 space-y-2 text-sm leading-relaxed text-foreground [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_table]:w-full [&_table]:text-xs [&_th]:border-b [&_th]:border-border [&_th]:py-1 [&_th]:text-left [&_td]:border-b [&_td]:border-border/50 [&_td]:py-1 [&_code]:rounded [&_code]:bg-secondary [&_code]:px-1">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
-                  {sources.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {sources.map((s) => (
-                        <a
-                          key={s.url}
-                          href={s.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-border bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-primary"
-                        >
-                          {s.title || s.url.replace(/^https?:\/\//, "").split("/")[0]}
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-          {status === "submitted" ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Analysing your records…</div>
-          ) : null}
-          {error && !busy ? <p className="text-sm text-destructive">The last message failed. Please try again.</p> : null}
-          <div ref={bottomRef} />
-        </div>
-      )}
+      ) : null}
 
       {qrCard ? (
         <div className="mt-4 flex gap-2">
@@ -467,9 +428,52 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
       {qrScanOpen ? <QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /> : null}
 
       {conversationControls}
+      <div className={cn("order-2 mt-2 min-w-0", !empty && "overflow-hidden rounded-[22px] border border-accent/40 bg-card shadow-[var(--shadow-lavender)]")} aria-label="Fin3a assistant chat">
+      {!empty ? (
+        <div ref={chatScrollRef} role="log" aria-label="Fin3a conversation" className="max-h-[420px] min-h-[220px] space-y-4 overflow-y-auto overscroll-contain px-4 py-6 sm:px-5">
+          {messages.map((m) => {
+            const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+            const sources = safeWebSources([...m.parts
+              .filter((p) => p.type === "source-url")
+              .map((p) => ({ url: (p as { url?: string }).url ?? "", title: (p as { title?: string }).title ?? "" }))
+              .filter((s) => s.url), ...metadataWebSources(m.metadata)]);
+            return m.role === "user" ? (
+              <div key={m.id} className="flex justify-end">
+                <div className="max-w-[85%] break-words whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-primary-foreground">{text}</div>
+              </div>
+            ) : (
+              <div key={m.id} className="flex gap-2">
+                <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
+                <div className="min-w-0 max-w-[85%] flex-1 space-y-2 rounded-2xl rounded-tl-sm bg-muted/50 px-4 py-3 text-sm break-words leading-relaxed text-foreground [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_table]:block [&_table]:overflow-x-auto [&_table]:w-full [&_table]:text-xs [&_th]:border-b [&_th]:border-border [&_th]:py-1 [&_th]:text-left [&_td]:border-b [&_td]:border-border/50 [&_td]:py-1 [&_code]:rounded [&_code]:bg-secondary [&_code]:px-1">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+                  {sources.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {sources.map((s) => (
+                        <a
+                          key={s.url}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-border bg-secondary/60 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-primary"
+                        >
+                          {s.title || s.url.replace(/^https?:\/\//, "").split("/")[0]}
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+          {status === "submitted" ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Analysing your records…</div>
+          ) : null}
+          {error && !busy ? <p className="text-sm text-destructive">The last message failed. Please try again.</p> : null}
+        </div>
+      ) : null}
       <AssistantComposerFrame
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="order-2 mt-2"
+        className={cn(!empty && "rounded-none border-0 border-t border-border shadow-none")}
       >
         <input
           ref={cameraInputRef}
@@ -537,6 +541,7 @@ function ChatWindow({ threadId, initialMessages, name, conversationControls }: {
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">Answers from your own records · not financial advice</p>
       </AssistantComposerFrame>
+      </div>
     </section>
   );
 }
