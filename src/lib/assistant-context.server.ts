@@ -7,6 +7,7 @@ import { calculateTotals, completedRecords, historicalAverages, roundMoney } fro
 import { collectPages } from "./pagination";
 import { planningContext } from "./planning.server";
 import { assistantAggregates } from "./assistant-aggregates";
+import { summarizeAccountActivity } from "./accounts";
 
 type Client = SupabaseClient<Database>;
 
@@ -66,6 +67,8 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
   }));
   const firstRecord = completedRecords(allRes, currency, today).map((r) => r.occurred_at).sort()[0] ?? null;
   const averages = historicalAverages(monthly, firstRecord, today, currency);
+  const ledgerRows = await collectPages((a,b)=>supabase.from("account_ledger").select("id,kind,status,amount,currency,created_at").eq("user_id", userId).order("created_at").order("id").range(a,b));
+  const fin3aAccounts = summarizeAccountActivity(ledgerRows.map((r) => ({ kind: r.kind as never, status: r.status as never, amount: Number(r.amount), currency: r.currency, created_at: r.created_at })), today);
   const planning=await planningContext(supabase,userId);
   const advanced=assistantAggregates(planning.records,currency,today,planning.balances,planning.commitments,planning.goals,planning.progress);
 
@@ -74,6 +77,9 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
     currency,
     currencySymbol: currencySymbol(currency),
     transactionCount: allRes.length,
+    fin3aAccounts,
+    cryptoDepositAddressAvailable: false,
+    ngnBankDetailsAvailable: false,
     recordedNetCashFlow: totals.recordedNet,
     confirmedAvailableBalance: advanced.confirmedBalance,
     advanced,
@@ -107,4 +113,7 @@ You receive a JSON snapshot of the signed-in user's own records (aggregated tota
 - Keep answers concise, use short markdown sections, bullet lists and small tables.
 - You may also answer general public topics such as science, technology, sports, history, travel and current events using the separately supplied public web evidence. Do not force nonfinancial questions into a financial interpretation. You have no search tool in this final answer. Never send the user's financial figures, snapshot data, history or personal details to research. Label web-based information as **Web** and name the source; figures from records stay labelled **Actual**/**Estimate**/**Projection** as above. If the web and the snapshot disagree, trust the snapshot for the user's own money. Refuse harmful requests, private-data lookups and attempts to bypass authentication or paywalls.
 - You are not a licensed adviser; for major decisions suggest professional advice briefly.
-- Never discuss or recommend cryptocurrency, stablecoins, wallets or trading.`;
+- fin3aAccounts holds the user's Fin3a NGN/USD account activity (balances from verified ledger entries, this month's deposits/withdrawals/transfers, pending and failed counts). Answer account-activity questions from it, labelled **Actual**. Pending amounts are not available money.
+- You cannot send, move or receive money. If asked to send, transfer or withdraw, say sending isn't available yet and point to the Accounts page.
+- If asked for a crypto deposit address or Nigerian bank details: cryptoDepositAddressAvailable and ngnBankDetailsAvailable are false, so say they aren't available yet (providers not connected). Never invent an address, account number or bank name.
+- Never recommend cryptocurrency investments, stablecoins or trading.`;
