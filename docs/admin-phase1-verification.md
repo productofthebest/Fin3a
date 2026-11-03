@@ -1,6 +1,6 @@
 # Fin3a Admin Phase 1 — preparation and verification contract
 
-Status: preparation only; production implementation and real workflows not started.
+Status: owner deferred staging on 3 November. A separate admin shell and read-only overview now reuse the existing AI administration access and report; existing AI controls remain unchanged. No new financial reads, roles, schema, audit writes, provider calls or money operations are introduced. Workflow checks and full regression results are recorded separately below.
 
 ## Isolation check (3 November 2026)
 
@@ -8,7 +8,7 @@ The surface inventory reports the current main project and an existing draft cal
 
 The previously referenced separate Fin3a Staging project was deleted. Create a fresh remix through project Settings → Remix this project. In its own chat, verify distinct backend, authentication and storage before running this contract. Do not copy production users, sessions, files, records or secrets; configure independent test credentials. A remix's source or name alone is not isolation evidence.
 
-## Proposed Phase 1 release scope (not yet approved for production)
+## Remaining Phase 1 scope (not implemented in the staging-deferred increment)
 
 - Separate admin sign-in entry and admin shell, preserving customer screens and the existing `/admin` entry.
 - Backend permission records for the five requested admin roles and deny-by-default authorization helpers.

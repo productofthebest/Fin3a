@@ -5,7 +5,7 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 
 ## Phase 1 — Foundation (current)
 - [x] Fin3a Admin audit and five-stage plan approved; Phase 1 verification contract prepared in docs/admin-phase1-verification.md; 170/170 baseline tests passed, no customer changes.
-- [ ] Fin3a Admin Phase 1 implementation: blocked on verified isolated remix. Surface inventory confirms existing `Fin3a staging tests` draft shares live database; do not use it for security or financial tests. Production release needs separate approval; provider phases need real enabled services.
+- [ ] Fin3a Admin Phase 1: owner deferred staging Nov 3; implement separate read-only overview and shell using existing AI admin permissions, preserving AI controls. Five-role authorization, audit evidence, customer/wallet reads and isolated security/financial verification remain deferred; no money movements, financial writes or publication.
 - [x] Dual phone/email authentication screens, registration, recovery and responsive validation tests
 - [ ] Enable Phone in Cloud Auth settings and configure SMS delivery; verify real six-digit OTP sign-in end-to-end (blocked on owner configuration)
 - [x] Lovable Cloud connected; email/password + Google + Lovable sign-in enabled
