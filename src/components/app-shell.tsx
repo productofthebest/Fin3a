@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getIsAdmin } from "@/lib/admin.functions";
-import { LogOut, QrCode } from "lucide-react";
+import { LogOut, QrCode, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,6 @@ const NAV_ITEMS = [
   { to: "/accounts", label: "Accounts" },
   { to: "/spending", label: "Spending" },
   { to: "/activity", label: "Activity" },
-  { to: "/categories", label: "Categories" },
   { to: "/bills", label: "Bills" },
   { to: "/analysis", label: "Analysis" },
   { to: "/planning", label: "Planning" },
@@ -51,12 +50,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "shrink-0 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                   (item.to === "/assistant" ? pathname.startsWith("/assistant") : pathname === item.to)
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
+                {item.to === "/bills" ? <Receipt className="size-4" aria-hidden="true" /> : null}
                 {item.label}
               </Link>
             ))}
@@ -91,12 +91,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={item.to}
               to={item.to}
               className={cn(
-                "shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors",
                 (item.to === "/assistant" ? pathname.startsWith("/assistant") : pathname === item.to)
                   ? "bg-secondary text-foreground"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
+              {item.to === "/bills" ? <Receipt className="size-4" aria-hidden="true" /> : null}
               {item.label}
             </Link>
           ))}

@@ -44,7 +44,6 @@ const PRIMARY_NAV = [
   { to: "/assistant", label: "Dashboard" },
   { to: "/spending", label: "Spending" },
   { to: "/activity", label: "Activity" },
-  { to: "/categories", label: "Categories" },
   { to: "/bills", label: "Bills" },
   { to: "/analysis", label: "Analysis" },
   { to: "/planning", label: "Planning" },
