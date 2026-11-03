@@ -148,6 +148,13 @@
       "when": 1793718887272,
       "tag": "0020_split_participant_directory",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793719737707,
+      "tag": "0021_fix_split_bills_rls_recursion",
+      "breakpoints": true
     }
   ]
 }

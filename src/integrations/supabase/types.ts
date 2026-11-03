@@ -1311,6 +1311,10 @@ export type Database = {
         Args: { p_document_id: string }
         Returns: number
       }
+      is_split_participant: {
+        Args: { _bill_id: string; _user_id: string }
+        Returns: boolean
+      }
       lookup_recipient: {
         Args: { _identifier: string }
         Returns: {
