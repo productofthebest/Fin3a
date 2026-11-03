@@ -29,6 +29,26 @@ export const getAiOverview = createServerFn({ method: "GET" })
     return JSON.parse(JSON.stringify(data)) as AiOverview;
   });
 
+export type SplitOverview = {
+  bills_created: number;
+  bills_open: number;
+  requested: { currency: string; total: number }[];
+  collected: { currency: string; total: number }[];
+  participants_pending: number;
+  participants_paid: number;
+  transfers_completed: number;
+  transfers_failed: number;
+  suspicious: { user_id: string; failed_count: number }[];
+};
+
+export const getAdminSplitOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc("admin_split_overview");
+    if (error) throw new Error(error.message.includes("Not authorized") ? "Administrator access required." : "Could not load sharing figures.");
+    return JSON.parse(JSON.stringify(data)) as SplitOverview;
+  });
+
 const money = z.number().min(0).max(1_000_000).nullable();
 
 export const updateAiSettings = createServerFn({ method: "POST" })
