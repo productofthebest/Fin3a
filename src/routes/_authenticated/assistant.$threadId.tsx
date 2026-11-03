@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   ArrowRight, Bell, Camera, ChevronDown, FileText, History, Loader2, LogOut, MessageSquarePlus, Mic,
-  PiggyBank, Search, Send, Settings, Square, Target, Trash2, TrendingUp, Wallet, Zap,
+  PiggyBank, QrCode, Search, Send, Settings, Square, Target, Trash2, TrendingUp, Wallet, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +18,10 @@ import { analyzeDocument, createDocument } from "@/lib/documents.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
 import { settingsQuery } from "@/lib/queries";
 import { AppShell } from "@/components/app-shell";
+import { QrScanner } from "@/components/qr-scanner";
+import { Button } from "@/components/ui/button";
+import { logQrScan, resolveQrRequest, type QrRequestDetails } from "@/lib/qr-payments.functions";
+import { formatQrAmount, parseScannedQr } from "@/lib/qr-payments";
 import { cn } from "@/lib/utils";
 import { metadataWebSources, safeWebSources } from "@/lib/web-access";
 import {
