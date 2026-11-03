@@ -54,7 +54,7 @@ function Landing() {
 
       <div className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:px-6">
         <p className="flex items-center gap-2 text-sm font-medium text-primary">
-          <Zap className="size-4 fill-primary" />
+          <Zap className="size-4 fill-topfloor-gold" />
           <span className="text-topfloor-gold">Powered by</span>{" "}
           <span className="text-topfloor-gold">Top Floor</span>
         </p>
