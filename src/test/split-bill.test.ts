@@ -12,7 +12,7 @@ describe("equalSplit", () => {
   it("splits ₦100,000 equally across 4 participants", () => {
     const shares = equalSplit(toCents(100_000), 4);
     expect(shares).toEqual([2_500_000, 2_500_000, 2_500_000, 2_500_000]);
-    expect(fromCents(shares[0])).toBe(25_000);
+    expect(fromCents(shares[0]!)).toBe(25_000);
   });
 
   it("distributes the remainder so shares always sum to the total", () => {

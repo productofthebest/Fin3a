@@ -96,7 +96,7 @@ function Page() {
               variant="outline"
               size="sm"
               disabled={!shareText}
-              onClick={() => void navigator.share({ title: "Pay me on Fin3a", text: shareText!, url: payLink ?? undefined }).catch(() => {})}
+              onClick={() => void navigator.share({ title: "Pay me on Fin3a", text: shareText!, ...(payLink ? { url: payLink } : {}) }).catch(() => {})}
             >
               <Share2 className="size-4" /> More apps
             </Button>

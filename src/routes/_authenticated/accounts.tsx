@@ -4,7 +4,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
-import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Copy, QrCode, AlertTriangle } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -62,6 +62,33 @@ function Page() {
             </div>
           </section>
         ))}
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <Link
+          to="/accounts/share"
+          className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:bg-secondary/50"
+        >
+          <Share2 className="mt-0.5 size-5 shrink-0 text-primary" />
+          <span>
+            <span className="block font-display text-lg font-semibold">Share Account</span>
+            <span className="mt-1 block text-sm text-muted-foreground">
+              Share your Fin3a account ID, payment link or QR code so other Fin3a users can pay you.
+            </span>
+          </span>
+        </Link>
+        <Link
+          to="/accounts/split"
+          className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:bg-secondary/50"
+        >
+          <Users className="mt-0.5 size-5 shrink-0 text-primary" />
+          <span>
+            <span className="block font-display text-lg font-semibold">Split Bill</span>
+            <span className="mt-1 block text-sm text-muted-foreground">
+              Share an expense with other Fin3a users and collect their shares from their Fin3a balance.
+            </span>
+          </span>
+        </Link>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">

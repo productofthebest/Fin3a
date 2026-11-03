@@ -65,7 +65,7 @@ function Page() {
           toUserId: resolved.participant.user_id,
           currency,
           amount: Number(amount),
-          reference: reference || undefined,
+          ...(reference ? { reference } : {}),
         },
       });
       toast.success(`Sent to ${profile!.display_name ?? profile!.fin3a_id}`);
