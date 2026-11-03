@@ -1,0 +1,49 @@
+# Fin3a Admin Phase 1 — preparation and verification contract
+
+Status: preparation only; production implementation and real workflows not started.
+
+## Isolation check (3 November 2026)
+
+The surface inventory reports the current main project and an existing draft called `Fin3a staging tests`. That draft explicitly uses **the project's live database**. It is not an isolated test environment and must not receive test users, role assignments, audit rows or financial records.
+
+The previously referenced separate Fin3a Staging project was deleted. Create a fresh remix through project Settings → Remix this project. In its own chat, verify distinct backend, authentication and storage before running this contract. Do not copy production users, sessions, files, records or secrets; configure independent test credentials. A remix's source or name alone is not isolation evidence.
+
+## Proposed Phase 1 release scope (not yet approved for production)
+
+- Separate admin sign-in entry and admin shell, preserving customer screens and the existing `/admin` entry.
+- Backend permission records for the five requested admin roles and deny-by-default authorization helpers.
+- Read-only customer counts and financial coverage overview from authoritative sources; unsupported values are unavailable.
+- Append-only administrative action evidence, including actor, action, target, timestamp, outcome and reason; never secrets or unnecessary raw payloads.
+- Existing AI controls retained; no change to budgets, prices, switches or current user roles in this preparation.
+
+Initial administrator mapping, audit retention and sensitive-operation reauthentication must be documented before the release approval. Do not automatically broaden the current AI administrator's privileges.
+
+## Required isolated test matrix
+
+| Case | Expected outcome | Evidence required |
+|---|---|---|
+| Guest opens admin or calls protected function directly | No private content; request denied | UI and direct endpoint result |
+| Customer signs in through admin entry | Admin access denied; no role assignment | UI, role readback and endpoint denial |
+| Super Admin | Approved administrative permissions only | Role-scoped endpoint tests |
+| Finance Admin | Treasury/reconciliation/reports/savings monitoring; other operations denied | Positive and negative permission tests |
+| Operations Admin | Approved payment investigation/operations only | Positive and negative permission tests |
+| Compliance Admin | KYC/risk/restrictions only as authorized | Positive and negative permission tests |
+| Customer Support | Customer/profile/history reads; financial writes denied | Positive and negative permission tests |
+| Forged user metadata, browser role or target ID | No elevation or cross-scope access | Endpoint and database policy tests |
+| Sensitive administrative action | Fresh verification and authorized reason; immutable audit evidence | Action and audit readback |
+| Edit/delete audit evidence as customer or admin | Denied; correction is a new event | Actual database permission tests |
+| Sign out and change identity | Queries canceled/cache cleared; protected data not restored by Back | Two-account browser test |
+| Overview counts | Match authoritative reads; unavailable sources not represented as zero | Readback and arithmetic comparison |
+| Desktop/tablet | Sidebar collapses/restores; tables scroll without hiding controls | Screenshots and interaction checks |
+| Customer regressions | Sign-in, assistant, spending, scanning and account screens preserved | Full automated suite and scoped workflows |
+
+No paid AI/provider call or financial test may run until isolated credentials and authorization are verified. Provider tests are blocked until real test-mode integrations exist. Automated tests alone never close these rows.
+
+## Current evidence
+
+- 170 automated tests passed across 22 files during the read-only audit.
+- Schema, ownership policies and effective table privileges inspected read-only.
+- Existing draft isolation check failed: it shares live data.
+- No admin code, migration, role assignment, provider request, financial write or publication performed.
+
+Next dependency: verified isolated remix, then Phase 1 implementation and the above tests; production promotion requires a separate exact-change approval.
