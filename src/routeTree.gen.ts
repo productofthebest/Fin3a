@@ -31,6 +31,8 @@ import { Route as AuthenticatedSpendingRouteImport } from './routes/_authenticat
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiLandingChatRouteImport } from './routes/api/landing-chat'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as AuthenticatedAccountsShareRouteImport } from './routes/_authenticated/accounts.share'
+import { Route as AuthenticatedAccountsSplitRouteImport } from './routes/_authenticated/accounts.split'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
 import { Route as ApiPublicGuestChatRouteImport } from './routes/api/public/guest-chat'
@@ -145,6 +147,18 @@ const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAccountsShareRoute =
+  AuthenticatedAccountsShareRouteImport.update({
+    id: '/share',
+    path: '/share',
+    getParentRoute: () => AuthenticatedAccountsRoute,
+  } as any)
+const AuthenticatedAccountsSplitRoute =
+  AuthenticatedAccountsSplitRouteImport.update({
+    id: '/split',
+    path: '/split',
+    getParentRoute: () => AuthenticatedAccountsRoute,
+  } as any)
 const AuthenticatedAssistantIndexRoute =
   AuthenticatedAssistantIndexRouteImport.update({
     id: '/assistant/',
@@ -167,7 +181,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/accounts': typeof AuthenticatedAccountsRoute
+  '/accounts': typeof AuthenticatedAccountsRouteWithChildren
   '/activity': typeof AuthenticatedActivityRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/admin-overview': typeof AuthenticatedAdminOverviewRoute
@@ -185,6 +199,8 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/accounts/share': typeof AuthenticatedAccountsShareRoute
+  '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/api/public/guest-chat': typeof ApiPublicGuestChatRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
@@ -193,7 +209,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/accounts': typeof AuthenticatedAccountsRoute
+  '/accounts': typeof AuthenticatedAccountsRouteWithChildren
   '/activity': typeof AuthenticatedActivityRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/admin-overview': typeof AuthenticatedAdminOverviewRoute
@@ -211,6 +227,8 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/accounts/share': typeof AuthenticatedAccountsShareRoute
+  '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/api/public/guest-chat': typeof ApiPublicGuestChatRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
@@ -221,7 +239,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
+  '/_authenticated/accounts': typeof AuthenticatedAccountsRouteWithChildren
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/admin-overview': typeof AuthenticatedAdminOverviewRoute
@@ -239,6 +257,8 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/_authenticated/accounts/share': typeof AuthenticatedAccountsShareRoute
+  '/_authenticated/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
   '/api/public/guest-chat': typeof ApiPublicGuestChatRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
@@ -267,6 +287,8 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/landing-chat'
     | '/api/transcribe'
+    | '/accounts/share'
+    | '/accounts/split'
     | '/assistant/$threadId'
     | '/api/public/guest-chat'
     | '/assistant/'
@@ -293,6 +315,8 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/landing-chat'
     | '/api/transcribe'
+    | '/accounts/share'
+    | '/accounts/split'
     | '/assistant/$threadId'
     | '/api/public/guest-chat'
     | '/assistant'
@@ -320,6 +344,8 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/landing-chat'
     | '/api/transcribe'
+    | '/_authenticated/accounts/share'
+    | '/_authenticated/accounts/split'
     | '/_authenticated/assistant/$threadId'
     | '/api/public/guest-chat'
     | '/_authenticated/assistant/'
@@ -492,6 +518,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/accounts/share': {
+      id: '/_authenticated/accounts/share'
+      path: '/share'
+      fullPath: '/accounts/share'
+      preLoaderRoute: typeof AuthenticatedAccountsShareRouteImport
+      parentRoute: typeof AuthenticatedAccountsRoute
+    }
+    '/_authenticated/accounts/split': {
+      id: '/_authenticated/accounts/split'
+      path: '/split'
+      fullPath: '/accounts/split'
+      preLoaderRoute: typeof AuthenticatedAccountsSplitRouteImport
+      parentRoute: typeof AuthenticatedAccountsRoute
+    }
     '/_authenticated/assistant/': {
       id: '/_authenticated/assistant/'
       path: '/assistant'
@@ -516,8 +556,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAccountsRouteChildren {
+  AuthenticatedAccountsShareRoute: typeof AuthenticatedAccountsShareRoute
+  AuthenticatedAccountsSplitRoute: typeof AuthenticatedAccountsSplitRoute
+}
+
+const AuthenticatedAccountsRouteChildren: AuthenticatedAccountsRouteChildren = {
+  AuthenticatedAccountsShareRoute: AuthenticatedAccountsShareRoute,
+  AuthenticatedAccountsSplitRoute: AuthenticatedAccountsSplitRoute,
+}
+
+const AuthenticatedAccountsRouteWithChildren =
+  AuthenticatedAccountsRoute._addFileChildren(
+    AuthenticatedAccountsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
+  AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRouteWithChildren
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAdminOverviewRoute: typeof AuthenticatedAdminOverviewRoute
@@ -537,7 +592,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
+  AuthenticatedAccountsRoute: AuthenticatedAccountsRouteWithChildren,
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAdminOverviewRoute: AuthenticatedAdminOverviewRoute,

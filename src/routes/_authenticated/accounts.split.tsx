@@ -362,11 +362,20 @@ function Page() {
         ) : (
           <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card shadow-sm">
             {data.transfers.map((t) => {
-              const incoming = t.to_user_id !== t.from_user_id && t.status === "completed" && data.memberships.every(() => true) && t.reference !== null ? undefined : undefined;
-              void incoming;
-              const isIncoming = t.status === "completed" && t.to_user_id !== "" && t.id !== "" && t.from_user_id !== t.to_user_id && t.to_user_id === (data as { me?: string }).me;
-              void isIncoming;
-              return null;
+              const incoming = t.to_user_id === data.me;
+              return (
+                <li key={t.id} className="flex items-center justify-between gap-2 px-4 py-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate">{t.reference ?? (incoming ? "Received payment" : "Sent payment")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(t.created_at).toLocaleString()} · {t.status}
+                    </p>
+                  </div>
+                  <span className={cn("shrink-0 font-medium", incoming && "text-primary")}>
+                    {incoming ? "+" : "−"}{fmt(t.currency, t.amount)}
+                  </span>
+                </li>
+              );
             })}
           </ul>
         )}

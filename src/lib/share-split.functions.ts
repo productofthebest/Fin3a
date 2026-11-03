@@ -166,6 +166,7 @@ export const getSplitBills = createServerFn({ method: "GET" })
     }
 
     return {
+      me: userId,
       created: created ?? [],
       memberships: memberships ?? [],
       transfers: transfers ?? [],
