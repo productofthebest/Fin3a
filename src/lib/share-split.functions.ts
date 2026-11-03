@@ -179,12 +179,14 @@ export const paySplitShare = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { participantId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { data: transferId, error } = await context.supabase.rpc("pay_split_share", {
+    const { data: result, error } = await context.supabase.rpc("pay_split_share", {
       _participant_id: data.participantId,
       _idempotency_key: crypto.randomUUID(),
     });
     if (error) throw new Error(error.message);
-    return { transferId };
+    const outcome = result as { id: string; status: string; reason?: string };
+    if (outcome.status !== "completed") throw new Error(outcome.reason ?? "Payment failed");
+    return { transferId: outcome.id };
   });
 
 export const sendSplitReminder = createServerFn({ method: "POST" })
