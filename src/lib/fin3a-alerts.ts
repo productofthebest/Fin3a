@@ -35,7 +35,7 @@ const money = (n: number, c: string | null) => `${c ?? ""} ${n.toLocaleString("e
 function median(xs: number[]): number {
   const s = [...xs].sort((a, b) => a - b);
   const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
 }
 
 export function buildAlerts(i: AlertInputs): Fin3aAlert[] {

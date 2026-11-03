@@ -15,12 +15,12 @@ describe("Fin3a alerts", () => {
   });
   it("marks split shares past deadline as high", () => {
     const a = buildAlerts({ ...base, splitOwedByMe: [{ id: "s", title: "Dinner", amount: 5000, currency: "NGN", deadline: "2026-11-02" }] });
-    expect(a[0].severity).toBe("high");
+    expect(a[0]!.severity).toBe("high");
   });
   it("reports pending scanned lines and skips empty documents", () => {
     const a = buildAlerts({ ...base, pendingDrafts: [{ document_id: "d", filename: "s.pdf", count: 4 }, { document_id: "e", filename: "x.pdf", count: 0 }] });
     expect(a).toHaveLength(1);
-    expect(a[0].title).toContain("4 scanned lines");
+    expect(a[0]!.title).toContain("4 scanned lines");
   });
   it("needs 5 baseline expenses and 3× median for an unusual-expense alert", () => {
     const hist = [1, 2, 3, 4, 5].map(n => exp("h" + n, 1000, `2026-10-0${n}`));
