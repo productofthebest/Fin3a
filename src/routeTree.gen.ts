@@ -32,6 +32,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiLandingChatRouteImport } from './routes/api/landing-chat'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as PayFin3aIdRouteImport } from './routes/pay.$fin3aId'
+import { Route as AuthenticatedAccountsQrRouteImport } from './routes/_authenticated/accounts_.qr'
 import { Route as AuthenticatedAccountsShareRouteImport } from './routes/_authenticated/accounts_.share'
 import { Route as AuthenticatedAccountsSplitRouteImport } from './routes/_authenticated/accounts_.split'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
@@ -153,6 +154,11 @@ const PayFin3aIdRoute = PayFin3aIdRouteImport.update({
   path: '/pay/$fin3aId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAccountsQrRoute = AuthenticatedAccountsQrRouteImport.update({
+  id: '/accounts_/qr',
+  path: '/accounts/qr',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAccountsShareRoute =
   AuthenticatedAccountsShareRouteImport.update({
     id: '/accounts_/share',
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/pay/$fin3aId': typeof PayFin3aIdRoute
+  '/accounts/qr': typeof AuthenticatedAccountsQrRoute
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/pay/$fin3aId': typeof PayFin3aIdRoute
+  '/accounts/qr': typeof AuthenticatedAccountsQrRoute
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
   '/pay/$fin3aId': typeof PayFin3aIdRoute
+  '/_authenticated/accounts_/qr': typeof AuthenticatedAccountsQrRoute
   '/_authenticated/accounts_/share': typeof AuthenticatedAccountsShareRoute
   '/_authenticated/accounts_/split': typeof AuthenticatedAccountsSplitRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/api/landing-chat'
     | '/api/transcribe'
     | '/pay/$fin3aId'
+    | '/accounts/qr'
     | '/accounts/share'
     | '/accounts/split'
     | '/assistant/$threadId'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/api/landing-chat'
     | '/api/transcribe'
     | '/pay/$fin3aId'
+    | '/accounts/qr'
     | '/accounts/share'
     | '/accounts/split'
     | '/assistant/$threadId'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/api/landing-chat'
     | '/api/transcribe'
     | '/pay/$fin3aId'
+    | '/_authenticated/accounts_/qr'
     | '/_authenticated/accounts_/share'
     | '/_authenticated/accounts_/split'
     | '/_authenticated/assistant/$threadId'
@@ -538,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayFin3aIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/accounts_/qr': {
+      id: '/_authenticated/accounts_/qr'
+      path: '/accounts/qr'
+      fullPath: '/accounts/qr'
+      preLoaderRoute: typeof AuthenticatedAccountsQrRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accounts_/share': {
       id: '/_authenticated/accounts_/share'
       path: '/accounts/share'
@@ -592,6 +611,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlanningRoute: typeof AuthenticatedPlanningRoute
   AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
   AuthenticatedSpendingRoute: typeof AuthenticatedSpendingRoute
+  AuthenticatedAccountsQrRoute: typeof AuthenticatedAccountsQrRoute
   AuthenticatedAccountsShareRoute: typeof AuthenticatedAccountsShareRoute
   AuthenticatedAccountsSplitRoute: typeof AuthenticatedAccountsSplitRoute
   AuthenticatedAssistantThreadIdRoute: typeof AuthenticatedAssistantThreadIdRoute
@@ -614,6 +634,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlanningRoute: AuthenticatedPlanningRoute,
   AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
   AuthenticatedSpendingRoute: AuthenticatedSpendingRoute,
+  AuthenticatedAccountsQrRoute: AuthenticatedAccountsQrRoute,
   AuthenticatedAccountsShareRoute: AuthenticatedAccountsShareRoute,
   AuthenticatedAccountsSplitRoute: AuthenticatedAccountsSplitRoute,
   AuthenticatedAssistantThreadIdRoute: AuthenticatedAssistantThreadIdRoute,
