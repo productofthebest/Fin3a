@@ -154,3 +154,15 @@ All migrations so far are additive (new tables/columns/indexes/functions). No de
 - ACC-03 Deposit/Withdraw/Transfer actions — DISABLED by design until provider connected; View transaction history links to Activity.
 - ACC-04 Navigation: Accounts placed after Dashboard; desktop menu spacing fixed so all items fit.
 - Note: owner reversed the no-crypto rule on 3 Nov 2026; trading/exchange features remain excluded.
+
+## SHR — Share Account & Split Bill (added 3 Nov 2026)
+| Ref | Requirement | Impl | Test | Evidence | Dependencies |
+|---|---|---|---|---|---|
+| SHR-01 | Share account: name, unique Fin3a ID, payment link, QR, copy, WhatsApp/SMS/native share | Done | Signed-in workflow | /accounts/share rendered with FIN-59445CCE, QR and share buttons; public /pay/FIN-3589A54F shows name+ID+QR signed out, send form signed in | None |
+| SHR-02 | Security: no passwords/OTPs/keys; only owner-authorized details; auth required; recipient validation | Done | Workflow + policy | Public profile RPC returns name+ID only; lookup rate-limited (20/h) and excludes self; transfers require verified session | None |
+| SHR-03 | Split bill: create (title, total, participants by ID/email/phone, equal/custom, include self, note, deadline) | Done | Signed-in workflow | "Test dinner" ₦100,000 created with Ordu via FIN-3589A54F; equal split 2×₦50,000 shown; 11 pure arithmetic tests | Phone lookup depends on verified phone identities |
+| SHR-04 | Collection: pay from Fin3a balance, auto status, paid/pending/overdue, reminders, collected/outstanding, creator notification | Partial | Signed-in workflow | Zero-balance payment rejected server-side ("Insufficient balance") and failed attempt persisted for admin; collected/outstanding and reminder button verified; overdue derived from deadline | Real paid transfer needs a funded account (provider deposit); reminders are in-app only (no push/SMS) |
+| SHR-05 | Three-section dashboard: Bills I Created / Shared With Me / Payment History | Done | Signed-in workflow | All three sections render; created bill lists participants, statuses and totals | None |
+| SHR-06 | Internal ledger, server-side verification, idempotency, no double payments, audit trail | Done | Workflow + source | execute_internal_transfer locks sender account, checks computed balance, unique idempotency key per completed transfer, paired ledger entries; failed rows persist | Concurrency stress test pending isolated staging |
+| SHR-07 | Admin visibility: sharing activity, bills, requested/collected, failed/pending, suspicious | Done | Signed-in admin workflow | /admin-overview shows bills created/open, shares paid/pending, transfers completed/failed, requested/collected totals, suspicious (3+ failed/24h) | None |
+- Baseline: **181/181 automated tests passed**, tsgo clean, build OK (3 Nov 2026). Two test bills cancelled after verification; one failed-transfer audit row retained intentionally. Not claimed complete for real money: no funded account exists until a provider is connected.
