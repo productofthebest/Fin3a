@@ -100,7 +100,7 @@ function AssistantPage() {
     <div className="mx-auto max-w-6xl pb-8 sm:pb-10">
 
           {loaded ? (
-            <ChatWindow key={threadId} threadId={threadId} initialMessages={loaded.messages as UIMessage[]} name={name} />
+            <ChatWindow key={threadId} threadId={threadId} name={name} />
           ) : (
             <div className="mt-8 rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground">Conversation not found.</div>
           )}
@@ -109,7 +109,7 @@ function AssistantPage() {
   );
 }
 
-function ChatWindow({ threadId, initialMessages, name }: { threadId: string; initialMessages: UIMessage[]; name?: string | undefined }) {
+function ChatWindow({ threadId, name }: { threadId: string; name?: string | undefined }) {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -117,7 +117,7 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
 
   const { messages, sendMessage, status, stop, error } = useChat({
     id: threadId,
-    messages: initialMessages,
+    messages: [],
     transport: new DefaultChatTransport({
       api: "/api/chat",
       headers: async (): Promise<Record<string, string>> => {
@@ -141,6 +141,7 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
   const busy = status === "submitted" || status === "streaming";
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => () => { void stop(); }, [stop]);
   useEffect(() => {
     const chat = chatScrollRef.current;
     chat?.scrollTo({ top: chat.scrollHeight });
