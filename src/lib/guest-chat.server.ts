@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { GUEST_INSTRUCTIONS, GUEST_MAX_OUTPUT, GUEST_MODEL, guestLimitMessage, guestMessageSchema, isGuestOriginAllowed } from "./guest-chat";
-import { publicSearchQuery } from "./web-access";
+import { homepageSearchQuestion } from "./homepage-web";
 import { finishWeb, reserveWeb, searchPublicInformation, webEvidence } from "./web-access.server";
 
 export async function guestChatResponse(request: Request) {
@@ -10,6 +10,8 @@ export async function guestChatResponse(request: Request) {
   if (raw.length > 12000) return Response.json({ error: "Message is too long." }, { status: 413 });
   const parsed = guestMessageSchema.safeParse(await Promise.resolve().then(() => JSON.parse(raw)).catch(() => null));
   if (!parsed.success) return Response.json({ error: "Enter a question of up to 2,000 characters." }, { status: 400 });
+  const publicQuestion = homepageSearchQuestion(parsed.data.message);
+  if (publicQuestion.error) return Response.json({ error: publicQuestion.error }, { status: 400 });
   const apiKey = process.env["OPENAI_API_KEY"];
   const secret = process.env["GUEST_CHAT_HASH_SECRET"];
   if (!apiKey || !secret) return Response.json({ error: "Fin3a AI is not configured yet." }, { status: 503 });
@@ -23,7 +25,7 @@ export async function guestChatResponse(request: Request) {
   const admission = data as { allowed?: boolean; reason?: string; usage_id?: string; warning?: string } | null;
   if (error || !admission?.allowed || !admission.usage_id) return Response.json({ error: guestLimitMessage(admission?.reason) }, { status: error ? 503 : 429 });
   const usageId = admission.usage_id;
-  const query = publicSearchQuery(parsed.data.message);
+  const query = publicQuestion.query;
   let webReserved = false;
   let searchInput: number | undefined;
   let searchOutput: number | undefined;
@@ -45,7 +47,7 @@ export async function guestChatResponse(request: Request) {
         await finish(false);
         return Response.json({ error: "Web search has reached its spending allowance. Please try again later." }, { status: 429 });
       }
-      const web = await searchPublicInformation(query, apiKey, request.signal);
+      const web = await searchPublicInformation(query, apiKey, request.signal, true);
       searchInput = web.input;
       searchOutput = web.output;
       evidence = webEvidence(web.text);
