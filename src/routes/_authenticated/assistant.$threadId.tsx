@@ -441,7 +441,7 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
                 <p className="font-medium">I've detected a Fin3a payment profile.</p>
                 <p className="mt-2 text-muted-foreground">Account: <span className="font-mono text-primary">{qrCard.fin3aId}</span></p>
                 <div className="mt-3 flex gap-2">
-                  <Button asChild size="sm"><Link to="/pay/$fin3aId" params={{ fin3aId: qrCard.fin3aId }}>Review Payment</Button></Link>
+                  <Button asChild size="sm"><Link to="/pay/$fin3aId" params={{ fin3aId: qrCard.fin3aId }}>Review Payment</Link></Button>
                   <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
                 </div>
               </>
