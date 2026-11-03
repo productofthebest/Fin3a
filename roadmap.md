@@ -4,6 +4,7 @@ Product: AI-first personal finance platform under Top Floor.
 Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with NGN/USD ledgers, crypto deposit addresses, Breet planned). Still excluded: trading/exchange features. Never fake addresses or simulated transactions.
 
 ## Phase 1 — Foundation (current)
+- [ ] Fin3a Admin: audit existing admin/auth, ledger and providers; present five-stage plan before changes. Implementation waits for plan approval, isolated security verification and missing provider services; preserve customer app/data.
 - [x] Dual phone/email authentication screens, registration, recovery and responsive validation tests
 - [ ] Enable Phone in Cloud Auth settings and configure SMS delivery; verify real six-digit OTP sign-in end-to-end (blocked on owner configuration)
 - [x] Lovable Cloud connected; email/password + Google + Lovable sign-in enabled
