@@ -347,8 +347,8 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
             </div>
           </div>
 
+          <h2 className="order-1 mt-8 text-[15px] font-medium">Try Asking Fin3a.</h2>
           <div className="order-3">
-          <h2 className="mt-8 text-[15px] font-medium">Try Asking Fin3a.</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {SUGGESTIONS.map((s) => (
               <button
@@ -471,7 +471,7 @@ function ChatWindow({ threadId, initialMessages, name }: { threadId: string; ini
 
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="order-2 mt-7 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
+        className="order-2 mt-4 rounded-[22px] border border-accent/40 bg-card px-4 pb-4 pt-4 shadow-[var(--shadow-lavender)] sm:px-5"
       >
         <input
           ref={cameraInputRef}
