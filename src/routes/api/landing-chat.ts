@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } from "@/lib/api-auth.server";
-import { publicSearchQuery } from "@/lib/web-access";
+import { homepageSearchQuestion } from "@/lib/homepage-web";
 
 // Signed-in homepage requests use only the verified caller's aggregate financial records.
 const MODEL = "gpt-5-mini";
@@ -24,6 +24,8 @@ export const Route = createFileRoute("/api/landing-chat")({
         if (!parsed.success) return jsonError(400, "Invalid message.");
         // Only the latest turn may be a user turn; earlier assistant turns are context only.
         if (parsed.data.messages.at(-1)?.role !== "user") return jsonError(400, "Invalid message.");
+        const publicQuestion = homepageSearchQuestion(parsed.data.messages.at(-1)?.content ?? "");
+        if (publicQuestion.error) return jsonError(400, publicQuestion.error);
         const apiKey = process.env["OPENAI_API_KEY"];
         if (!apiKey) return jsonError(500, "Fin3a AI is not configured yet.");
         if (!(await consumeQuota(auth.supabase, "landing_chat", HOURLY_LIMIT, 3600))) {
@@ -45,7 +47,7 @@ export const Route = createFileRoute("/api/landing-chat")({
         const { createOpenAI } = await import("@ai-sdk/openai");
         const openai = createOpenAI({ apiKey });
         const { finishWeb, reserveWeb, searchPublicInformation, webEvidence } = await import("@/lib/web-access.server");
-        const query = publicSearchQuery(parsed.data.messages.at(-1)?.content ?? "");
+        const query = publicQuestion.query;
         let evidence = "";
         let sources: import("@/lib/web-access").WebSource[] = [];
         let webInput: number | undefined;
@@ -56,7 +58,7 @@ export const Route = createFileRoute("/api/landing-chat")({
             return jsonError(429, "Web search is unavailable within the current spending allowance.");
           }
           try {
-            const web = await searchPublicInformation(query, apiKey, request.signal);
+            const web = await searchPublicInformation(query, apiKey, request.signal, true);
             evidence = webEvidence(web.text);
             sources = web.sources;
             webInput = web.input;
@@ -68,7 +70,7 @@ export const Route = createFileRoute("/api/landing-chat")({
         }
         const result = streamText({
           model: openai.responses(MODEL),
-          system: `${ASSISTANT_INSTRUCTIONS}${evidence}\nWithout public web evidence do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
+          system: `${ASSISTANT_INSTRUCTIONS}\nYou may also answer general public questions on science, technology, sports, history, travel and current events. Do not force unrelated questions into a financial interpretation. Retain ordinary safety restrictions.${evidence}\nWithout public web evidence do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
           // Never accept browser-authored assistant/system history as trusted context.
           messages: [{ role: "user", content: parsed.data.messages.at(-1)?.content ?? "" }],
           maxOutputTokens: 1200,
