@@ -141,6 +141,13 @@
       "when": 1793718860385,
       "tag": "0019_share_account_split_bills",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793718887272,
+      "tag": "0020_split_participant_directory",
+      "breakpoints": true
     }
   ]
 }

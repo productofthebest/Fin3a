@@ -1327,6 +1327,14 @@ export type Database = {
         Args: { _participant_id: string }
         Returns: undefined
       }
+      split_participant_directory: {
+        Args: { _bill_id: string }
+        Returns: {
+          display_name: string
+          fin3a_id: string
+          user_id: string
+        }[]
+      }
       transfer_internal: {
         Args: {
           _amount: number
