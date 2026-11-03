@@ -4,7 +4,7 @@ import { Loader2, RefreshCw, ShieldAlert, ArrowUpRight } from "lucide-react";
 import { AdminShell } from "@/components/admin-shell";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { getAdminSplitOverview, getAiOverview, getIsAdmin } from "@/lib/admin.functions";
+import { getAdminQrOverview, getAdminSplitOverview, getAiOverview, getIsAdmin } from "@/lib/admin.functions";
 import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/admin-overview")({
