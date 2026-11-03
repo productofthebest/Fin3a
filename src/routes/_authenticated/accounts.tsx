@@ -61,14 +61,14 @@ function Page() {
             </div>
             <p className="mt-3 break-all font-display text-3xl font-bold">{fmt(account.currency, account.balance.available)}</p>
             <p className="text-xs text-muted-foreground">Available balance</p>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg border border-border/70 p-3">
+            <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-3 py-1">
                 <p className="text-xs text-muted-foreground">Pending</p>
-                <p className="mt-1 font-medium">{fmt(account.currency, account.balance.pending)}</p>
+                <p className="break-all font-medium">{fmt(account.currency, account.balance.pending)}</p>
               </div>
-              <div className="rounded-lg border border-border/70 p-3">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-3 py-1">
                 <p className="text-xs text-muted-foreground">Total</p>
-                <p className="mt-1 font-medium">{fmt(account.currency, account.balance.total)}</p>
+                <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
               </div>
             </div>
             <div className="mt-4">
