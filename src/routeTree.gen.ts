@@ -31,6 +31,7 @@ import { Route as AuthenticatedSpendingRouteImport } from './routes/_authenticat
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiLandingChatRouteImport } from './routes/api/landing-chat'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
+import { Route as PayFin3aIdRouteImport } from './routes/pay.$fin3aId'
 import { Route as AuthenticatedAccountsShareRouteImport } from './routes/_authenticated/accounts.share'
 import { Route as AuthenticatedAccountsSplitRouteImport } from './routes/_authenticated/accounts.split'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
@@ -147,6 +148,11 @@ const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
   path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PayFin3aIdRoute = PayFin3aIdRouteImport.update({
+  id: '/pay/$fin3aId',
+  path: '/pay/$fin3aId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAccountsShareRoute =
   AuthenticatedAccountsShareRouteImport.update({
     id: '/share',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/api/chat': typeof ApiChatRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/pay/$fin3aId': typeof PayFin3aIdRoute
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -227,6 +234,7 @@ export interface FileRoutesByTo {
   '/api/chat': typeof ApiChatRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/pay/$fin3aId': typeof PayFin3aIdRoute
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/api/chat': typeof ApiChatRoute
   '/api/landing-chat': typeof ApiLandingChatRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/pay/$fin3aId': typeof PayFin3aIdRoute
   '/_authenticated/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/_authenticated/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/landing-chat'
     | '/api/transcribe'
+    | '/pay/$fin3aId'
     | '/accounts/share'
     | '/accounts/split'
     | '/assistant/$threadId'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/landing-chat'
     | '/api/transcribe'
+    | '/pay/$fin3aId'
     | '/accounts/share'
     | '/accounts/split'
     | '/assistant/$threadId'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/api/chat'
     | '/api/landing-chat'
     | '/api/transcribe'
+    | '/pay/$fin3aId'
     | '/_authenticated/accounts/share'
     | '/_authenticated/accounts/split'
     | '/_authenticated/assistant/$threadId'
@@ -359,6 +371,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   ApiLandingChatRoute: typeof ApiLandingChatRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
+  PayFin3aIdRoute: typeof PayFin3aIdRoute
   ApiPublicGuestChatRoute: typeof ApiPublicGuestChatRoute
 }
 
@@ -518,6 +531,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pay/$fin3aId': {
+      id: '/pay/$fin3aId'
+      path: '/pay/$fin3aId'
+      fullPath: '/pay/$fin3aId'
+      preLoaderRoute: typeof PayFin3aIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/accounts/share': {
       id: '/_authenticated/accounts/share'
       path: '/share'
@@ -622,6 +642,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   ApiLandingChatRoute: ApiLandingChatRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
+  PayFin3aIdRoute: PayFin3aIdRoute,
   ApiPublicGuestChatRoute: ApiPublicGuestChatRoute,
 }
 export const routeTree = rootRouteImport
