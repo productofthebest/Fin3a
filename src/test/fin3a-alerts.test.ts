@@ -26,7 +26,7 @@ describe("Fin3a alerts", () => {
     const hist = [1, 2, 3, 4, 5].map(n => exp("h" + n, 1000, `2026-10-0${n}`));
     expect(buildAlerts({ ...base, expenses: [...hist.slice(0, 4), exp("big", 5000, "2026-11-02")] })).toHaveLength(0);
     expect(buildAlerts({ ...base, expenses: [...hist, exp("ok", 2999, "2026-11-02")] })).toHaveLength(0);
-    expect(buildAlerts({ ...base, expenses: [...hist, exp("big", 3000, "2026-11-02")] })[0].kind).toBe("unusual_expense");
+    expect(buildAlerts({ ...base, expenses: [...hist, exp("big", 3000, "2026-11-02")] })[0]!.kind).toBe("unusual_expense");
   });
   it("ignores flagged, pending and unknown-currency expenses", () => {
     const hist = [1, 2, 3, 4, 5].map(n => exp("h" + n, 1000, `2026-10-0${n}`));
