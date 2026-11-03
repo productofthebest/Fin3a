@@ -13,8 +13,6 @@ async function accessToken() {
   return data.session?.access_token ?? null;
 }
 
-const SIGN_IN_REQUIRED = "Please sign in or create a free account to chat with Fin3a AI. This keeps the assistant secure and fair for everyone.";
-
 type Msg = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
@@ -31,7 +29,8 @@ export function LandingAssistant() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | "signup" | null>("choose");
+  const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | "signup" | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [photoScanning, setPhotoScanning] = useState(false);
@@ -54,28 +53,26 @@ export function LandingAssistant() {
       setError(null);
       return;
     }
-    setAuthChoice("choose");
+    setAuthChoice(null);
     setError(null);
+    setWarning(null);
     const token = await accessToken();
-    if (!token) {
-      setMessages((prev) => [...prev, { role: "user", content }, { role: "assistant", content: SIGN_IN_REQUIRED }]);
-      setInput("");
-      return;
-    }
     const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages([...history, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
     try {
-      const res = await fetch("/api/landing-chat", {
+      const res = await fetch(token ? "/api/landing-chat" : "/api/public/guest-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ messages: history }),
+        headers: token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : { "Content-Type": "application/json" },
+        body: JSON.stringify(token ? { messages: [{ role: "user", content }] } : { message: content }),
       });
       if (!res.ok || !res.body) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error ?? "Fin3a AI is unavailable right now.");
       }
+      const usageWarning = res.headers.get("x-ai-usage-warning");
+      if (usageWarning) setWarning(decodeURIComponent(usageWarning));
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let acc = "";
@@ -224,6 +221,7 @@ export function LandingAssistant() {
 
         <div className="border-t border-border p-3 sm:p-4">
           {error && <p className="mb-2 px-1 text-xs text-destructive">{error}</p>}
+          {warning && <p className="mb-2 px-1 text-xs text-primary">{warning}</p>}
           {(recording || transcribing || photoScanning) && (
             <p className="mb-2 flex items-center gap-2 px-1 text-xs text-primary">
               {recording ? (
@@ -304,7 +302,7 @@ export function LandingAssistant() {
                 </button>
               </div>
             </div>
-            <p className="mt-3 text-[11px] text-muted-foreground">Answers from your own records · not financial advice</p>
+            <p className="mt-3 text-[11px] text-muted-foreground">General guidance · sign in for answers from your own records · not financial advice</p>
           </form>
         </div>
       </div>

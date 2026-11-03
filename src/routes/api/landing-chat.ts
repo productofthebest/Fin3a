@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } from "@/lib/api-auth.server";
 
-// Homepage Fin3a AI: signed-in only, general guidance, no database reads of financial records.
+// Signed-in homepage requests use only the verified caller's aggregate financial records.
 const MODEL = "gpt-5-mini";
 const HOURLY_LIMIT = 20;
 
@@ -38,13 +38,22 @@ export const Route = createFileRoute("/api/landing-chat")({
         const usage = await beginAiUsage(auth.supabase, "landing_chat", null);
         if (!usage.allowed) return jsonError(429, usage.message);
 
+        const { buildFinancialSnapshot, ASSISTANT_INSTRUCTIONS } = await import("@/lib/assistant-context.server");
+        let snapshot;
+        try {
+          snapshot = await buildFinancialSnapshot(auth.supabase, auth.userId);
+        } catch {
+          await finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "snapshot_error");
+          return jsonError(503, "Your records could not be read. Please try again later.");
+        }
         const { streamText } = await import("ai");
         const { createOpenAI } = await import("@ai-sdk/openai");
         const openai = createOpenAI({ apiKey });
         const result = streamText({
           model: openai.responses(MODEL),
-          system: INSTRUCTIONS,
-          messages: parsed.data.messages,
+          system: `${ASSISTANT_INSTRUCTIONS}\nNo web search tool is available in this homepage conversation; do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
+          // Never accept browser-authored assistant/system history as trusted context.
+          messages: [{ role: "user", content: parsed.data.messages.at(-1)?.content ?? "" }],
           maxOutputTokens: 1200,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
           onFinish: ({ totalUsage }) => finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
