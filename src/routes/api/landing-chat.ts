@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } from "@/lib/api-auth.server";
+import { publicSearchQuery } from "@/lib/web-access";
 
 // Signed-in homepage requests use only the verified caller's aggregate financial records.
 const MODEL = "gpt-5-mini";
@@ -43,17 +44,47 @@ export const Route = createFileRoute("/api/landing-chat")({
         const { streamText } = await import("ai");
         const { createOpenAI } = await import("@ai-sdk/openai");
         const openai = createOpenAI({ apiKey });
+        const { finishWeb, reserveWeb, searchPublicInformation, webEvidence } = await import("@/lib/web-access.server");
+        const query = publicSearchQuery(parsed.data.messages.at(-1)?.content ?? "");
+        let evidence = "";
+        let sources: import("@/lib/web-access").WebSource[] = [];
+        let webInput: number | undefined;
+        let webOutput: number | undefined;
+        if (query) {
+          if (!(await reserveWeb(auth.supabase, usage.usageId, false))) {
+            await finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "web_budget");
+            return jsonError(429, "Web search is unavailable within the current spending allowance.");
+          }
+          try {
+            const web = await searchPublicInformation(query, apiKey, request.signal);
+            evidence = webEvidence(web.text);
+            sources = web.sources;
+            webInput = web.input;
+            webOutput = web.output;
+          } catch {
+            await finishWeb(auth.supabase, usage.usageId, false, false);
+            return jsonError(503, "Web search could not be completed. Please try again later.");
+          }
+        }
         const result = streamText({
           model: openai.responses(MODEL),
-          system: `${ASSISTANT_INSTRUCTIONS}\nNo web search tool is available in this homepage conversation; do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
+          system: `${ASSISTANT_INSTRUCTIONS}${evidence}\nWithout public web evidence do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
           // Never accept browser-authored assistant/system history as trusted context.
           messages: [{ role: "user", content: parsed.data.messages.at(-1)?.content ?? "" }],
           maxOutputTokens: 1200,
           providerOptions: { openai: { store: false, reasoningEffort: "low" } },
-          onFinish: ({ totalUsage }) => finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
-          onError: () => finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
+          maxRetries: 0,
+          abortSignal: request.signal,
+          onFinish: ({ totalUsage }) => query
+            ? finishWeb(auth.supabase, usage.usageId, false, true, webInput !== undefined && totalUsage.inputTokens !== undefined ? webInput + totalUsage.inputTokens : undefined, webOutput !== undefined && totalUsage.outputTokens !== undefined ? webOutput + totalUsage.outputTokens : undefined)
+            : finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
+          onError: () => query ? finishWeb(auth.supabase, usage.usageId, false, false) : finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
+          onAbort: () => query ? finishWeb(auth.supabase, usage.usageId, false, false) : finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "aborted"),
         });
-        return result.toTextStreamResponse(usage.warning ? { headers: { "x-ai-usage-warning": encodeURIComponent(usage.warning) } } : undefined);
+        const headers = new Headers({ "Cache-Control": "no-store" });
+        if (usage.warning) headers.set("x-ai-usage-warning", encodeURIComponent(usage.warning));
+        if (sources.length) headers.set("x-fin3a-web-sources", encodeURIComponent(JSON.stringify(sources)));
+        return result.toTextStreamResponse({ headers });
       },
     },
   },

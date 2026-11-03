@@ -1,4 +1,16 @@
 import { WEB_MAX_CALLS, safeWebSources } from "./web-access";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+export async function reserveWeb(client: SupabaseClient<Database>, id: string, guest: boolean) {
+  const { data, error } = await client.rpc("ai_web_reserve", { _id: id, _guest: guest });
+  return !error && data === true;
+}
+
+export async function finishWeb(client: SupabaseClient<Database>, id: string, guest: boolean, ok: boolean, input?: number, output?: number) {
+  const { error } = await client.rpc("ai_web_finish", { _id: id, _guest: guest, _ok: ok, _input: input ?? -1, _output: output ?? -1 });
+  if (error) console.error("Web usage finalization failed");
+}
 
 /** This helper receives an allowlisted public query only, never personal context/history. */
 export async function searchPublicInformation(query: string, apiKey: string, signal: AbortSignal) {

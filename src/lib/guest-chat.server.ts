@@ -1,5 +1,7 @@
 import { createHmac } from "node:crypto";
 import { GUEST_INSTRUCTIONS, GUEST_MAX_OUTPUT, GUEST_MODEL, guestLimitMessage, guestMessageSchema, isGuestOriginAllowed } from "./guest-chat";
+import { publicSearchQuery } from "./web-access";
+import { finishWeb, reserveWeb, searchPublicInformation, webEvidence } from "./web-access.server";
 
 export async function guestChatResponse(request: Request) {
   if (!isGuestOriginAllowed(request)) return Response.json({ error: "Please ask from the Fin3a homepage." }, { status: 403 });
@@ -21,17 +23,39 @@ export async function guestChatResponse(request: Request) {
   const admission = data as { allowed?: boolean; reason?: string; usage_id?: string; warning?: string } | null;
   if (error || !admission?.allowed || !admission.usage_id) return Response.json({ error: guestLimitMessage(admission?.reason) }, { status: error ? 503 : 429 });
   const usageId = admission.usage_id;
+  const query = publicSearchQuery(parsed.data.message);
+  let webReserved = false;
+  let searchInput: number | undefined;
+  let searchOutput: number | undefined;
+  let evidence = "";
+  let sources: import("./web-access").WebSource[] = [];
   const finish = async (ok: boolean, input?: number, output?: number) => {
+    if (webReserved) {
+      await finishWeb(supabaseAdmin, usageId, true, ok, input !== undefined && searchInput !== undefined ? input + searchInput : undefined, output !== undefined && searchOutput !== undefined ? output + searchOutput : undefined);
+      return;
+    }
     // Null counts keep the reservation rather than turning an uncertain paid request into zero cost.
     const { error: finishError } = await supabaseAdmin.rpc("ai_guest_finish", { _id: usageId, _ok: ok, _input: input ?? -1, _output: output ?? -1 });
     if (finishError) console.error("Guest AI usage finalization failed");
   };
   try {
+    if (query) {
+      webReserved = await reserveWeb(supabaseAdmin, usageId, true);
+      if (!webReserved) {
+        await finish(false);
+        return Response.json({ error: "Web search has reached its spending allowance. Please try again later." }, { status: 429 });
+      }
+      const web = await searchPublicInformation(query, apiKey, request.signal);
+      searchInput = web.input;
+      searchOutput = web.output;
+      evidence = webEvidence(web.text);
+      sources = web.sources;
+    }
     const { streamText } = await import("ai");
     const { createOpenAI } = await import("@ai-sdk/openai");
     const result = streamText({
       model: createOpenAI({ apiKey }).responses(GUEST_MODEL),
-      system: GUEST_INSTRUCTIONS,
+      system: GUEST_INSTRUCTIONS + evidence,
       messages: [{ role: "user", content: parsed.data.message }],
       maxOutputTokens: GUEST_MAX_OUTPUT,
       maxRetries: 0,
@@ -42,6 +66,7 @@ export async function guestChatResponse(request: Request) {
       onAbort: () => finish(false),
     });
     const headers = new Headers({ "Cache-Control": "no-store" });
+    if (sources.length) headers.set("x-fin3a-web-sources", encodeURIComponent(JSON.stringify(sources)));
     if (admission.warning) headers.set("x-ai-usage-warning", encodeURIComponent(admission.warning));
     return result.toTextStreamResponse({ headers });
   } catch {
