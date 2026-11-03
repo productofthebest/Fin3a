@@ -88,13 +88,11 @@ export async function buildFinancialSnapshot(supabase: Client, userId: string) {
   if (!preferred) throw new Error("Financial currency unavailable.");
   return {
     today: now.toISOString().slice(0, 10),
-    currency,
-    currencySymbol: currencySymbol(currency),
-    transactionCount: allRes.length,
     fin3aAccounts,
     cryptoDepositAddressAvailable: false,
     ngnBankDetailsAvailable: false,
     ...preferred,
+    transactionCount: allRes.length,
     byCurrency,
     assumptions: ["NGN and USD are separate records, not converted equivalents; never combine currency totals", "UTC calendar dates; user timezone not configured", "Completed regular known-currency records only; duplicate/ambiguous flags excluded", "First recorded and current partial months excluded from averages; zero-activity months included", "Recording history does not establish complete account coverage"],
     activeRecurringBills: (billsRes.data ?? []).map((b) => ({

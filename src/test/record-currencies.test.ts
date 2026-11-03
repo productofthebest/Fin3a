@@ -11,7 +11,7 @@ describe("NGN and USD records", () => {
     const totals = totalsByCurrency([row("NGN", 12500), row("USD", 50), row(null, 900)], "NGN", "2026-11-03");
     expect(totals.find(t => t.currency === "NGN")?.spending).toBe(12500);
     expect(totals.find(t => t.currency === "USD")?.spending).toBe(50);
-    expect(totals.find(t => t.currency === "USD")?.excluded.unknownCurrency).toBe(1);
+    expect(totals.find(t => t.currency === "USD")?.excluded["unknownCurrency"]).toBe(1);
   });
   it("does not relabel a dollar record as Naira or assign unknown amounts a currency", () => {
     expect(recordMoney(50, "USD")).toBe("$50 USD");

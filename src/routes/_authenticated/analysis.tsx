@@ -15,7 +15,7 @@ import { formatMoney } from "@/lib/fin3a";
 import { settingsQuery } from "@/lib/queries";
 import { RecordCurrencySelect } from "@/components/record-currency-select";
 import { pageMeta } from "@/lib/page-meta";
-const analysisQuery = (filters: AnalysisFilters & { currency?: string }) => queryOptions({ queryKey: ["financial-analysis", filters], queryFn: () => getAnalysis({ data: filters }) });
+const analysisQuery = (filters: AnalysisFilters & { currency?: string | undefined }) => queryOptions({ queryKey: ["financial-analysis", filters], queryFn: () => getAnalysis({ data: filters }) });
 export const Route = createFileRoute("/_authenticated/analysis")({
   head: () => pageMeta("Financial analysis", "Your Fin3a historical comparisons, category trends and transparent cash-flow forecasts."),
   validateSearch: analysisSearch,
@@ -37,7 +37,7 @@ function AnalysisPage() {
   const transactions = category === undefined ? data.transactions : data.transactions.filter(r => r.type === "expense" && r.category_id === category);
   const money = (v: number) => formatMoney(v, data.currency);
   const change = (v: number | null) => v === null ? "No percentage baseline" : `${v > 0 ? "+" : ""}${v}% vs comparison`;
-  function update(patch: Partial<AnalysisFilters & { currency?: string }>) { setCategory(undefined); void navigate({ to: "/analysis", search: { ...filters, ...patch } }); }
+  function update(patch: Partial<AnalysisFilters & { currency?: string | undefined }>) { setCategory(undefined); void navigate({ to: "/analysis", search: { ...filters, ...patch } }); }
   function download() { const url = URL.createObjectURL(new Blob([analysisCsv(data, data.currency)], { type: "text/csv;charset=utf-8" })); const a = document.createElement("a"); a.href = url; a.download = `fin3a-${data.range.start}-${data.range.end}.csv`; a.click(); URL.revokeObjectURL(url); }
   const excluded = Object.values(data.current.excluded).reduce((s,n) => s+n,0);
   return <AppShell>
