@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin-messages'
 import { Route as AuthenticatedAdminOverviewRouteImport } from './routes/_authenticated/admin-overview'
 import { Route as AuthenticatedAdminRevenueRouteImport } from './routes/_authenticated/admin-revenue'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin-users'
@@ -77,6 +78,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminMessagesRoute =
+  AuthenticatedAdminMessagesRouteImport.update({
+    id: '/admin-messages',
+    path: '/admin-messages',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminOverviewRoute =
   AuthenticatedAdminOverviewRouteImport.update({
     id: '/admin-overview',
@@ -222,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/accounts': typeof AuthenticatedAccountsRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-messages': typeof AuthenticatedAdminMessagesRoute
   '/admin-overview': typeof AuthenticatedAdminOverviewRoute
   '/admin-revenue': typeof AuthenticatedAdminRevenueRoute
   '/admin-users': typeof AuthenticatedAdminUsersRoute
@@ -256,6 +264,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof AuthenticatedAccountsRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/admin-messages': typeof AuthenticatedAdminMessagesRoute
   '/admin-overview': typeof AuthenticatedAdminOverviewRoute
   '/admin-revenue': typeof AuthenticatedAdminRevenueRoute
   '/admin-users': typeof AuthenticatedAdminUsersRoute
@@ -292,6 +301,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin-messages': typeof AuthenticatedAdminMessagesRoute
   '/_authenticated/admin-overview': typeof AuthenticatedAdminOverviewRoute
   '/_authenticated/admin-revenue': typeof AuthenticatedAdminRevenueRoute
   '/_authenticated/admin-users': typeof AuthenticatedAdminUsersRoute
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/activity'
     | '/admin'
+    | '/admin-messages'
     | '/admin-overview'
     | '/admin-revenue'
     | '/admin-users'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/activity'
     | '/admin'
+    | '/admin-messages'
     | '/admin-overview'
     | '/admin-revenue'
     | '/admin-users'
@@ -397,6 +409,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts'
     | '/_authenticated/activity'
     | '/_authenticated/admin'
+    | '/_authenticated/admin-messages'
     | '/_authenticated/admin-overview'
     | '/_authenticated/admin-revenue'
     | '/_authenticated/admin-users'
@@ -487,6 +500,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin-messages': {
+      id: '/_authenticated/admin-messages'
+      path: '/admin-messages'
+      fullPath: '/admin-messages'
+      preLoaderRoute: typeof AuthenticatedAdminMessagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin-overview': {
@@ -678,6 +698,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
   AuthenticatedAdminOverviewRoute: typeof AuthenticatedAdminOverviewRoute
   AuthenticatedAdminRevenueRoute: typeof AuthenticatedAdminRevenueRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -704,6 +725,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
   AuthenticatedAdminOverviewRoute: AuthenticatedAdminOverviewRoute,
   AuthenticatedAdminRevenueRoute: AuthenticatedAdminRevenueRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
