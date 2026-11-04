@@ -54,7 +54,7 @@ function Page() {
           <div className="col-start-1 row-start-1"><AssistantComposerSizeReference /></div>
           <section className="col-start-1 row-start-1 min-w-0 rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5" aria-label={`${account.currency} balance card`}>
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-sm font-semibold">{sym(account.currency)} Account</h2>
+              <h2 className="font-display text-sm font-semibold">{account.currency} Account</h2>
               <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{sym(account.currency)}</span>
             </div>
             <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
