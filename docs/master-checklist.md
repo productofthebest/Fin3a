@@ -4,6 +4,7 @@ Owner: Top Floor Ltd. Updated: 2026-11-02.
 Single source of truth for every requirement, audit finding and approved task. Update at the end of every priority.
 
 ## Status vocabulary
+November 4 fee/revenue increment: see `docs/transaction-fees-readiness.md`. Foundation and Admin read/confirmation/export implemented; not provider-integrated or financially complete. Latest full automated suite: 254/254 passed. No financial-record writes, fee-setting changes or publication during verification.
 - **Impl**: Not started · Partial · Code done
 - **Test**: None · Unit · Integration · Workflow (real user flow observed in the app) · Real-world (real data/providers)
 - A row is **Complete** only when Impl = Code done AND Test reaches Workflow (and Real-world where the row requires it). Interface, written code, connected API or passing unit tests alone never count.
