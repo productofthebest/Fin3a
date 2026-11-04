@@ -161,7 +161,7 @@ function Page() {
       </Dialog>
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          Deposits, withdrawals and external transfers are unavailable until provider integration and settlement verification are complete.
+          Deposits, withdrawals and external transfers are unavailable until provider integration and settlement verification are complete. Crypto deposits convert directly to your chosen NGN or USD balance; a conversion fee of 1% below USD 5,000 (0.5% at or above) is deducted and shown before you confirm.
         </p>
       ) : null}
 
