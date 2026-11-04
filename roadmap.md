@@ -4,6 +4,7 @@ Product: AI-first personal finance platform under Top Floor.
 Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with NGN/USD ledgers, crypto deposit addresses, Breet planned). Still excluded: trading/exchange features. Never fake addresses or simulated transactions.
 
 ## Phase 1 — Foundation (current)
+- [ ] Transaction fees/revenue engine and per-deposit NGN/USD selection (4 Nov briefs): audit and approval plan first; preserve balances/design. Live fee collection and provider routes blocked on actual Breet/Flutterwave capabilities, isolated funded testing and financial rollout approval.
 - [x] Two-currency display: original currency in Activity, NGN/USD selectors in Spending/Analysis/Insights/Planning/Goals; assistant carries separate aggregate summaries. Signed-in switches/reload checked on six pages; real protected assistant answer returned separate NGN/USD totals; 204/204 tests, build OK. No financial writes/publication. Current account has no transactions; nonempty live reconciliation and saving USD planning inputs remain unverified.
 - [x] Removed Dashboard chat-history selector, preserving saved conversations, active replies and New; homepage has no history selector. Signed-in browser check passed, 200/200 tests pass, preview build OK.
 - [x] Dashboard replies inside the question-bar chat box like the homepage: saved signed-in conversation verified at 1280/768/393px, no page overflow or runtime errors; 200/200 tests pass, preview build OK. No paid requests, financial writes or publication.
