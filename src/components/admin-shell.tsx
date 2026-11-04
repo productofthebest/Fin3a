@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, ChartNoAxesCombined, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Shield } from "lucide-react";
+import { ArrowLeft, ChartNoAxesCombined, LayoutDashboard, PanelLeftClose, Users, PanelLeftOpen, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function AdminShell({ children, section }: { children: ReactNode; section: "overview" | "ai" | "revenue" }) {
+export function AdminShell({ children, section }: { children: ReactNode; section: "overview" | "ai" | "revenue" | "users" }) {
   const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="min-h-screen bg-background text-foreground lg:flex">
@@ -16,6 +16,7 @@ export function AdminShell({ children, section }: { children: ReactNode; section
         </div>
         <nav aria-label="Administration" className="mt-6 flex flex-wrap gap-2 lg:flex-col">
           <Button asChild variant={section === "overview" ? "secondary" : "ghost"} className="justify-start" title="Overview"><Link to="/admin-overview"><LayoutDashboard />{!collapsed && "Overview"}</Link></Button>
+          <Button asChild variant={section === "users" ? "secondary" : "ghost"} className="justify-start" title="Users"><Link to="/admin-users"><Users />{!collapsed && "Users"}</Link></Button>
           <Button asChild variant={section === "ai" ? "secondary" : "ghost"} className="justify-start" title="AI usage"><Link to="/admin"><ChartNoAxesCombined />{!collapsed && "AI usage"}</Link></Button>
           <Button asChild variant={section === "revenue" ? "secondary" : "ghost"} className="justify-start" title="Revenue and fees"><Link to="/admin-revenue"><ChartNoAxesCombined />{!collapsed && "Revenue & fees"}</Link></Button>
         </nav>
