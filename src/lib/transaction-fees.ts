@@ -1,7 +1,7 @@
 export const FEE_SERVICES = ["crypto_deposit", "crypto_withdrawal", "crypto_swap", "ngn_withdrawal", "ngn_deposit"] as const;
 export type FeeService = typeof FEE_SERVICES[number];
 export interface FeeSetting { service: FeeService; id: string | null; rate_bps: number; high_rate_bps: number; threshold_usd: number; flat_ngn: number; created_at: string | null }
-export const SERVICE_LABELS: Record<string, string> = { crypto_withdrawal: "Crypto withdrawals", crypto_swap: "Crypto swaps", ngn_withdrawal: "NGN withdrawals", ngn_deposit: "NGN bank top-ups", crypto_deposit: "Crypto deposit conversion", bill_payment: "Bill commissions" };
+export const SERVICE_LABELS: Record<string, string> = { crypto_withdrawal: "USD withdrawals", crypto_swap: "Swaps", ngn_withdrawal: "NGN withdrawals", ngn_deposit: "NGN bank top-ups", crypto_deposit: "Crypto deposit conversion", bill_payment: "Bill commissions" };
 
 /** Exact nonnegative decimal parsing; never silently round a provider quote. */
 export function minorUnits(value: string, precision = 2): bigint {
