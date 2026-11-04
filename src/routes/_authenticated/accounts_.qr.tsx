@@ -12,6 +12,8 @@ import { getShareProfile } from "@/lib/share-split.functions";
 import { cancelQrRequest, createQrRequest, getMyQrRequests, logQrScan, resolveQrRequest } from "@/lib/qr-payments.functions";
 import { formatQrAmount, parseScannedQr, qrProfileUrl, qrRequestUrl, QR_EXPIRY_OPTIONS } from "@/lib/qr-payments";
 import { pageMeta } from "@/lib/page-meta";
+import { CryptoQrReview } from "@/components/crypto-qr-review";
+import type { CryptoQr } from "@/lib/crypto-qr";
 
 const shareQuery = () =>
   queryOptions({ queryKey: ["accounts", "share-profile"], queryFn: () => getShareProfile(), staleTime: 60_000 });
@@ -52,6 +54,7 @@ function Page() {
   const { data: profile } = useSuspenseQuery(shareQuery());
   const { data: requests } = useQuery(requestsQuery());
   const [scanning, setScanning] = useState(false);
+  const [cryptoReview, setCryptoReview] = useState<CryptoQr | null>(null);
   const [resolving, setResolving] = useState(false);
 
   // Fixed request form
@@ -69,7 +72,10 @@ function Page() {
 
   async function handleScan(text: string) {
     const parsed = parseScannedQr(text);
-    if (parsed.kind === "fin3a_request") {
+    if (parsed.kind === "crypto") {
+      setScanning(false);
+      setCryptoReview(parsed);
+    } else if (parsed.kind === "fin3a_request") {
       setScanning(false);
       setResolving(true);
       try {
@@ -163,7 +169,7 @@ function Page() {
                 variant="outline"
                 size="sm"
                 disabled={!profileUrl}
-                onClick={() => void navigator.clipboard.writeText(profileUrl!).then(() => toast.success("Payment link copied"))}
+                onClick={() => { if (profileUrl) void navigator.clipboard.writeText(profileUrl).then(() => toast.success("Payment link copied")); }}
               >
                 Copy link
               </Button>
@@ -303,6 +309,7 @@ function Page() {
       ) : null}
 
       {scanning ? <QrScanner onScan={handleScan} onClose={() => setScanning(false)} /> : null}
+      <CryptoQrReview value={cryptoReview} onClose={() => setCryptoReview(null)} />
     </AppShell>
   );
 }

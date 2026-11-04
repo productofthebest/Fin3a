@@ -120,6 +120,7 @@ function Page() {
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Button onClick={() => setSwapOpen(true)}><ArrowLeftRight className="size-4" />Swap</Button>
+        <Button asChild variant="outline"><Link to="/accounts/actions"><QrCode className="size-4" />Account details &amp; payments</Link></Button>
         {[
           { icon: ArrowDownToLine, label: "Deposit" },
           { icon: ArrowUpFromLine, label: "Withdraw" },

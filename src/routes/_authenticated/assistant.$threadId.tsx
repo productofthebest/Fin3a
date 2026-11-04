@@ -25,6 +25,9 @@ import { formatQrAmount, parseScannedQr } from "@/lib/qr-payments";
 import { cn } from "@/lib/utils";
 import { metadataWebSources, safeWebSources } from "@/lib/web-access";
 import robot from "@/assets/fin3a-robot.png";
+import { CryptoQrReview } from "@/components/crypto-qr-review";
+import type { CryptoQr } from "@/lib/crypto-qr";
+import { accountHelpIntent, ACCOUNT_HELP_TEXT, type AccountHelpIntent } from "@/lib/account-help";
 
 const QrScanner = lazy(() => import("@/components/qr-scanner").then(module => ({ default: module.QrScanner })));
 
@@ -114,6 +117,8 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const [accountHelp, setAccountHelp] = useState<AccountHelpIntent | null>(null);
+  const [cryptoReview, setCryptoReview] = useState<CryptoQr | null>(null);
 
   const { messages, sendMessage, status, stop, error } = useChat({
     id: threadId,
@@ -150,6 +155,13 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
   function send(text: string) {
     const t = text.trim();
     if (!t || busy) return;
+    const help = accountHelpIntent(t);
+    if (help) {
+      setAccountHelp(help);
+      setInput("");
+      return;
+    }
+    setAccountHelp(null);
     sendMessage({ text: t });
     setInput("");
     inputRef.current?.focus();
@@ -177,7 +189,10 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
 
   async function handleQrScan(text: string) {
     const parsed = parseScannedQr(text);
-    if (parsed.kind === "fin3a_request") {
+    if (parsed.kind === "crypto") {
+      setQrScanOpen(false);
+      setCryptoReview(parsed);
+    } else if (parsed.kind === "fin3a_request") {
       setQrScanOpen(false);
       try {
         const details = await resolveQrRequest({ data: { requestId: parsed.requestId } });
@@ -388,6 +403,12 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
         </div>
       ) : null}
       {qrScanOpen ? <Suspense fallback={<Loader2 className="mt-4 size-5 animate-spin" aria-label="Opening scanner" />}><QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /></Suspense> : null}
+      <CryptoQrReview value={cryptoReview} onClose={() => setCryptoReview(null)} />
+      {accountHelp && <div role="status" className="order-2 my-4 space-y-3 border-y border-border py-4 text-sm">
+        <p>{ACCOUNT_HELP_TEXT[accountHelp]}</p>
+        <Button asChild><Link to="/accounts/actions">Open account details &amp; payments</Link></Button>
+        <Button variant="ghost" onClick={() => setAccountHelp(null)}>Dismiss</Button>
+      </div>}
 
       <div className={cn("order-2 mt-2 min-w-0", !empty && "overflow-hidden rounded-[22px] border border-accent/40 bg-card shadow-[var(--shadow-lavender)]")} aria-label="Fin3a assistant chat">
       {!empty ? (
