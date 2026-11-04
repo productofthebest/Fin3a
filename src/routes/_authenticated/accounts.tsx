@@ -22,7 +22,8 @@ export const Route = createFileRoute("/_authenticated/accounts")({
 });
 
 const fmt = (currency: string, amount: number) =>
-  new Intl.NumberFormat("en", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
+  new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format(amount);
+const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());

@@ -71,9 +71,10 @@ export function isRequestExpired(expiresAt: string | null, now: Date = new Date(
 }
 
 export function formatQrAmount(amount: number | null, currency: string): string {
-  if (amount === null) return `Any amount (${currency})`;
   const symbol = currency === "NGN" ? "₦" : currency === "USD" ? "$" : "";
-  return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+  if (amount === null) return symbol ? `Any amount (${symbol})` : `Any amount (${currency})`;
+  const formatted = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return symbol ? `${symbol}${formatted}` : `${formatted} ${currency}`;
 }
 
 export const QR_EXPIRY_OPTIONS = [
