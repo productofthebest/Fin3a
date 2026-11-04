@@ -80,3 +80,16 @@ export function billProgress(shares: readonly ShareForProgress[]): BillProgress 
   }
   return { collected, outstanding, paidCount, pendingCount };
 }
+
+/** Split a total by whole/decimal percentages (must sum to exactly 100). Remainder cents go to the first shares. */
+export function percentSplit(totalCents: number, percents: readonly number[]): number[] | string {
+  if (percents.length === 0) return "Add at least one recipient";
+  if (percents.some((p) => !Number.isFinite(p) || p <= 0)) return "Every percentage must be above 0";
+  const basis = percents.map((p) => Math.round(p * 100));
+  if (basis.reduce((a, b) => a + b, 0) !== 10000) return "Percentages must add up to 100%";
+  const shares = basis.map((b) => Math.floor((totalCents * b) / 10000));
+  let rest = totalCents - shares.reduce((a, b) => a + b, 0);
+  for (let i = 0; rest > 0; i = (i + 1) % shares.length, rest--) shares[i]! += 1;
+  if (shares.some((s) => s <= 0)) return "Each share must be at least 0.01";
+  return shares;
+}

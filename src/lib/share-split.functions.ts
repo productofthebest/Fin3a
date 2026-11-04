@@ -8,6 +8,7 @@ import {
   fromCents,
   toCents,
   validateCustomSplit,
+  percentSplit,
   type SplitCurrency,
 } from "./split-bill";
 
@@ -236,4 +237,37 @@ export const getPublicShareProfile = createServerFn({ method: "GET" })
     const { data: rows, error } = await supabasePublic.rpc("get_public_share_profile", { _fin3a_id: data.fin3aId });
     if (error) throw new Error(error.message);
     return rows?.[0] ?? null;
+  });
+
+/** Share Bill: send money from your balance to several Fin3a users by percentage. Each transfer is atomic on its own. */
+export const shareMoneyByPercent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: { currency: SplitCurrency; totalAmount: number; reference?: string; recipients: { userId: string; percent: number }[] }) => input,
+  )
+  .handler(async ({ data, context }) => {
+    if (!SPLIT_CURRENCIES.includes(data.currency)) throw new Error("Unsupported currency");
+    if (!Number.isFinite(data.totalAmount) || data.totalAmount <= 0) throw new Error("Enter a valid amount");
+    const ids = data.recipients.map((r) => r.userId);
+    if (new Set(ids).size !== ids.length) throw new Error("Each recipient can only be added once");
+    if (ids.includes(context.userId)) throw new Error("You cannot send money to yourself");
+    if (ids.length > 20) throw new Error("Up to 20 recipients at a time");
+    const shares = percentSplit(toCents(data.totalAmount), data.recipients.map((r) => r.percent));
+    if (typeof shares === "string") throw new Error(shares);
+    const batch = crypto.randomUUID();
+    const reference = data.reference?.trim() || "Share Bill";
+    const results: { userId: string; amount: number; status: string; reason?: string | undefined }[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      const amount = fromCents(shares[i]!);
+      const { data: result, error } = await context.supabase.rpc("transfer_internal", {
+        _to_user: ids[i]!,
+        _currency: data.currency,
+        _amount: amount,
+        _idempotency_key: `share-bill:${batch}:${ids[i]}`,
+        _reference: reference.slice(0, 120),
+      });
+      const outcome = (result ?? {}) as { status?: string; reason?: string };
+      results.push({ userId: ids[i]!, amount, status: error ? "failed" : (outcome.status ?? "failed"), reason: error?.message ?? outcome.reason });
+    }
+    return { results };
   });
