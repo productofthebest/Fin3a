@@ -256,7 +256,7 @@ export const shareMoneyByPercent = createServerFn({ method: "POST" })
     if (typeof shares === "string") throw new Error(shares);
     const batch = crypto.randomUUID();
     const reference = data.reference?.trim() || "Share Bill";
-    const results: { userId: string; amount: number; status: string; reason?: string }[] = [];
+    const results: { userId: string; amount: number; status: string; reason?: string | undefined }[] = [];
     for (let i = 0; i < ids.length; i++) {
       const amount = fromCents(shares[i]!);
       const { data: result, error } = await context.supabase.rpc("transfer_internal", {
