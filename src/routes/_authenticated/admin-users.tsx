@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/admin-users")({
 
 const LIVE_MS = 15_000;
 const money = (c: string, n: number) => `${c === "NGN" ? "₦" : "$"}${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
 const when = (s: string | null) => (s ? new Date(s).toLocaleString() : "—");
 
 function AdminUsers() {
@@ -96,7 +97,7 @@ function Management() {
         <Button type="submit"><Search />Search</Button>
       </form>
       <div className="mt-4 overflow-x-auto border-y border-border">
-        <table className="w-full text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr>{["Name", "Email", "Phone", "Fin3a ID", "NGN", "USD", "Status", "Verification", "Registered"].map((h) => <th key={h} className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}</tr></thead>
+        <table className="w-full text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr>{["Name", "Email", "Phone", "Fin3a ID", "₦", "$", "Status", "Verification", "Registered"].map((h) => <th key={h} className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}</tr></thead>
           <tbody className="divide-y divide-border">
             {users.data?.rows.map((u) => <tr key={u.user_id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(u.user_id)}>
               <td className="px-4 py-3"><button className="font-medium text-primary underline-offset-2 hover:underline">{u.display_name || "Unnamed"}</button></td>
@@ -158,7 +159,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
             {[["Email", p.email], ["Phone", p.phone], ["Fin3a ID", p.fin3a_id], ["User ID", p.user_id], ["Registered", when(p.created_at)], ["Last activity", when(p.last_active)], ["Preferred currency", p.currency], ["Verification", `${p.verification}${p.verification_note ? ` — ${p.verification_note}` : ""}`]].map(([k, v]) => <div key={k}><dt className="text-muted-foreground">{k}</dt><dd className="break-all font-medium">{v || "—"}</dd></div>)}
             <div><dt className="text-muted-foreground">Account status</dt><dd><StatusBadge value={p.status} /></dd></div>
           </dl>
-          <div className="grid gap-3 sm:grid-cols-2">{(["NGN", "USD"] as const).map((c) => <div key={c} className="rounded-xl border border-border bg-card p-4"><p className="text-muted-foreground">{c} balance</p><p className="mt-1 text-xl font-bold tabular-nums">{money(c, d.balances[c].available)}</p><p className="text-xs text-muted-foreground">Including pending: {money(c, d.balances[c].with_pending)}</p></div>)}</div>
+          <div className="grid gap-3 sm:grid-cols-2">{(["NGN", "USD"] as const).map((c) => <div key={c} className="rounded-xl border border-border bg-card p-4"><p className="text-muted-foreground">{sym(c)} balance</p><p className="mt-1 text-xl font-bold tabular-nums">{money(c, d.balances[c].available)}</p><p className="text-xs text-muted-foreground">Including pending: {money(c, d.balances[c].with_pending)}</p></div>)}</div>
           <div><h3 className="font-semibold">Crypto wallets</h3>{d.crypto.length ? <ul className="mt-2 space-y-1">{d.crypto.map((w) => <li key={w.address} className="break-all">{w.symbol} · {w.network} · {w.address} ({w.status})</li>)}</ul> : <p className="mt-1 text-muted-foreground">No crypto wallet addresses issued.</p>}</div>
 
           <div className="space-y-3 rounded-xl border border-border p-4">
@@ -173,7 +174,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
             <h3 className="font-semibold">Request a balance adjustment</h3>
             <p className="text-xs text-muted-foreground">A second administrator must approve it. Approval adds a new ledger entry; existing records are never edited.</p>
             <div className="flex flex-wrap gap-2">
-              <select aria-label="Currency" className="h-9 rounded-md border border-input bg-background px-2" value={adj.currency} onChange={(e) => setAdj({ ...adj, currency: e.target.value as "NGN" | "USD" })}><option>NGN</option><option>USD</option></select>
+              <select aria-label="Currency" className="h-9 rounded-md border border-input bg-background px-2" value={adj.currency} onChange={(e) => setAdj({ ...adj, currency: e.target.value as "NGN" | "USD" })}><option value="NGN">₦</option><option value="USD">$</option></select>
               <select aria-label="Direction" className="h-9 rounded-md border border-input bg-background px-2" value={adj.direction} onChange={(e) => setAdj({ ...adj, direction: e.target.value as "credit" | "debit" })}><option value="credit">Credit</option><option value="debit">Debit</option></select>
               <Input className="w-36" inputMode="decimal" placeholder="Amount" aria-label="Adjustment amount" value={adj.amount} onChange={(e) => setAdj({ ...adj, amount: e.target.value })} />
               <Button size="sm" disabled={amount == null} onClick={() => amount != null && setConfirm({ title: "Submit adjustment for approval?", description: `${adj.direction === "credit" ? "Credit" : "Debit"} ${money(adj.currency, amount)} on this user's ${adj.currency} balance. Nothing changes until another administrator approves.`, noteLabel: "Reason (at least 10 characters)", minNote: 10, run: (note) => adjustFn({ data: { userId: p.user_id, currency: adj.currency, direction: adj.direction, amount, reason: note } }).then(() => { setAdj({ ...adj, amount: "" }); refresh(); }) })}>Submit</Button>
