@@ -479,6 +479,48 @@ export type Database = {
         }
         Relationships: []
       }
+      currency_swaps: {
+        Row: {
+          created_at: string
+          destination_amount: number
+          from_currency: string
+          id: string
+          idempotency_key: string
+          rate: number
+          reference: string | null
+          source_amount: number
+          status: string
+          to_currency: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination_amount: number
+          from_currency: string
+          id?: string
+          idempotency_key: string
+          rate: number
+          reference?: string | null
+          source_amount: number
+          status: string
+          to_currency: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination_amount?: number
+          from_currency?: string
+          id?: string
+          idempotency_key?: string
+          rate?: number
+          reference?: string | null
+          source_amount?: number
+          status?: string
+          to_currency?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
@@ -608,6 +650,27 @@ export type Database = {
           target_amount?: number
           target_date?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      fx_settings: {
+        Row: {
+          id: boolean
+          ngn_per_usd: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          ngn_per_usd?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          ngn_per_usd?: number
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -1260,6 +1323,7 @@ export type Database = {
         Row: {
           created_at: string
           currency: string
+          deposit_credit_currency: string | null
           display_name: string | null
           fin3a_id: string | null
           id: string
@@ -1270,6 +1334,7 @@ export type Database = {
         Insert: {
           created_at?: string
           currency?: string
+          deposit_credit_currency?: string | null
           display_name?: string | null
           fin3a_id?: string | null
           id?: string
@@ -1280,6 +1345,7 @@ export type Database = {
         Update: {
           created_at?: string
           currency?: string
+          deposit_credit_currency?: string | null
           display_name?: string | null
           fin3a_id?: string | null
           id?: string
@@ -1295,6 +1361,7 @@ export type Database = {
     }
     Functions: {
       admin_qr_overview: { Args: never; Returns: Json }
+      admin_set_fx_rate: { Args: { _ngn_per_usd: number }; Returns: undefined }
       admin_split_overview: { Args: never; Returns: Json }
       ai_admin_overview: { Args: never; Returns: Json }
       ai_admin_set_price: {
@@ -1385,6 +1452,16 @@ export type Database = {
           _expires_in_minutes?: number
         }
         Returns: string
+      }
+      execute_currency_swap: {
+        Args: {
+          _amount: number
+          _from_currency: string
+          _idempotency_key: string
+          _reference: string
+          _user_id: string
+        }
+        Returns: Json
       }
       execute_internal_transfer: {
         Args: {
