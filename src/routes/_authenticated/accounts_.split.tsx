@@ -379,6 +379,14 @@ function Page() {
         )}
       </section>
 
+      {scanning ? (
+        <QrScanner
+          title="Scan to add a participant"
+          onScan={handleScan}
+          onClose={() => setScanning(false)}
+        />
+      ) : null}
+
       <section className="mt-10">
         <h2 className="font-display text-xl font-semibold">Payment history</h2>
         {data.transfers.length === 0 ? (
