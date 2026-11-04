@@ -5,7 +5,7 @@ const settings: FeeSetting[] = ["crypto_deposit","crypto_withdrawal","crypto_swa
 describe("Launch fee rules", () => {
   for (const service of ["crypto_deposit","crypto_withdrawal"]) for (const asset of ["USDT","USDC"]) for (const [value, fee] of ([["999.99","10.00"],["1000","10.00"],["4999.99","50.00"],["5000","25.00"],["10000","50.00"]] as const)) it(`${service} ${asset} USD ${value}`, () => expect(calculateFee({service,asset,currency:"USD",payout:value,usdValue:value},settings).fin3aFee).toBe(fee));
   for (const currency of ["NGN","USD"] as const) it(`BTC deposit to ${currency} charges 1% under USD 5,000`, () => expect(calculateFee({service:"crypto_deposit",asset:"BTC",currency,payout:"1000",usdValue:"1000"},settings).fin3aFee).toBe("10.00"));
-  it("rejects retired crypto selling", () => expect(() => calculateFee({service:"crypto_deposit",asset:"USDT",currency:"USD",payout:"100",usdValue:"100"},settings)).toThrow());
+  it("rejects retired crypto selling", () => expect(() => calculateFee({service:"crypto_sell",asset:"USDT",currency:"USD",payout:"100",usdValue:"100"},settings)).toThrow());
   for (const service of ["internal_transfer","share_payment","bill_split","qr_payment","bill_payment","currency_swap"]) it(`free ${service}`, () => expect(calculateFee({service,currency:"NGN",payout:"5000"},settings).finalAmount).toBe("5000.00"));
   it("deducts flat NGN 50 from payout", () => expect(calculateFee({service:"ngn_withdrawal",currency:"NGN",payout:"5000"},settings)).toMatchObject({fin3aFee:"50.00",finalAmount:"4950.00"}));
   it("keeps provider charges separate", () => expect(calculateFee({service:"ngn_withdrawal",currency:"NGN",payout:"5000",providerCharge:"20",networkCharge:"5"},settings).finalAmount).toBe("4925.00"));
