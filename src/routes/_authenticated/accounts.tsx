@@ -1,11 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
-import { getAccountsOverview } from "@/lib/accounts.functions";
+import { getAccountsOverview, executeSwap, setDepositCreditCurrency } from "@/lib/accounts.functions";
+import { calcSwapDestination, type AccountCurrency } from "@/lib/accounts";
 import { pageMeta } from "@/lib/page-meta";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
