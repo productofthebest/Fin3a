@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { percentSplit } from "@/lib/split-bill";
 
-describe("Share Bill percentage split", () => {
+describe("Share Payment percentage split", () => {
   it("splits 100,000 as 50/30/20", () => {
     expect(percentSplit(10_000_000, [50, 30, 20])).toEqual([5_000_000, 3_000_000, 2_000_000]);
   });
