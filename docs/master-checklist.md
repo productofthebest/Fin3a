@@ -4,6 +4,7 @@ Owner: Top Floor Ltd. Updated: 2026-11-02.
 Single source of truth for every requirement, audit finding and approved task. Update at the end of every priority.
 
 ## Status vocabulary
+November 4 20:10 follow-up: user Accounts swap button/dialog and Admin conversion-rate card removed, superseding SWP-01/02 visible controls below; legacy records/functions retained, not disabled server-side. Signed-in desktop/phone inspected: both balances remain, no overflow/page errors; Admin crypto swap fee displays the existing 0.1% default. Homepage acknowledges submitted questions before session lookup and handles lookup failures inside the request error path. 256/256 regressions pass, build OK; no financial records/settings changed, paid requests or publication. Model latency and provider swap settlement remain unverified.
 Crypto deposit follow-up (4 Nov 20:02 UTC): global receiving selector/read/server setter retired; legacy column retained/deprecated. Signed-in desktop/phone verified, 254 tests passed, build OK. Actual per-deposit quote/instructions/settlement remains blocked on missing Breet access/adapter and isolated funded verification; not complete.
 November 4 fee/revenue increment: see `docs/transaction-fees-readiness.md`. Foundation and Admin read/confirmation/export implemented; not provider-integrated or financially complete. Latest full automated suite: 254/254 passed. No financial-record writes, fee-setting changes or publication during verification.
 - **Impl**: Not started · Partial · Code done
