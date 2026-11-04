@@ -164,6 +164,7 @@ function Page() {
             permanently lose your funds.
           </p>
         </div>
+        <DepositCreditChooser value={data.depositCreditCurrency} />
         <div ref={walletsRef} className="mt-4 grid items-start gap-4 sm:grid-cols-2">
           {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
               <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
@@ -204,5 +205,133 @@ function Page() {
         </div>
       </section>
     </AppShell>
+  );
+}
+
+function SwapDialog({
+  open,
+  onOpenChange,
+  rate,
+  accounts,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  rate: number;
+  accounts: { currency: AccountCurrency; available: number }[];
+}) {
+  const [direction, setDirection] = useState<AccountCurrency>("NGN");
+  const [amountText, setAmountText] = useState("");
+  const queryClient = useQueryClient();
+  const swap = useMutation({
+    mutationFn: (input: { fromCurrency: AccountCurrency; amount: number }) => executeSwap({ data: input }),
+    onSuccess: (result) => {
+      const to = direction === "NGN" ? "USD" : "NGN";
+      toast.success(`Swap complete — ${fmt(to, result.destinationAmount)} added to your ${to} account`);
+      setAmountText("");
+      onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ["accounts", "overview"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const to = direction === "NGN" ? "USD" : "NGN";
+  const amount = Number(amountText.replaceAll(",", ""));
+  const source = accounts.find((account) => account.currency === direction);
+  const destination = calcSwapDestination(amount, rate, direction);
+  const valid = Number.isFinite(amount) && amount > 0 && source != null && amount <= source.available && destination != null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Swap currency</DialogTitle>
+          <DialogDescription>Move money between your NGN and USD accounts at the Fin3a rate.</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Swap direction">
+          {(["NGN", "USD"] as AccountCurrency[]).map((currency) => (
+            <button
+              key={currency}
+              type="button"
+              onClick={() => setDirection(currency)}
+              className={
+                direction === currency
+                  ? "rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm font-medium text-primary"
+                  : "rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-secondary/60"
+              }
+            >
+              {currency} → {currency === "NGN" ? "USD" : "NGN"}
+            </button>
+          ))}
+        </div>
+        <div>
+          <label htmlFor="swap-amount" className="text-xs text-muted-foreground">
+            Amount to swap ({direction})
+          </label>
+          <Input
+            id="swap-amount"
+            inputMode="decimal"
+            autoComplete="off"
+            placeholder="0.00"
+            value={amountText}
+            onChange={(event) => setAmountText(event.target.value)}
+            className="mt-1"
+          />
+          {source ? <p className="mt-1 text-[11px] text-muted-foreground">Available: {fmt(direction, source.available)}</p> : null}
+        </div>
+        <div className="rounded-lg border border-border/70 bg-secondary/40 px-3 py-2 text-sm">
+          <p className="flex items-center justify-between">
+            <span className="text-muted-foreground">You receive</span>
+            <span className="font-medium">{destination != null ? fmt(to, destination) : "—"}</span>
+          </p>
+          <p className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>Rate</span>
+            <span>1 USD = {new Intl.NumberFormat("en").format(rate)} NGN</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={!valid || swap.isPending}
+          onClick={() => swap.mutate({ fromCurrency: direction, amount })}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {swap.isPending ? "Swapping…" : "Confirm swap"}
+        </button>
+        <p className="text-[11px] text-muted-foreground">Swaps are final once confirmed. The rate is set by Fin3a and can change.</p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DepositCreditChooser({ value }: { value: AccountCurrency | null }) {
+  const queryClient = useQueryClient();
+  const save = useMutation({
+    mutationFn: (currency: AccountCurrency | null) => setDepositCreditCurrency({ data: { currency } }),
+    onSuccess: () => {
+      toast.success("Deposit currency updated");
+      queryClient.invalidateQueries({ queryKey: ["accounts", "overview"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm">
+      <p className="text-muted-foreground">Crypto deposits are credited to:</p>
+      {(["NGN", "USD"] as AccountCurrency[]).map((currency) => (
+        <button
+          key={currency}
+          type="button"
+          disabled={save.isPending}
+          onClick={() => save.mutate(currency)}
+          className={
+            value === currency
+              ? "rounded-md border border-primary bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+              : "rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-secondary/60"
+          }
+        >
+          {currency} account
+        </button>
+      ))}
+      {value ? null : (
+        <p className="text-[11px] text-muted-foreground">Choose NGN or USD — verified deposits are added to that account's balance.</p>
+      )}
+    </div>
   );
 }
