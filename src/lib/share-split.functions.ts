@@ -239,7 +239,7 @@ export const getPublicShareProfile = createServerFn({ method: "GET" })
     return rows?.[0] ?? null;
   });
 
-/** Share Bill: send money from your balance to several Fin3a users by percentage. Each transfer is atomic on its own. */
+/** Share Payment: send money from your balance to several Fin3a users by percentage. Each transfer is atomic on its own. */
 export const shareMoneyByPercent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -255,7 +255,7 @@ export const shareMoneyByPercent = createServerFn({ method: "POST" })
     const shares = percentSplit(toCents(data.totalAmount), data.recipients.map((r) => r.percent));
     if (typeof shares === "string") throw new Error(shares);
     const batch = crypto.randomUUID();
-    const reference = data.reference?.trim() || "Share Bill";
+    const reference = data.reference?.trim() || "Share Payment";
     const results: { userId: string; amount: number; status: string; reason?: string | undefined }[] = [];
     for (let i = 0; i < ids.length; i++) {
       const amount = fromCents(shares[i]!);

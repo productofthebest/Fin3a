@@ -19,7 +19,7 @@ const shareQuery = () =>
   queryOptions({ queryKey: ["accounts", "share-profile"], queryFn: () => getShareProfile(), staleTime: 60_000 });
 
 export const Route = createFileRoute("/_authenticated/accounts_/share")({
-  head: () => pageMeta("Share bill", "Send money to several Fin3a users at once, split by percentage."),
+  head: () => pageMeta("Share payment", "Send money to several Fin3a users at once, split by percentage."),
   loader: ({ context }) => context.queryClient.ensureQueryData(shareQuery()),
   component: Page,
 });
@@ -45,7 +45,7 @@ function Page() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-bold">Share Bill</h1>
+      <h1 className="font-display text-3xl font-bold">Share Payment</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Send money from your Fin3a balance to several Fin3a users at once, split by percentage.
       </p>
