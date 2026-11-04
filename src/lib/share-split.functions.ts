@@ -8,6 +8,7 @@ import {
   fromCents,
   toCents,
   validateCustomSplit,
+  percentSplit,
   type SplitCurrency,
 } from "./split-bill";
 

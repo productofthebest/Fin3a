@@ -90,9 +90,9 @@ function Page() {
         >
           <Share2 className="mt-0.5 size-5 shrink-0 text-primary" />
           <span>
-            <span className="block font-display text-lg font-semibold">Share Account</span>
+            <span className="block font-display text-lg font-semibold">Share Bill</span>
             <span className="mt-1 block text-sm text-muted-foreground">
-              Share your Fin3a account ID, payment link or QR code so other Fin3a users can pay you.
+              Send money to several Fin3a users at once, split by percentage. Add people by ID or QR scan.
             </span>
           </span>
         </Link>
