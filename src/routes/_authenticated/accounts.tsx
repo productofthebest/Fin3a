@@ -26,6 +26,7 @@ const fmt = (currency: string, amount: number) =>
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
+  const [swapOpen, setSwapOpen] = useState(false);
   const splitRef = useRef<HTMLAnchorElement>(null);
   const walletsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -67,6 +68,9 @@ function Page() {
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
               </div>
             </div>
+            {data.depositCreditCurrency === account.currency ? (
+              <p className="mt-1 text-[11px] text-primary">Crypto deposits will be credited to this account</p>
+            ) : null}
             <div className="mt-1 text-[11px] leading-4">
               <p className="font-medium text-muted-foreground">Recent activity{account.recent.length === 0 ? ": No account transactions yet." : ""}</p>
               {account.recent.length === 0 ? (
@@ -116,6 +120,13 @@ function Page() {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setSwapOpen(true)}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          <ArrowLeftRight className="size-4" /> Swap NGN ↔ USD
+        </button>
         {[
           { icon: ArrowDownToLine, label: "Deposit" },
           { icon: ArrowUpFromLine, label: "Withdraw" },
@@ -132,6 +143,12 @@ function Page() {
           </button>
         ))}
       </div>
+      <SwapDialog
+        open={swapOpen}
+        onOpenChange={setSwapOpen}
+        rate={data.fxRate}
+        accounts={data.accounts.map((account) => ({ currency: account.currency as AccountCurrency, available: account.balance.available }))}
+      />
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
           Deposits, withdrawals and transfers switch on automatically once the payment provider is connected.
@@ -148,8 +165,7 @@ function Page() {
           </p>
         </div>
         <div ref={walletsRef} className="mt-4 grid items-start gap-4 sm:grid-cols-2">
-          {data.cryptoAssets.map((asset) => (
-            <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
+          {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
               <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
               <div className="flex min-w-0 items-center justify-between gap-3">
                 <div className="min-w-0">
