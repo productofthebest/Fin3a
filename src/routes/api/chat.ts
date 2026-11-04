@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { beginAiUsage, finishAiUsage } from "@/lib/api-auth.server";
 import { homepageSearchQuestion } from "@/lib/homepage-web";
-import { readOnlyAssistantOptions } from "@/lib/assistant-read-only";
+import { readOnlyAssistantOptions, adminInformationRequest, ADMIN_INFORMATION_REFUSAL } from "@/lib/assistant-read-only";
 
 const MODEL = "gpt-5-mini";
 const HOURLY_LIMIT = 40;
@@ -84,6 +84,7 @@ export const Route = createFileRoute("/api/chat")({
         const userText = textOf(last.parts).trim();
         if (last.role !== "user" || !userText) return json(400, "Message is empty.");
         if (userText.length > 4000) return json(400, "Message is too long (max 4,000 characters).");
+        if (adminInformationRequest(userText)) return json(403, ADMIN_INFORMATION_REFUSAL);
         const publicQuestion = homepageSearchQuestion(userText);
         if (publicQuestion.error) return json(400, publicQuestion.error);
         // Company identity questions use the official Top Floor site retrieval, not a paid web search.
