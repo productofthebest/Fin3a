@@ -11,14 +11,15 @@ export const getRevenueReport = createServerFn({ method: "GET" }).middleware([re
   const access = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (access.error || access.data !== true) throw new Error("Administrator access required");
   const end = new Date(data.to + "T00:00:00Z"); end.setUTCDate(end.getUTCDate() + 1);
-  const [schedule, history, events, quotes] = await Promise.all([
+  const [schedule, history, events, quotes, usage] = await Promise.all([
     supabase.rpc("current_fee_schedule"),
     supabase.from("fee_versions").select("*").order("created_at", { ascending: false }).limit(100),
     collectPages((a,b) => supabase.from("revenue_events").select("*").gte("occurred_at",data.from + "T00:00:00Z").lt("occurred_at",end.toISOString()).order("occurred_at").order("id").range(a,b)),
     collectPages((a,b) => supabase.from("payment_fee_snapshots").select("id,service,currency,provider,quoted_payout,asset,network").order("id").range(a,b)),
+    supabase.rpc("admin_internal_payment_usage",{_from:data.from+"T00:00:00Z",_to:end.toISOString()}),
   ]);
-  if (schedule.error || history.error) throw new Error("Could not load revenue records");
-  return { settings: schedule.data as unknown as FeeSetting[], history: history.data ?? [], events, quotes, totals: summarizeRevenue(events, quotes), providerReady: false };
+  if (schedule.error || history.error || usage.error) throw new Error("Could not load revenue records");
+  return { settings: schedule.data as unknown as FeeSetting[], history: history.data ?? [], events, quotes, usage:usage.data as unknown as {service:string;currency:string;count:number;volume:string}[], totals: summarizeRevenue(events, quotes), providerReady: false };
 });
 
 export const changeFee = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator(i => z.object({ service: z.enum(FEE_SERVICES), rate_bps: z.number().int().min(0).max(10000), high_rate_bps: z.number().int().min(0).max(10000), flat_ngn: z.number().min(0).max(1000000).refine(v => Number.isInteger(v * 100)), expected_id: z.string().uuid().nullable(), change_key: z.string().uuid(), confirmed: z.literal(true) }).parse(i)).handler(async ({ data, context }) => {
