@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
@@ -19,7 +19,6 @@ import { analyzeDocument, createDocument } from "@/lib/documents.functions";
 import { getIsAdmin } from "@/lib/admin.functions";
 import { settingsQuery } from "@/lib/queries";
 import { AppShell } from "@/components/app-shell";
-import { QrScanner } from "@/components/qr-scanner";
 import { Button } from "@/components/ui/button";
 import { logQrScan, resolveQrRequest, type QrRequestDetails } from "@/lib/qr-payments.functions";
 import { formatQrAmount, parseScannedQr } from "@/lib/qr-payments";
@@ -27,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { metadataWebSources, safeWebSources } from "@/lib/web-access";
 import robot from "@/assets/fin3a-robot.png";
 
+const QrScanner = lazy(() => import("@/components/qr-scanner").then(module => ({ default: module.QrScanner })));
 
 const SUGGESTIONS = [
   { icon: TrendingUp, text: "How much did I spend last month?" },
@@ -387,7 +387,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
           </div>
         </div>
       ) : null}
-      {qrScanOpen ? <QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /> : null}
+      {qrScanOpen ? <Suspense fallback={<Loader2 className="mt-4 size-5 animate-spin" aria-label="Opening scanner" />}><QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /></Suspense> : null}
 
       <div className={cn("order-2 mt-2 min-w-0", !empty && "overflow-hidden rounded-[22px] border border-accent/40 bg-card shadow-[var(--shadow-lavender)]")} aria-label="Fin3a assistant chat">
       {!empty ? (
