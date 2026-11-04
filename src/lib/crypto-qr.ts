@@ -56,7 +56,8 @@ export function parseCryptoQr(raw: string): CryptoQr | null {
   let tokenContract: string | null = null;
   let expected: CryptoQr["family"] | null = null;
   if (match) {
-    expected = ({ bitcoin: "Bitcoin", ethereum: "EVM", tron: "TRON", litecoin: "Litecoin", dogecoin: "Dogecoin" } as const)[match[1]?.toLowerCase() as "bitcoin"] ?? null;
+    const families: Record<string, CryptoQr["family"]> = { bitcoin: "Bitcoin", ethereum: "EVM", tron: "TRON", litecoin: "Litecoin", dogecoin: "Dogecoin" };
+    expected = families[match[1]?.toLowerCase() ?? ""] ?? null;
     const target = (match[2] ?? "").replace(/^pay-/, "");
     const params = new URLSearchParams(match[3] ?? "");
     if ([...params.keys()].some(k => k.startsWith("req-"))) return null;
