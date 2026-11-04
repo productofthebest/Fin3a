@@ -6,7 +6,7 @@ import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { useEffect, useRef } from "react";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
-import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, History, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
