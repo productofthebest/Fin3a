@@ -6,7 +6,7 @@ import { blocksSignIn } from "./admin-users";
 // Every function below is re-checked in the database (admin_require → has_role 'admin').
 // Passwords, OTP hashes and credentials are never selected.
 
-type Json = Record<string, unknown>;
+type Json = { [key: string]: string | number | boolean | null };
 const clean = <T,>(v: unknown) => JSON.parse(JSON.stringify(v)) as T;
 function fail(message: string): never {
   if (message.includes("forbidden")) throw new Error("Administrator access required.");
@@ -40,7 +40,7 @@ export type UserDetail = {
   balances: Record<"NGN" | "USD", { available: number; with_pending: number }>;
   crypto: { symbol: string; network: string; address: string; status: string; created_at: string }[];
   ledger: { id: string; kind: string; status: string; amount: number; currency: string; reference: string | null; provider: string | null; created_at: string }[];
-  ledger_status: Record<string, number>;
+  ledger_status: { pending?: number; completed?: number; failed?: number; reversed?: number };
   transfers: { id: string; direction: string; currency: string; amount: number; status: string; reference: string | null; created_at: string }[];
   swaps: { id: string; from_currency: string; to_currency: string; source_amount: number; destination_amount: number; rate: number; status: string; created_at: string }[];
   records: { id: string; type: string; amount: number; currency: string | null; description: string | null; merchant: string | null; occurred_at: string; status: string; source: string }[];

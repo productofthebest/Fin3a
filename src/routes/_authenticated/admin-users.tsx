@@ -199,7 +199,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
   );
 }
 
-function describe(detail: Record<string, unknown>) {
+function describe(detail: { [key: string]: string | number | boolean | null }) {
   return Object.entries(detail).filter(([k]) => !k.endsWith("_id")).map(([k, v]) => `${k}: ${String(v)}`).join(" · ");
 }
 
