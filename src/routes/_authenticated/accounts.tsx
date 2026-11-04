@@ -22,7 +22,8 @@ export const Route = createFileRoute("/_authenticated/accounts")({
 });
 
 const fmt = (currency: string, amount: number) =>
-  new Intl.NumberFormat("en", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
+  new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format(amount);
+const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
@@ -45,7 +46,7 @@ function Page() {
   return (
     <AppShell>
       <h1 className="font-display text-3xl font-bold">Accounts</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Your NGN and USD balances, activity and deposit addresses</p>
+      <p className="mt-2 text-sm text-muted-foreground">Your ₦ and $ balances, activity and deposit addresses</p>
 
       <div className="mt-6 grid gap-4">
         {data.accounts.map((account) => (
@@ -53,8 +54,8 @@ function Page() {
           <div className="col-start-1 row-start-1"><AssistantComposerSizeReference /></div>
           <section className="col-start-1 row-start-1 min-w-0 rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5" aria-label={`${account.currency} balance card`}>
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-sm font-semibold">{account.currency} Account</h2>
-              <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{account.currency}</span>
+              <h2 className="font-display text-sm font-semibold">{sym(account.currency)} Account</h2>
+              <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{sym(account.currency)}</span>
             </div>
             <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
             <p className="break-all font-display text-xl font-bold">{fmt(account.currency, account.balance.available)}</p>
@@ -144,10 +145,10 @@ function Page() {
             <DialogDescription>Swaps are currently unavailable. A live quote is required before confirmation.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2" role="group" aria-label="Swap direction">
-            {(["NGN", "USD"] as const).map(currency => <Button key={currency} variant={swapCurrency === currency ? "default" : "outline"} aria-pressed={swapCurrency === currency} onClick={() => setSwapCurrency(currency)}>{currency} → {currency === "NGN" ? "USD" : "NGN"}</Button>)}
+            {(["NGN", "USD"] as const).map(currency => <Button key={currency} variant={swapCurrency === currency ? "default" : "outline"} aria-pressed={swapCurrency === currency} onClick={() => setSwapCurrency(currency)}>{sym(currency)} → {sym(currency === "NGN" ? "USD" : "NGN")}</Button>)}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="swap-amount">Amount ({swapCurrency})</Label>
+            <Label htmlFor="swap-amount">Amount ({sym(swapCurrency)})</Label>
             <Input id="swap-amount" inputMode="decimal" autoComplete="off" placeholder="0.00" value={swapAmount} onChange={event => setSwapAmount(event.target.value)} />
           </div>
           <dl className="divide-y divide-border text-sm">
@@ -155,14 +156,14 @@ function Page() {
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fin3a fee</dt><dd>0.1%</dd></div>
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fee amount</dt><dd>Awaiting quote</dd></div>
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Provider / network charges</dt><dd>Unavailable</dd></div>
-            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">You receive ({swapCurrency === "NGN" ? "USD" : "NGN"})</dt><dd>Awaiting quote</dd></div>
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">You receive ({sym(swapCurrency === "NGN" ? "USD" : "NGN")})</dt><dd>Awaiting quote</dd></div>
           </dl>
           <Button disabled>Confirm swap</Button>
         </DialogContent>
       </Dialog>
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          Deposits, withdrawals and external transfers are unavailable until provider integration and settlement verification are complete. NGN bank transfer top-ups have a flat NGN 50 fee deducted from the amount credited. Crypto deposits convert directly to your chosen NGN or USD balance; a conversion fee of 1% below USD 5,000 (0.5% at or above) is deducted and shown before you confirm.
+          Deposits, withdrawals and external transfers are unavailable until provider integration and settlement verification are complete. NGN bank transfer top-ups have a flat ₦50 fee deducted from the amount credited. Crypto deposits convert directly to your chosen ₦ or $ balance; a conversion fee of 1% below $5,000 (0.5% at or above) is deducted and shown before you confirm.
         </p>
       ) : null}
 

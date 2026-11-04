@@ -58,7 +58,7 @@ describe("expiry and formatting", () => {
   });
 
   it("formats amounts", () => {
-    expect(formatQrAmount(15000, "NGN")).toBe("₦15,000.00 NGN");
-    expect(formatQrAmount(null, "USD")).toBe("Any amount (USD)");
+    expect(formatQrAmount(15000, "NGN")).toBe("₦15,000.00");
+    expect(formatQrAmount(null, "USD")).toBe("Any amount ($)");
   });
 });

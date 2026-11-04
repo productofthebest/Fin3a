@@ -126,7 +126,8 @@ function Page() {
 }
 
 const fmt = (currency: string, amount: number) =>
-  new Intl.NumberFormat("en", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
+  new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format(amount);
+const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
 
 function ShareMoney() {
   const lookup = useServerFn(lookupRecipient);
@@ -200,7 +201,7 @@ function ShareMoney() {
         <div>
           <Label htmlFor="sh-currency">Currency</Label>
           <select id="sh-currency" value={currency} onChange={(e) => setCurrency(e.target.value as SplitCurrency)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
-            {SPLIT_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {SPLIT_CURRENCIES.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
           </select>
         </div>
         <div>

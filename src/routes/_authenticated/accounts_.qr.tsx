@@ -222,8 +222,8 @@ function Page() {
             onChange={(e) => setCurrency(e.target.value as "NGN" | "USD")}
             aria-label="Currency"
           >
-            <option value="NGN">NGN</option>
-            <option value="USD">USD</option>
+            <option value="NGN">₦</option>
+            <option value="USD">$</option>
           </select>
           <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Description" />
           <select

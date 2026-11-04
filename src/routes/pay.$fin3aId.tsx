@@ -31,6 +31,7 @@ function Page() {
   const { data: profile } = useSuspenseQuery(payQuery(fin3aId));
   const lookup = useServerFn(lookupRecipient);
   const send = useServerFn(sendTransfer);
+  const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
 
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [amount, setAmount] = useState("");
@@ -114,7 +115,7 @@ function Page() {
                 onChange={(e) => setCurrency(e.target.value as SplitCurrency)}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
-                {SPLIT_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {SPLIT_CURRENCIES.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
               </select>
             </div>
             <div>

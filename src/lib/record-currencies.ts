@@ -11,7 +11,8 @@ export function recordMoney(amount: number, currency?: string | null) {
   if (!currency || !CURRENCIES.some(c => c.code === currency)) {
     return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(amount)} · Currency unconfirmed`;
   }
-  return `${formatMoney(amount, currency)} ${currency}`;
+  const formatted = formatMoney(amount, currency);
+  return currency === "NGN" || currency === "USD" ? formatted : `${formatted} ${currency}`;
 }
 
 export function totalsByCurrency(records: FinancialRecord[], preferred: string, today: string) {
