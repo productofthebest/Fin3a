@@ -64,7 +64,8 @@ export async function guestChatResponse(request: Request) {
     }
     const { streamText } = await import("ai");
     const { createOpenAI } = await import("@ai-sdk/openai");
-    const result = streamText(readOnlyAssistantOptions({
+    const result = streamText({
+      ...readOnlyAssistantOptions(),
       model: createOpenAI({ apiKey }).responses(GUEST_MODEL),
       system: GUEST_INSTRUCTIONS + companyBlock + evidence,
       messages: [{ role: "user", content: parsed.data.message }],
@@ -75,7 +76,7 @@ export async function guestChatResponse(request: Request) {
       onFinish: ({ totalUsage }) => finish(true, totalUsage.inputTokens, totalUsage.outputTokens),
       onError: () => finish(false),
       onAbort: () => finish(false),
-    }));
+    });
     const headers = new Headers({ "Cache-Control": "no-store" });
     if (sources.length) headers.set("x-fin3a-web-sources", encodeURIComponent(JSON.stringify(sources)));
     if (admission.warning) headers.set("x-ai-usage-warning", encodeURIComponent(admission.warning));

@@ -164,7 +164,8 @@ export const Route = createFileRoute("/api/chat")({
           parts: [{ type: "text" as const, text: textOf(m.parts).slice(0, 8000) }],
         }));
 
-        const result = streamText(readOnlyAssistantOptions({
+        const result = streamText({
+          ...readOnlyAssistantOptions(),
           model: openai.responses(MODEL),
           system: `${ASSISTANT_INSTRUCTIONS}${companyBlock}${evidence}\nWithout public web evidence do not claim live information.\n\nUSER FINANCIAL SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
           messages: await convertToModelMessages(history),
@@ -177,7 +178,7 @@ export const Route = createFileRoute("/api/chat")({
             : finishAiUsage(supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
           onError: () => query ? finishWeb(supabase, usage.usageId, false, false) : finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
           onAbort: () => query ? finishWeb(supabase, usage.usageId, false, false) : finishAiUsage(supabase, usage.usageId, false, { model: MODEL }, "aborted"),
-        }));
+        });
 
         return result.toUIMessageStreamResponse({
           ...(usage.warning ? { headers: { "x-ai-usage-warning": encodeURIComponent(usage.warning) } } : {}),
