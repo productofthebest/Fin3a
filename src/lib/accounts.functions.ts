@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { collectPages } from "./pagination";
 import {
   ACCOUNT_CURRENCIES,
   DEFAULT_NGN_PER_USD,
@@ -21,17 +22,17 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
       if (error) throw new Error(error.message);
     }
 
-    const [{ data: accounts, error: accErr }, { data: ledger, error: ledErr }, { data: assets, error: assetErr }, { data: addresses, error: addrErr }, { data: fx, error: fxErr }, { data: settings, error: settingsErr }] =
+    const [{ data: accounts, error: accErr }, { data: ledger }, { data: assets, error: assetErr }, { data: addresses, error: addrErr }, { data: fx, error: fxErr }, { data: settings, error: settingsErr }] =
       await Promise.all([
         supabase.from("accounts").select("id, currency, created_at").eq("user_id", userId),
-        supabase.from("account_ledger").select("id, account_id, kind, status, amount, currency, reference, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+        collectPages((from, to) => supabase.from("account_ledger").select("id, account_id, kind, status, amount, currency, reference, created_at").eq("user_id", userId).order("created_at", { ascending: false }).order("id").range(from, to)).then(data => ({ data, error: null })),
         supabase.from("crypto_assets").select("id, symbol, name, network, min_deposit").eq("active", true).order("symbol"),
         supabase.from("crypto_addresses").select("id, asset_id, address, status").eq("user_id", userId),
         supabase.from("fx_settings").select("ngn_per_usd, updated_at").eq("id", true).maybeSingle(),
         supabase.from("user_settings").select("deposit_credit_currency").eq("user_id", userId).maybeSingle(),
       ]);
     if (accErr) throw new Error(accErr.message);
-    if (ledErr) throw new Error(ledErr.message);
+
     if (assetErr) throw new Error(assetErr.message);
     if (addrErr) throw new Error(addrErr.message);
     if (fxErr) throw new Error(fxErr.message);
@@ -53,8 +54,8 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
       fxRate: Number(fx?.ngn_per_usd ?? DEFAULT_NGN_PER_USD),
       fxUpdatedAt: fx?.updated_at ?? null,
       depositCreditCurrency: (settings?.deposit_credit_currency as AccountCurrency | null) ?? null,
-      // True only once a real provider (e.g. Breet) is configured server-side.
-      providerConnected: Boolean(process.env["BREET_API_KEY"]),
+      // A secret's presence is not evidence of an operational provider adapter.
+      providerConnected: false,
     };
   });
 

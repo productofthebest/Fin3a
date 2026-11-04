@@ -204,6 +204,20 @@
       "when": 1793818571223,
       "tag": "0028_currency_swap_fx_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793821978638,
+      "tag": "0029_fee_revenue_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793822180751,
+      "tag": "0030_revenue_event_lifecycle_guards",
+      "breakpoints": true
     }
   ]
 }

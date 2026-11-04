@@ -81,6 +81,7 @@ function AdminOverview() {
       </section>
       <section className="mt-10 border-t border-border pt-6">
         <h2 className="text-xl font-semibold">Financial operations</h2>
+        <Button asChild variant="link" className="mt-2"><Link to="/admin-revenue">Revenue and fee management <ArrowUpRight /></Link></Button>
         <FxRateCard />
         <dl className="mt-4 divide-y divide-border">{[["Customer directory and wallet totals", "Unavailable — verified administrative reads pending"], ["Flutterwave bank services", "Not connected"], ["Breet crypto services", "Not connected"], ["Treasury, revenue and settlement", "Unavailable — authoritative sources pending"], ["KYC and interest-bearing savings", "Unavailable — product and provider rules pending"]].map(([label, status]) => <div key={label} className="grid gap-2 py-4 sm:grid-cols-2"><dt className="text-sm font-medium">{label}</dt><dd className="text-sm text-muted-foreground">{status}</dd></div>)}</dl>
       </section>

@@ -575,6 +575,53 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_versions: {
+        Row: {
+          change_key: string
+          changed_by: string
+          created_at: string
+          flat_ngn: number
+          high_rate_bps: number
+          id: string
+          previous_id: string | null
+          rate_bps: number
+          service: string
+          threshold_usd: number
+        }
+        Insert: {
+          change_key: string
+          changed_by: string
+          created_at?: string
+          flat_ngn?: number
+          high_rate_bps: number
+          id?: string
+          previous_id?: string | null
+          rate_bps: number
+          service: string
+          threshold_usd?: number
+        }
+        Update: {
+          change_key?: string
+          changed_by?: string
+          created_at?: string
+          flat_ngn?: number
+          high_rate_bps?: number
+          id?: string
+          previous_id?: string | null
+          rate_bps?: number
+          service?: string
+          threshold_usd?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_versions_previous_id_fkey"
+            columns: ["previous_id"]
+            isOneToOne: false
+            referencedRelation: "fee_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_commitments: {
         Row: {
           amount: number
@@ -783,6 +830,118 @@ export type Database = {
           },
         ]
       }
+      payment_fee_snapshots: {
+        Row: {
+          account_id: string
+          asset: string | null
+          blockchain_hash: string | null
+          commission_included: boolean
+          created_at: string
+          currency: string
+          fee_rate_bps: number
+          fee_version_id: string | null
+          fin3a_fee: number
+          final_amount: number
+          id: string
+          idempotency_key: string
+          ledger_id: string | null
+          network: string | null
+          network_charge: number
+          original_amount: number
+          provider: string
+          provider_charge: number
+          provider_rate: number | null
+          provider_reference: string
+          quote_expires_at: string | null
+          quoted_payout: number
+          rate_state: string
+          receiving_currency: string | null
+          service: string
+          usd_value: number | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          asset?: string | null
+          blockchain_hash?: string | null
+          commission_included?: boolean
+          created_at?: string
+          currency: string
+          fee_rate_bps: number
+          fee_version_id?: string | null
+          fin3a_fee: number
+          final_amount: number
+          id?: string
+          idempotency_key: string
+          ledger_id?: string | null
+          network?: string | null
+          network_charge: number
+          original_amount: number
+          provider: string
+          provider_charge: number
+          provider_rate?: number | null
+          provider_reference: string
+          quote_expires_at?: string | null
+          quoted_payout: number
+          rate_state: string
+          receiving_currency?: string | null
+          service: string
+          usd_value?: number | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          asset?: string | null
+          blockchain_hash?: string | null
+          commission_included?: boolean
+          created_at?: string
+          currency?: string
+          fee_rate_bps?: number
+          fee_version_id?: string | null
+          fin3a_fee?: number
+          final_amount?: number
+          id?: string
+          idempotency_key?: string
+          ledger_id?: string | null
+          network?: string | null
+          network_charge?: number
+          original_amount?: number
+          provider?: string
+          provider_charge?: number
+          provider_rate?: number | null
+          provider_reference?: string
+          quote_expires_at?: string | null
+          quoted_payout?: number
+          rate_state?: string
+          receiving_currency?: string | null
+          service?: string
+          usd_value?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_fee_snapshots_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_fee_snapshots_fee_version_id_fkey"
+            columns: ["fee_version_id"]
+            isOneToOne: false
+            referencedRelation: "fee_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_fee_snapshots_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "account_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phone_identities: {
         Row: {
           phone: string
@@ -976,6 +1135,66 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_events: {
+        Row: {
+          created_at: string
+          event_kind: string
+          fin3a_fee: number
+          id: string
+          network_charge: number
+          occurred_at: string
+          provider_charge: number
+          provider_commission: number
+          provider_event_reference: string
+          related_event_id: string | null
+          snapshot_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_kind: string
+          fin3a_fee?: number
+          id?: string
+          network_charge?: number
+          occurred_at: string
+          provider_charge?: number
+          provider_commission?: number
+          provider_event_reference: string
+          related_event_id?: string | null
+          snapshot_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_kind?: string
+          fin3a_fee?: number
+          id?: string
+          network_charge?: number
+          occurred_at?: string
+          provider_charge?: number
+          provider_commission?: number
+          provider_event_reference?: string
+          related_event_id?: string | null
+          snapshot_id?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_events_related_event_id_fkey"
+            columns: ["related_event_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_events_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "payment_fee_snapshots"
             referencedColumns: ["id"]
           },
         ]
@@ -1360,6 +1579,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_change_fee: {
+        Args: {
+          _change_key: string
+          _expected_id: string
+          _flat_ngn: number
+          _high_rate_bps: number
+          _rate_bps: number
+          _service: string
+        }
+        Returns: string
+      }
+      admin_internal_payment_usage: {
+        Args: { _from: string; _to: string }
+        Returns: Json
+      }
       admin_qr_overview: { Args: never; Returns: Json }
       admin_set_fx_rate: { Args: { _ngn_per_usd: number }; Returns: undefined }
       admin_split_overview: { Args: never; Returns: Json }
@@ -1453,6 +1687,7 @@ export type Database = {
         }
         Returns: string
       }
+      current_fee_schedule: { Args: never; Returns: Json }
       execute_currency_swap: {
         Args: {
           _amount: number
