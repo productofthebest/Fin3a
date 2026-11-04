@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
-import { getAccountsOverview, executeSwap, setDepositCreditCurrency } from "@/lib/accounts.functions";
+import { getAccountsOverview, executeSwap } from "@/lib/accounts.functions";
 import { calcSwapDestination, type AccountCurrency } from "@/lib/accounts";
 import { pageMeta } from "@/lib/page-meta";
 import { useEffect, useRef, useState } from "react";
@@ -68,9 +68,6 @@ function Page() {
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
               </div>
             </div>
-            {data.depositCreditCurrency === account.currency ? (
-              <p className="mt-1 text-[11px] text-primary">Crypto deposits will be credited to this account</p>
-            ) : null}
             <div className="mt-1 text-[11px] leading-4">
               <p className="font-medium text-muted-foreground">Recent activity{account.recent.length === 0 ? ": No account transactions yet." : ""}</p>
               {account.recent.length === 0 ? (
@@ -151,7 +148,7 @@ function Page() {
       />
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          Deposits, withdrawals and transfers switch on automatically once the payment provider is connected.
+          Deposits, withdrawals and external transfers are unavailable until provider integration and settlement verification are complete.
         </p>
       ) : null}
 
@@ -164,7 +161,6 @@ function Page() {
             permanently lose your funds.
           </p>
         </div>
-        <DepositCreditChooser value={data.depositCreditCurrency} />
         <div ref={walletsRef} className="mt-4 grid items-start gap-4 sm:grid-cols-2">
           {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
               <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
@@ -301,37 +297,3 @@ function SwapDialog({
   );
 }
 
-function DepositCreditChooser({ value }: { value: AccountCurrency | null }) {
-  const queryClient = useQueryClient();
-  const save = useMutation({
-    mutationFn: (currency: AccountCurrency | null) => setDepositCreditCurrency({ data: { currency } }),
-    onSuccess: () => {
-      toast.success("Deposit currency updated");
-      queryClient.invalidateQueries({ queryKey: ["accounts", "overview"] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-  return (
-    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm">
-      <p className="text-muted-foreground">Crypto deposits are credited to:</p>
-      {(["NGN", "USD"] as AccountCurrency[]).map((currency) => (
-        <button
-          key={currency}
-          type="button"
-          disabled={save.isPending}
-          onClick={() => save.mutate(currency)}
-          className={
-            value === currency
-              ? "rounded-md border border-primary bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-              : "rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-secondary/60"
-          }
-        >
-          {currency} account
-        </button>
-      ))}
-      {value ? null : (
-        <p className="text-[11px] text-muted-foreground">Choose NGN or USD — verified deposits are added to that account's balance.</p>
-      )}
-    </div>
-  );
-}

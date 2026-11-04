@@ -4,6 +4,7 @@ Owner: Top Floor Ltd. Updated: 2026-11-02.
 Single source of truth for every requirement, audit finding and approved task. Update at the end of every priority.
 
 ## Status vocabulary
+Crypto deposit follow-up (4 Nov 20:02 UTC): global receiving selector/read/server setter retired; legacy column retained/deprecated. Signed-in desktop/phone verified, 254 tests passed, build OK. Actual per-deposit quote/instructions/settlement remains blocked on missing Breet access/adapter and isolated funded verification; not complete.
 November 4 fee/revenue increment: see `docs/transaction-fees-readiness.md`. Foundation and Admin read/confirmation/export implemented; not provider-integrated or financially complete. Latest full automated suite: 254/254 passed. No financial-record writes, fee-setting changes or publication during verification.
 - **Impl**: Not started · Partial · Code done
 - **Test**: None · Unit · Integration · Workflow (real user flow observed in the app) · Real-world (real data/providers)

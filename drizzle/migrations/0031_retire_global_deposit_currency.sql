@@ -1,0 +1,1 @@
+COMMENT ON COLUMN public.user_settings.deposit_credit_currency IS 'DEPRECATED: crypto receiving currency must be selected and bound per deposit in payment_fee_snapshots.receiving_currency; retained for history only and no longer read or written by the application.';
