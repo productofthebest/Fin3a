@@ -6,7 +6,6 @@ import type { CountryCode } from "libphonenumber-js";
 import { AppShell } from "@/components/app-shell";
 import { PhoneField } from "@/components/auth-fields";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { settingsQuery } from "@/lib/queries";
@@ -65,7 +64,7 @@ function SecurityPage() {
         </section>
         <section className="space-y-4 border-b border-border pb-8">
           <h2 className="font-display text-xl font-semibold">Email</h2>
-          <p className="break-all text-sm text-muted-foreground">{account.isPending ? "Loading email…" : account.isError ? "Email details unavailable. Please try again." : account.data?.email?.endsWith("@phone.fin3a.internal") ? "No personal email linked." : account.data?.email ?? "No email linked."}</p>
+          <p className="break-all text-sm text-muted-foreground">{account.isPending ? "Loading email…" : account.isError ? "Email details unavailable. Please try again." : account.data?.email?.endsWith("@phone.fin3a.local") ? "No personal email linked." : account.data?.email ?? "No email linked."}</p>
           <form className="space-y-3" onSubmit={e => { e.preventDefault(); setEmailReview(true); }}>
             <Label htmlFor="settings-email">New email address</Label>
             <Input id="settings-email" type="email" required maxLength={254} autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />

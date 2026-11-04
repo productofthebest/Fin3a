@@ -14,14 +14,15 @@ const Scanner = lazy(() => import("@/components/qr-scanner").then(m => ({ defaul
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
   head: () => pageMeta("Deposits & withdrawals", "Your secure Fin3a NGN and USD deposit and withdrawal options."),
-  validateSearch: (search: Record<string, unknown>): { action: "deposit" | "withdraw" } => ({ action: search.action === "withdraw" ? "withdraw" : "deposit" }),
+  validateSearch: (search: Record<string, unknown>): { action?: "deposit" | "withdraw" } => ({ action: search["action"] === "withdraw" ? "withdraw" : "deposit" }),
   loader: ({ context }) => context.queryClient.ensureQueryData(overview),
   component: Page,
 });
 
 function Page() {
   const { data } = useSuspenseQuery(overview);
-  const { action: mode } = Route.useSearch();
+  const { action = "deposit" } = Route.useSearch();
+  const mode = action;
   const navigate = Route.useNavigate();
   const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
   const [asset, setAsset] = useState<"USDC" | "USDT">("USDC");
