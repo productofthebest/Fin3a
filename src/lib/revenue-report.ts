@@ -13,7 +13,7 @@ export function summarizeRevenue(events: readonly RevenueRow[], quotes: readonly
       const cost = minorUnits(String(event.provider_charge)) + minorUnits(String(event.network_charge));
       if (event.event_kind === "earned") { fees += fee; commissions += commission; charges += cost; if (!counted.has(quote.id)) { volume += minorUnits(String(quote.quoted_payout)); counted.add(quote.id); } }
       else if (event.event_kind === "refund" || event.event_kind === "reversal") { refunds += fee + commission; charges -= cost; }
-      else if (event.event_kind === "pending") pending += fee + commission;
+      else if (event.event_kind === "pending" && !events.some(e => e.snapshot_id === event.snapshot_id && ["earned","failed","reversal"].includes(e.event_kind))) pending += fee + commission;
       else if (event.event_kind === "settled") settled += fee + commission;
       else if (event.event_kind === "commission_estimate") estimated += commission;
       else if (event.event_kind === "commission_adjustment") { commissions += commission; charges += cost; }
