@@ -11,6 +11,7 @@ describe("Launch fee rules", () => {
   it("rejects no positive payout", () => expect(() => calculateFee({service:"ngn_withdrawal",currency:"NGN",payout:"50"},settings)).toThrow());
   it("rejects BTC withdrawal", () => expect(() => calculateFee({service:"crypto_withdrawal",asset:"BTC",currency:"USD",payout:"100",usdValue:"100"},settings)).toThrow());
   it("crypto swaps charge 0.1%", () => expect(calculateFee({service:"crypto_swap",asset:"USDT",currency:"USD",payout:"5000",usdValue:"5000"},settings).fin3aFee).toBe("5.00"));
+  it("keeps the 0.1% swap fee below the withdrawal threshold", () => expect(calculateFee({service:"crypto_swap",asset:"USDC",currency:"USD",payout:"1000",usdValue:"1000"},settings)).toMatchObject({feeRateBps:10,fin3aFee:"1.00",finalAmount:"999.00"}));
   it("does not charge included commission twice", () => expect(calculateFee({service:"crypto_sell",asset:"USDT",currency:"USD",payout:"5000",usdValue:"5000",commissionIncluded:true},settings).fin3aFee).toBe("0.00"));
   it("rejects imprecise quotes", () => expect(() => minorUnits("1.001")).toThrow());
   it("requires verified tier valuation", () => expect(() => calculateFee({service:"crypto_sell",asset:"USDT",currency:"USD",payout:"100"},settings)).toThrow());
