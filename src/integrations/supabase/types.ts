@@ -88,6 +88,60 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_account_status: {
+        Row: {
+          status: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          verification: string
+          verification_note: string | null
+        }
+        Insert: {
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+          verification?: string
+          verification_note?: string | null
+        }
+        Update: {
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          verification?: string
+          verification_note?: string | null
+        }
+        Relationships: []
+      }
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          detail: Json
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_guest_usage: {
         Row: {
           created_at: string
@@ -297,6 +351,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      balance_adjustments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          direction: string
+          id: string
+          ledger_id: string | null
+          reason: string
+          requested_by: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          direction: string
+          id?: string
+          ledger_id?: string | null
+          reason: string
+          requested_by: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          direction?: string
+          id?: string
+          ledger_id?: string | null
+          reason?: string
+          requested_by?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_adjustments_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "account_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {
@@ -1579,6 +1689,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_blocked: { Args: { _user_id: string }; Returns: boolean }
+      admin_audit_feed: { Args: { _limit: number }; Returns: Json }
+      admin_balance: {
+        Args: { _completed_only: boolean; _currency: string; _user_id: string }
+        Returns: number
+      }
       admin_change_fee: {
         Args: {
           _change_key: string
@@ -1590,13 +1706,56 @@ export type Database = {
         }
         Returns: string
       }
+      admin_decide_adjustment: {
+        Args: { _approve: boolean; _id: string; _note: string }
+        Returns: string
+      }
       admin_internal_payment_usage: {
         Args: { _from: string; _to: string }
         Returns: Json
       }
+      admin_list_users: {
+        Args: { _limit: number; _offset: number; _search: string }
+        Returns: Json
+      }
       admin_qr_overview: { Args: never; Returns: Json }
+      admin_request_adjustment: {
+        Args: {
+          _amount: number
+          _currency: string
+          _direction: string
+          _reason: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      admin_require: { Args: never; Returns: undefined }
+      admin_set_account_status: {
+        Args: { _reason: string; _status: string; _user_id: string }
+        Returns: string
+      }
       admin_set_fx_rate: { Args: { _ngn_per_usd: number }; Returns: undefined }
+      admin_set_verification: {
+        Args: { _note: string; _user_id: string; _verification: string }
+        Returns: undefined
+      }
       admin_split_overview: { Args: never; Returns: Json }
+      admin_update_profile: {
+        Args: { _display_name: string; _reason: string; _user_id: string }
+        Returns: undefined
+      }
+      admin_user_activity: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          last_active: string
+          phone: string
+          user_id: string
+        }[]
+      }
+      admin_user_detail: { Args: { _user_id: string }; Returns: Json }
+      admin_user_stats: { Args: never; Returns: Json }
       ai_admin_overview: { Args: never; Returns: Json }
       ai_admin_set_price: {
         Args: {
