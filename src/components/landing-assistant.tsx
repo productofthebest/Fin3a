@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { authenticationIntent, type AuthMethod } from "@/lib/auth-options";
 import { supabase } from "@/integrations/supabase/client";
 import { safeWebSources, type WebSource } from "@/lib/web-access";
+import { accountHelpIntent, ACCOUNT_HELP_TEXT, type AccountHelpIntent } from "@/lib/account-help";
 
 async function accessToken() {
   const { data } = await supabase.auth.getSession();
@@ -28,6 +29,7 @@ const SUGGESTIONS = [
 export function LandingAssistant() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  const [accountHelp, setAccountHelp] = useState<AccountHelpIntent | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authChoice, setAuthChoice] = useState<AuthMethod | "choose" | "signup" | null>(null);
@@ -47,6 +49,14 @@ export function LandingAssistant() {
   async function send(text: string) {
     const content = text.trim();
     if (!content || loading) return;
+    const help = accountHelpIntent(content);
+    if (help) {
+      setAccountHelp(help);
+      setInput("");
+      setError(null);
+      return;
+    }
+    setAccountHelp(null);
     const intent = authenticationIntent(content);
     if (intent) {
       setAuthChoice(intent);
@@ -201,6 +211,11 @@ export function LandingAssistant() {
               </Button>
             </div>
           )}
+          {accountHelp && <div role="status" className="space-y-3 border-t border-border pt-4 text-sm">
+            <p>{ACCOUNT_HELP_TEXT[accountHelp]}</p>
+            <Button asChild><Link to="/accounts/actions">Open secure account page</Link></Button>
+            <Button variant="ghost" onClick={() => setAccountHelp(null)}>Dismiss</Button>
+          </div>}
 
           {messages.length === 0 && (
             <div className="flex flex-wrap gap-2 pt-2">

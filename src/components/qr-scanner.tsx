@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, Loader2, X } from "lucide-react";
+import { Camera, CameraOff, Loader2, X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QrScannerProps {
@@ -19,6 +19,24 @@ export function QrScanner({ onScan, onClose, title = "Scan QR code" }: QrScanner
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(true);
   const lastScanRef = useRef<{ text: string; at: number } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [readingFile, setReadingFile] = useState(false);
+  const [fileError, setFileError] = useState("");
+
+  async function readImage(file: File) {
+    if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) {
+      setFileError("Choose a QR image up to 10 MB.");
+      return;
+    }
+    setReadingFile(true); setFileError("");
+    const url = URL.createObjectURL(file);
+    try {
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
+      const result = await new BrowserQRCodeReader().decodeFromImageUrl(url);
+      onScan(result.getText());
+    } catch { setFileError("No readable QR code was found in this image."); }
+    finally { URL.revokeObjectURL(url); setReadingFile(false); }
+  }
 
   useEffect(() => {
     let stopped = false;
@@ -100,7 +118,12 @@ export function QrScanner({ onScan, onClose, title = "Scan QR code" }: QrScanner
           </div>
         )}
       </div>
-      <p className="pb-6 text-center text-xs text-muted-foreground">Point the camera at a Fin3a payment QR code</p>
+      <div className="space-y-3 px-4 pb-6 text-center">
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" aria-label="QR image" onChange={e => { const file = e.target.files?.[0]; if (file) void readImage(file); e.target.value = ""; }} />
+        <Button variant="outline" disabled={readingFile} onClick={() => fileRef.current?.click()}>{readingFile ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}Choose QR image</Button>
+        {fileError && <p role="alert" className="text-sm text-destructive">{fileError}</p>}
+        <p className="text-xs text-muted-foreground">Fin3a payment or crypto address QR · No automatic payment</p>
+      </div>
     </div>
   );
 }
