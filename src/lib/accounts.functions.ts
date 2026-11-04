@@ -96,10 +96,13 @@ export const setDepositCreditCurrency = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const currency = data.currency && ACCOUNT_CURRENCIES.includes(data.currency) ? data.currency : null;
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("user_settings")
       .update({ deposit_credit_currency: currency, updated_at: new Date().toISOString() })
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .select("deposit_credit_currency")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return { depositCreditCurrency: currency };
+    if (!updated) throw new Error("Finish onboarding before choosing a deposit currency.");
+    return { depositCreditCurrency: (updated.deposit_credit_currency as AccountCurrency | null) ?? null };
   });

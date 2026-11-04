@@ -67,6 +67,29 @@ export const getAdminQrOverview = createServerFn({ method: "GET" })
     return JSON.parse(JSON.stringify(data)) as QrOverview;
   });
 
+export type FxRate = { ngn_per_usd: number; updated_at: string };
+
+export const getFxRate = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("fx_settings")
+      .select("ngn_per_usd, updated_at")
+      .eq("id", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { ngn_per_usd: Number(data?.ngn_per_usd ?? 1400), updated_at: data?.updated_at ?? "" } as FxRate;
+  });
+
+export const setFxRate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ ngn_per_usd: z.number().min(0.01).max(1_000_000) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("admin_set_fx_rate", { _ngn_per_usd: data.ngn_per_usd });
+    if (error) throw new Error(error.message.includes("Not authorized") ? "Administrator access required." : "Could not save the rate.");
+    return { ok: true };
+  });
+
 const money = z.number().min(0).max(1_000_000).nullable();
 
 export const updateAiSettings = createServerFn({ method: "POST" })
