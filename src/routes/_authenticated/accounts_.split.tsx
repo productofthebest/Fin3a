@@ -232,6 +232,9 @@ function Page() {
             <Button type="button" variant="outline" onClick={() => void addParticipant()} disabled={busy === "lookup" || identifier.trim().length < 3}>
               {busy === "lookup" ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} Add
             </Button>
+            <Button type="button" variant="outline" onClick={() => setScanning(true)} aria-label="Scan a Fin3a QR code to add a participant">
+              <ScanLine className="size-4" /> Scan
+            </Button>
           </div>
           {participants.length > 0 ? (
             <ul className="mt-3 space-y-2">
