@@ -4,6 +4,7 @@ Product: AI-first personal finance platform under Top Floor.
 Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with NGN/USD ledgers, crypto deposit addresses, Breet planned). Still excluded: trading/exchange features. Never fake addresses or simulated transactions.
 
 ## Phase 1 — Foundation (current)
+- [ ] Nov 4 20:10: remove user/Admin currency-conversion controls, verify the 0.1% crypto swap fee, and reduce safe frontend AI delays; preserve records and provider/security gates.
 - [x] Per-deposit currency cleanup (20:00 UTC): retired account-wide selector, read and server setter; marked legacy field deprecated without deleting records. Signed-in desktop/phone Accounts verified, Deposit remains disabled, two balance cards intact, no overflow/errors; 254 regressions passed, build OK.
 - [ ] Actual asset/network/amount/per-deposit receiving-currency quote and settlement flow: blocked on missing Breet credentials/adapter, account-supported settlement options and isolated funded verification; no simulated rates/addresses or deposits.
 - [x] Fee/revenue foundation and Admin reporting (4 Nov approved plan): exact fee calculator, versioned settings/audit, immutable quotes/revenue lifecycle guards, separate NGN/USD reports, CSV/Excel controls, corrected account pagination; 254 unit/regression tests and signed-in read/confirmation/CSV verified. No fee settings or financial records changed in verification.
