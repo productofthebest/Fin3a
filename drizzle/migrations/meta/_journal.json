@@ -232,6 +232,13 @@
       "when": 1793826419680,
       "tag": "0032_admin_user_management",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793827941396,
+      "tag": "0033_crypto_deposit_conversion_fee",
+      "breakpoints": true
     }
   ]
 }
