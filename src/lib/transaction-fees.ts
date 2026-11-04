@@ -1,7 +1,7 @@
-export const FEE_SERVICES = ["crypto_deposit", "crypto_withdrawal", "crypto_swap", "ngn_withdrawal"] as const;
+export const FEE_SERVICES = ["crypto_deposit", "crypto_withdrawal", "crypto_swap", "ngn_withdrawal", "ngn_deposit"] as const;
 export type FeeService = typeof FEE_SERVICES[number];
 export interface FeeSetting { service: FeeService; id: string | null; rate_bps: number; high_rate_bps: number; threshold_usd: number; flat_ngn: number; created_at: string | null }
-export const SERVICE_LABELS: Record<string, string> = { crypto_withdrawal: "Crypto withdrawals", crypto_swap: "Crypto swaps", ngn_withdrawal: "NGN withdrawals", crypto_deposit: "Crypto deposit conversion", bill_payment: "Bill commissions" };
+export const SERVICE_LABELS: Record<string, string> = { crypto_withdrawal: "Crypto withdrawals", crypto_swap: "Crypto swaps", ngn_withdrawal: "NGN withdrawals", ngn_deposit: "NGN bank top-ups", crypto_deposit: "Crypto deposit conversion", bill_payment: "Bill commissions" };
 
 /** Exact nonnegative decimal parsing; never silently round a provider quote. */
 export function minorUnits(value: string, precision = 2): bigint {
@@ -27,8 +27,8 @@ export function calculateFee(input: { service: string; asset?: string; currency:
     const config = settings.find(s => s.service === input.service);
     if (!config) throw new Error("Fee configuration unavailable");
     version = config.id;
-    if (input.service === "ngn_withdrawal") {
-      if (input.currency !== "NGN") throw new Error("NGN withdrawal required");
+    if (input.service === "ngn_withdrawal" || input.service === "ngn_deposit") {
+      if (input.currency !== "NGN") throw new Error("NGN bank transfer required");
       fee = minorUnits(String(config.flat_ngn));
     } else {
       if (input.service !== "crypto_deposit" && input.asset !== "USDT" && input.asset !== "USDC") throw new Error("Unsupported crypto asset");
