@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } from "@/lib/api-auth.server";
 import { homepageSearchQuestion } from "@/lib/homepage-web";
-import { readOnlyAssistantOptions } from "@/lib/assistant-read-only";
+import { readOnlyAssistantOptions, adminInformationRequest, ADMIN_INFORMATION_REFUSAL } from "@/lib/assistant-read-only";
 
 // Signed-in homepage requests use only the verified caller's aggregate financial records.
 const MODEL = "gpt-5-mini";
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/api/landing-chat")({
         if (!parsed.success) return jsonError(400, "Invalid message.");
         // Only the latest turn may be a user turn; earlier assistant turns are context only.
         if (parsed.data.messages.at(-1)?.role !== "user") return jsonError(400, "Invalid message.");
+        if (adminInformationRequest(parsed.data.messages.at(-1)?.content ?? "")) return jsonError(403, ADMIN_INFORMATION_REFUSAL);
         const publicQuestion = homepageSearchQuestion(parsed.data.messages.at(-1)?.content ?? "");
         if (publicQuestion.error) return jsonError(400, publicQuestion.error);
         const apiKey = process.env["OPENAI_API_KEY"];

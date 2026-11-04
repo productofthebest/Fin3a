@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { GUEST_INSTRUCTIONS, GUEST_MAX_OUTPUT, GUEST_MODEL, guestLimitMessage, guestMessageSchema, isGuestOriginAllowed } from "./guest-chat";
 import { homepageSearchQuestion } from "./homepage-web";
-import { readOnlyAssistantOptions } from "./assistant-read-only";
+import { readOnlyAssistantOptions, adminInformationRequest, ADMIN_INFORMATION_REFUSAL } from "./assistant-read-only";
 import { finishWeb, reserveWeb, searchPublicInformation, webEvidence } from "./web-access.server";
 
 export async function guestChatResponse(request: Request) {
@@ -11,6 +11,7 @@ export async function guestChatResponse(request: Request) {
   if (raw.length > 12000) return Response.json({ error: "Message is too long." }, { status: 413 });
   const parsed = guestMessageSchema.safeParse(await Promise.resolve().then(() => JSON.parse(raw)).catch(() => null));
   if (!parsed.success) return Response.json({ error: "Enter a question of up to 2,000 characters." }, { status: 400 });
+  if (adminInformationRequest(parsed.data.message)) return Response.json({ error: ADMIN_INFORMATION_REFUSAL }, { status: 403 });
   const publicQuestion = homepageSearchQuestion(parsed.data.message);
   if (publicQuestion.error) return Response.json({ error: publicQuestion.error }, { status: 400 });
   const apiKey = process.env["OPENAI_API_KEY"];
