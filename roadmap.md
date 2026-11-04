@@ -125,3 +125,5 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 
 ## Split Bill QR add (2026-11-04)
 - Scan button beside Add on /accounts/split; reuses QrScanner + parseScannedQr; fin3a_profile codes feed lookupRecipient, request/external codes rejected with a toast.
+
+- [ ] Admin User Statistics & User Management (verification = admin manual check now, KYC later) — awaiting owner answers on data access, balance adjustments, active-user definition
