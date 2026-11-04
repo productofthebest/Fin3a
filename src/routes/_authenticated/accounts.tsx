@@ -4,7 +4,11 @@ import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
@@ -22,6 +26,9 @@ const fmt = (currency: string, amount: number) =>
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
+  const [swapOpen, setSwapOpen] = useState(false);
+  const [swapAmount, setSwapAmount] = useState("");
+  const [swapCurrency, setSwapCurrency] = useState<"NGN" | "USD">("NGN");
   const splitRef = useRef<HTMLAnchorElement>(null);
   const walletsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -112,6 +119,7 @@ function Page() {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
+        <Button onClick={() => setSwapOpen(true)}><ArrowLeftRight className="size-4" />Swap</Button>
         {[
           { icon: ArrowDownToLine, label: "Deposit" },
           { icon: ArrowUpFromLine, label: "Withdraw" },
@@ -128,6 +136,29 @@ function Page() {
           </button>
         ))}
       </div>
+      <Dialog open={swapOpen} onOpenChange={setSwapOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Swap</DialogTitle>
+            <DialogDescription>Breet is not connected. No swap quote or settlement is available.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2" role="group" aria-label="Swap direction">
+            {(["NGN", "USD"] as const).map(currency => <Button key={currency} variant={swapCurrency === currency ? "default" : "outline"} aria-pressed={swapCurrency === currency} onClick={() => setSwapCurrency(currency)}>{currency} → {currency === "NGN" ? "USD" : "NGN"}</Button>)}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="swap-amount">Amount ({swapCurrency})</Label>
+            <Input id="swap-amount" inputMode="decimal" autoComplete="off" placeholder="0.00" value={swapAmount} onChange={event => setSwapAmount(event.target.value)} />
+          </div>
+          <dl className="divide-y divide-border text-sm">
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Breet rate</dt><dd>Unavailable</dd></div>
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fin3a fee</dt><dd>0.1%</dd></div>
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fee amount</dt><dd>Awaiting quote</dd></div>
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Provider / network charges</dt><dd>Unavailable</dd></div>
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">You receive ({swapCurrency === "NGN" ? "USD" : "NGN"})</dt><dd>Awaiting quote</dd></div>
+          </dl>
+          <Button disabled>Confirm swap</Button>
+        </DialogContent>
+      </Dialog>
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
           Deposits, withdrawals and external transfers are unavailable until provider integration and settlement verification are complete.
