@@ -57,12 +57,12 @@ export function LandingAssistant() {
     setAuthChoice(null);
     setError(null);
     setWarning(null);
-    const token = await accessToken();
     const history: Msg[] = [...messages, { role: "user" as const, content }].slice(-12);
     setMessages([...history, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
     try {
+      const token = await accessToken();
       const res = await fetch(token ? "/api/landing-chat" : "/api/public/guest-chat", {
         method: "POST",
         headers: token ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` } : { "Content-Type": "application/json" },

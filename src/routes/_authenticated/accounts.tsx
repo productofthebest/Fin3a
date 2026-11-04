@@ -1,15 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
-import { getAccountsOverview, executeSwap } from "@/lib/accounts.functions";
-import { calcSwapDestination, type AccountCurrency } from "@/lib/accounts";
+import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useRef } from "react";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
@@ -26,7 +22,6 @@ const fmt = (currency: string, amount: number) =>
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
-  const [swapOpen, setSwapOpen] = useState(false);
   const splitRef = useRef<HTMLAnchorElement>(null);
   const walletsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -117,13 +112,6 @@ function Page() {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setSwapOpen(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          <ArrowLeftRight className="size-4" /> Swap NGN ↔ USD
-        </button>
         {[
           { icon: ArrowDownToLine, label: "Deposit" },
           { icon: ArrowUpFromLine, label: "Withdraw" },
@@ -140,12 +128,6 @@ function Page() {
           </button>
         ))}
       </div>
-      <SwapDialog
-        open={swapOpen}
-        onOpenChange={setSwapOpen}
-        rate={data.fxRate}
-        accounts={data.accounts.map((account) => ({ currency: account.currency as AccountCurrency, available: account.balance.available }))}
-      />
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
           Deposits, withdrawals and external transfers are unavailable until provider integration and settlement verification are complete.
@@ -201,99 +183,6 @@ function Page() {
         </div>
       </section>
     </AppShell>
-  );
-}
-
-function SwapDialog({
-  open,
-  onOpenChange,
-  rate,
-  accounts,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  rate: number;
-  accounts: { currency: AccountCurrency; available: number }[];
-}) {
-  const [direction, setDirection] = useState<AccountCurrency>("NGN");
-  const [amountText, setAmountText] = useState("");
-  const queryClient = useQueryClient();
-  const swap = useMutation({
-    mutationFn: (input: { fromCurrency: AccountCurrency; amount: number }) => executeSwap({ data: input }),
-    onSuccess: (result) => {
-      const to = direction === "NGN" ? "USD" : "NGN";
-      toast.success(`Swap complete — ${fmt(to, result.destinationAmount)} added to your ${to} account`);
-      setAmountText("");
-      onOpenChange(false);
-      queryClient.invalidateQueries({ queryKey: ["accounts", "overview"] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-  const to = direction === "NGN" ? "USD" : "NGN";
-  const amount = Number(amountText.replaceAll(",", ""));
-  const source = accounts.find((account) => account.currency === direction);
-  const destination = calcSwapDestination(amount, rate, direction);
-  const valid = Number.isFinite(amount) && amount > 0 && source != null && amount <= source.available && destination != null;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Swap currency</DialogTitle>
-          <DialogDescription>Move money between your NGN and USD accounts at the Fin3a rate.</DialogDescription>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Swap direction">
-          {(["NGN", "USD"] as AccountCurrency[]).map((currency) => (
-            <button
-              key={currency}
-              type="button"
-              onClick={() => setDirection(currency)}
-              className={
-                direction === currency
-                  ? "rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm font-medium text-primary"
-                  : "rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-secondary/60"
-              }
-            >
-              {currency} → {currency === "NGN" ? "USD" : "NGN"}
-            </button>
-          ))}
-        </div>
-        <div>
-          <label htmlFor="swap-amount" className="text-xs text-muted-foreground">
-            Amount to swap ({direction})
-          </label>
-          <Input
-            id="swap-amount"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="0.00"
-            value={amountText}
-            onChange={(event) => setAmountText(event.target.value)}
-            className="mt-1"
-          />
-          {source ? <p className="mt-1 text-[11px] text-muted-foreground">Available: {fmt(direction, source.available)}</p> : null}
-        </div>
-        <div className="rounded-lg border border-border/70 bg-secondary/40 px-3 py-2 text-sm">
-          <p className="flex items-center justify-between">
-            <span className="text-muted-foreground">You receive</span>
-            <span className="font-medium">{destination != null ? fmt(to, destination) : "—"}</span>
-          </p>
-          <p className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>Rate</span>
-            <span>1 USD = {new Intl.NumberFormat("en").format(rate)} NGN</span>
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled={!valid || swap.isPending}
-          onClick={() => swap.mutate({ fromCurrency: direction, amount })}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {swap.isPending ? "Swapping…" : "Confirm swap"}
-        </button>
-        <p className="text-[11px] text-muted-foreground">Swaps are final once confirmed. The rate is set by Fin3a and can change.</p>
-      </DialogContent>
-    </Dialog>
   );
 }
 
