@@ -1590,6 +1590,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_internal_payment_usage: {
+        Args: { _from: string; _to: string }
+        Returns: Json
+      }
       admin_qr_overview: { Args: never; Returns: Json }
       admin_set_fx_rate: { Args: { _ngn_per_usd: number }; Returns: undefined }
       admin_split_overview: { Args: never; Returns: Json }
