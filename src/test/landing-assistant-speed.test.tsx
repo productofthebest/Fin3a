@@ -17,11 +17,11 @@ describe("Homepage question responsiveness", () => {
     Object.defineProperty(HTMLElement.prototype, "scrollTo", { value: vi.fn(), configurable: true });
     render(<LandingAssistant />);
     fireEvent.change(screen.getByRole("textbox", { name: "Your question" }), { target: { value: "Explain budgeting" } });
-    fireEvent.click(screen.getByRole("button", { name: "Send", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Send$/ }));
     expect(screen.getByText("Explain budgeting")).toBeInTheDocument();
     expect(screen.getByText("Thinking…")).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Send", exact: true })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Send$/ })).toBeDisabled();
     await act(async () => resolveSession({ data: { session: null } }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/public/guest-chat", expect.objectContaining({ body: JSON.stringify({ message: "Explain budgeting" }) })));
     await waitFor(() => expect(screen.getByText("Service unavailable")).toBeInTheDocument());
