@@ -1,15 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, RefreshCw, ShieldAlert, ArrowUpRight } from "lucide-react";
 import { AdminShell } from "@/components/admin-shell";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { getAdminQrOverview, getAdminSplitOverview, getAiOverview, getFxRate, getIsAdmin, setFxRate } from "@/lib/admin.functions";
+import { getAdminQrOverview, getAdminSplitOverview, getAiOverview, getIsAdmin } from "@/lib/admin.functions";
 import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/admin-overview")({
@@ -82,63 +77,9 @@ function AdminOverview() {
       <section className="mt-10 border-t border-border pt-6">
         <h2 className="text-xl font-semibold">Financial operations</h2>
         <Button asChild variant="link" className="mt-2"><Link to="/admin-revenue">Revenue and fee management <ArrowUpRight /></Link></Button>
-        <FxRateCard />
         <dl className="mt-4 divide-y divide-border">{[["Customer directory and wallet totals", "Unavailable — verified administrative reads pending"], ["Flutterwave bank services", "Not connected"], ["Breet crypto services", "Not connected"], ["Treasury, revenue and settlement", "Unavailable — authoritative sources pending"], ["KYC and interest-bearing savings", "Unavailable — product and provider rules pending"]].map(([label, status]) => <div key={label} className="grid gap-2 py-4 sm:grid-cols-2"><dt className="text-sm font-medium">{label}</dt><dd className="text-sm text-muted-foreground">{status}</dd></div>)}</dl>
       </section>
     </AdminShell>
-  );
-}
-
-function FxRateCard() {
-  const rate = useQuery({ queryKey: ["admin", "fx-rate"], queryFn: () => getFxRate() });
-  const [value, setValue] = useState("");
-  const queryClient = useQueryClient();
-  const save = useMutation({
-    mutationFn: (ngnPerUsd: number) => setFxRate({ data: { ngn_per_usd: ngnPerUsd } }),
-    onSuccess: () => {
-      toast.success("Swap rate updated");
-      setValue("");
-      queryClient.invalidateQueries({ queryKey: ["admin", "fx-rate"] });
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-  const parsed = Number(value);
-  const valid = Number.isFinite(parsed) && parsed > 0 && parsed <= 1_000_000;
-  const updated = rate.data?.updated_at ? new Date(rate.data.updated_at).toISOString().slice(0, 16).replace("T", " ") + " UTC" : "";
-  return (
-    <Card className="mt-4">
-      <CardHeader><CardTitle className="text-base">NGN ↔ USD swap rate</CardTitle></CardHeader>
-      <CardContent>
-        {rate.isError ? <p role="alert" className="text-sm text-destructive">Could not load the current rate.</p> : (
-          <p className="text-sm text-muted-foreground">
-            Current: <span className="font-medium text-foreground">1 USD = {rate.data ? Number(rate.data.ngn_per_usd).toLocaleString() : "—"} NGN</span>
-            {updated ? ` · updated ${updated}` : ""}
-          </p>
-        )}
-        <div className="mt-3 flex flex-wrap items-end gap-2">
-          <div>
-            <Label htmlFor="fx-rate">New rate (NGN per USD)</Label>
-            <Input
-              id="fx-rate"
-              inputMode="decimal"
-              autoComplete="off"
-              className="mt-1 w-44"
-              placeholder={rate.data ? String(rate.data.ngn_per_usd) : "1400"}
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-            />
-          </div>
-          <Button
-            type="button"
-            disabled={!valid || save.isPending}
-            onClick={() => save.mutate(parsed)}
-          >
-            {save.isPending ? "Saving…" : "Save rate"}
-          </Button>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">Applies to every NGN↔USD swap on Accounts. Completed swaps keep the rate they were executed at.</p>
-      </CardContent>
-    </Card>
   );
 }
 
