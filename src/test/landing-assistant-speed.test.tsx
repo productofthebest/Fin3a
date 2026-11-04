@@ -14,7 +14,7 @@ describe("Homepage question responsiveness", () => {
     mocks.getSession.mockReturnValue(new Promise(resolve => { resolveSession = resolve; }));
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: "Service unavailable" }) });
     vi.stubGlobal("fetch", fetchMock);
-    vi.spyOn(HTMLElement.prototype, "scrollTo").mockImplementation(() => {});
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", { value: vi.fn(), configurable: true });
     render(<LandingAssistant />);
     fireEvent.change(screen.getByRole("textbox", { name: "Your question" }), { target: { value: "Explain budgeting" } });
     fireEvent.click(screen.getByRole("button", { name: "Send", exact: true }));
