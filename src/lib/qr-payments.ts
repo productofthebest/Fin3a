@@ -1,8 +1,10 @@
 // Pure QR payment helpers: payload building/parsing and display formatting.
 // QR codes only ever encode a URL with an opaque identifier — never amounts
 // alone, credentials, balances, or personal data.
+import { parseCryptoQr, type CryptoQr } from "./crypto-qr";
 
 export type ScannedQr =
+  | CryptoQr
   | { kind: "fin3a_profile"; fin3aId: string }
   | { kind: "fin3a_request"; requestId: string }
   | { kind: "external"; url: string }
@@ -29,6 +31,9 @@ export function qrProfileUrl(origin: string, fin3aId: string): string {
 export function parseScannedQr(raw: string): ScannedQr {
   const text = raw.trim();
   if (!text) return { kind: "invalid", raw };
+  if (text.length > 2048) return { kind: "invalid", raw: "" };
+  const crypto = parseCryptoQr(text);
+  if (crypto) return crypto;
 
   // Path-only payloads (e.g. generated in tests or copied without origin).
   const pathMatch = text.match(/^\/pay\/(qr\/)?([A-Za-z0-9-]+)\/?$/);
