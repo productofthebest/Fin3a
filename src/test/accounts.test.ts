@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeAccountBalance, type LedgerEntry } from "@/lib/accounts";
+import { computeAccountBalance, calcSwapDestination, DEFAULT_NGN_PER_USD, type LedgerEntry } from "@/lib/accounts";
 
 const entry = (kind: LedgerEntry["kind"], status: LedgerEntry["status"], amount: number): LedgerEntry => ({ kind, status, amount });
 
@@ -42,6 +42,40 @@ describe("computeAccountBalance", () => {
     expect(balance.pendingOut).toBe(300);
     expect(balance.pending).toBe(-200);
     expect(balance.total).toBe(1800);
+  });
+
+  it("counts completed swaps as a credit in and a debit out", () => {
+    const balance = computeAccountBalance([
+      entry("deposit", "completed", 1000),
+      entry("swap_out", "completed", 1000),
+      entry("swap_in", "completed", 0.71),
+    ]);
+    expect(balance.available).toBe(0.71);
+    expect(balance.total).toBe(0.71);
+  });
+
+  it("never moves the balance for a pending swap", () => {
+    const balance = computeAccountBalance([entry("swap_out", "pending", 500), entry("swap_in", "pending", 0.36)]);
+    expect(balance.available).toBe(0);
+    expect(balance.pending).toBe(-500 + 0.36);
+  });
+});
+
+describe("calcSwapDestination", () => {
+  it("converts USD to NGN at the owner-set rate", () => {
+    expect(calcSwapDestination(100, DEFAULT_NGN_PER_USD, "USD")).toBe(140000);
+  });
+
+  it("converts NGN to USD and rounds to two decimals", () => {
+    expect(calcSwapDestination(2800, DEFAULT_NGN_PER_USD, "NGN")).toBe(2);
+    expect(calcSwapDestination(1000, DEFAULT_NGN_PER_USD, "NGN")).toBe(0.71);
+  });
+
+  it("rejects invalid amounts and rates", () => {
+    expect(calcSwapDestination(0, DEFAULT_NGN_PER_USD, "NGN")).toBeNull();
+    expect(calcSwapDestination(-5, DEFAULT_NGN_PER_USD, "NGN")).toBeNull();
+    expect(calcSwapDestination(10, 0, "NGN")).toBeNull();
+    expect(calcSwapDestination(Number.NaN, DEFAULT_NGN_PER_USD, "NGN")).toBeNull();
   });
 });
 
