@@ -57,14 +57,15 @@ function Page() {
   const [identifier, setIdentifier] = useState("");
   const [participants, setParticipants] = useState<DraftParticipant[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts", "split-bills"] });
 
-  async function addParticipant() {
+  async function addParticipantByIdentifier(value: string) {
     setBusy("lookup");
     try {
-      const result = await lookup({ data: { identifier } });
+      const result = await lookup({ data: { identifier: value } });
       if (!result.found) {
         toast.error("No Fin3a account found for that ID, email or phone number");
         return;
@@ -80,6 +81,24 @@ function Page() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function addParticipant() {
+    void addParticipantByIdentifier(identifier);
+  }
+
+  function handleScan(text: string) {
+    const parsed = parseScannedQr(text);
+    if (parsed.kind === "fin3a_profile") {
+      setScanning(false);
+      void addParticipantByIdentifier(parsed.fin3aId);
+      return;
+    }
+    if (parsed.kind === "fin3a_request") {
+      toast.error("That QR code is a payment request, not a person — scan their personal Fin3a QR code");
+      return;
+    }
+    toast.error("That is not a Fin3a QR code");
   }
 
   async function submit() {
