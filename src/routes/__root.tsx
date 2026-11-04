@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createSessionCacheHandler } from "@/lib/session-cache";
+import { Button } from "@/components/ui/button";
+import { isModuleLoadError, recoverBrowserModuleLoad } from "@/lib/module-load-recovery";
 
 function NotFoundComponent() {
   return (
@@ -42,6 +44,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    recoverBrowserModuleLoad(error);
   }, [error]);
 
   return (
@@ -54,15 +57,18 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
+          <Button
             onClick={() => {
+              if (isModuleLoadError(error)) {
+                window.location.reload();
+                return;
+              }
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
-          </button>
+          </Button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
@@ -132,6 +138,15 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => {
+    const handlePreloadError = (event: Event) => {
+      const error = (event as Event & { payload?: unknown }).payload;
+      if (recoverBrowserModuleLoad(error)) event.preventDefault();
+    };
+    window.addEventListener("vite:preloadError", handlePreloadError);
+    return () => window.removeEventListener("vite:preloadError", handlePreloadError);
+  }, []);
 
   // Re-validate identity transitions so route gates and caches stay fresh.
   useEffect(() => {
