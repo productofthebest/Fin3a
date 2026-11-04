@@ -1,5 +1,5 @@
-import { servicesForCurrency, describe, expect, it } from "vitest";
-import { calculateFee, minorUnits, type FeeSetting } from "../lib/transaction-fees";
+import { describe, expect, it } from "vitest";
+import { calculateFee, servicesForCurrency, minorUnits, type FeeSetting } from "../lib/transaction-fees";
 import { summarizeRevenue } from "../lib/revenue-report";
 const settings: FeeSetting[] = ["crypto_deposit","crypto_withdrawal","crypto_swap","ngn_withdrawal","ngn_deposit"].map(service => ({ service: service as FeeSetting["service"], id:null,rate_bps:service === "crypto_swap" ? 10 : (service === "ngn_withdrawal" || service === "ngn_deposit") ? 0 : 100, high_rate_bps:service === "crypto_swap" ? 10 : (service === "ngn_withdrawal" || service === "ngn_deposit") ? 0 : 50, threshold_usd:5000,flat_ngn:(service === "ngn_withdrawal" || service === "ngn_deposit") ? 50 : 0,created_at:null }));
 describe("Launch fee rules", () => {
