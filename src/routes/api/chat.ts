@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { beginAiUsage, finishAiUsage } from "@/lib/api-auth.server";
 import { homepageSearchQuestion } from "@/lib/homepage-web";
+import { readOnlyAssistantOptions } from "@/lib/assistant-read-only";
 
 const MODEL = "gpt-5-mini";
 const HOURLY_LIMIT = 40;
@@ -164,6 +165,7 @@ export const Route = createFileRoute("/api/chat")({
         }));
 
         const result = streamText({
+          ...readOnlyAssistantOptions(),
           model: openai.responses(MODEL),
           system: `${ASSISTANT_INSTRUCTIONS}${companyBlock}${evidence}\nWithout public web evidence do not claim live information.\n\nUSER FINANCIAL SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
           messages: await convertToModelMessages(history),

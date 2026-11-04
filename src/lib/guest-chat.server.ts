@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { GUEST_INSTRUCTIONS, GUEST_MAX_OUTPUT, GUEST_MODEL, guestLimitMessage, guestMessageSchema, isGuestOriginAllowed } from "./guest-chat";
 import { homepageSearchQuestion } from "./homepage-web";
+import { readOnlyAssistantOptions } from "./assistant-read-only";
 import { finishWeb, reserveWeb, searchPublicInformation, webEvidence } from "./web-access.server";
 
 export async function guestChatResponse(request: Request) {
@@ -64,6 +65,7 @@ export async function guestChatResponse(request: Request) {
     const { streamText } = await import("ai");
     const { createOpenAI } = await import("@ai-sdk/openai");
     const result = streamText({
+      ...readOnlyAssistantOptions(),
       model: createOpenAI({ apiKey }).responses(GUEST_MODEL),
       system: GUEST_INSTRUCTIONS + companyBlock + evidence,
       messages: [{ role: "user", content: parsed.data.message }],
