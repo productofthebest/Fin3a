@@ -9,8 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
+    // Local session read (no network round trip); every server function still verifies the token.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session?.user) {
       throw redirect({ to: "/auth" });
     }
   },
