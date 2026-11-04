@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { GUEST_INSTRUCTIONS, GUEST_MAX_OUTPUT, GUEST_MODEL, guestLimitMessage, guestMessageSchema, isGuestOriginAllowed } from "./guest-chat";
 import { homepageSearchQuestion } from "./homepage-web";
+import { readOnlyAssistantOptions } from "./assistant-read-only";
 import { finishWeb, reserveWeb, searchPublicInformation, webEvidence } from "./web-access.server";
 
 export async function guestChatResponse(request: Request) {
@@ -63,7 +64,7 @@ export async function guestChatResponse(request: Request) {
     }
     const { streamText } = await import("ai");
     const { createOpenAI } = await import("@ai-sdk/openai");
-    const result = streamText({
+    const result = streamText(readOnlyAssistantOptions({
       model: createOpenAI({ apiKey }).responses(GUEST_MODEL),
       system: GUEST_INSTRUCTIONS + companyBlock + evidence,
       messages: [{ role: "user", content: parsed.data.message }],
@@ -74,7 +75,7 @@ export async function guestChatResponse(request: Request) {
       onFinish: ({ totalUsage }) => finish(true, totalUsage.inputTokens, totalUsage.outputTokens),
       onError: () => finish(false),
       onAbort: () => finish(false),
-    });
+    }));
     const headers = new Headers({ "Cache-Control": "no-store" });
     if (sources.length) headers.set("x-fin3a-web-sources", encodeURIComponent(JSON.stringify(sources)));
     if (admission.warning) headers.set("x-ai-usage-warning", encodeURIComponent(admission.warning));

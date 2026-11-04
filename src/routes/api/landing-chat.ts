@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { beginAiUsage, consumeQuota, finishAiUsage, jsonError, verifyBearer } from "@/lib/api-auth.server";
 import { homepageSearchQuestion } from "@/lib/homepage-web";
+import { readOnlyAssistantOptions } from "@/lib/assistant-read-only";
 
 // Signed-in homepage requests use only the verified caller's aggregate financial records.
 const MODEL = "gpt-5-mini";
@@ -76,7 +77,7 @@ export const Route = createFileRoute("/api/landing-chat")({
             return jsonError(503, "Web search could not be completed. Please try again later.");
           }
         }
-        const result = streamText({
+        const result = streamText(readOnlyAssistantOptions({
           model: openai.responses(MODEL),
           system: `${ASSISTANT_INSTRUCTIONS}\nYou may also answer general public questions on science, technology, sports, history, travel and current events. Do not force unrelated questions into a financial interpretation. Retain ordinary safety restrictions.${companyBlock}${evidence}\nWithout public web evidence do not claim live information.\nVERIFIED FINANCIAL SNAPSHOT:\n${JSON.stringify(snapshot)}`,
           // Never accept browser-authored assistant/system history as trusted context.
@@ -90,7 +91,7 @@ export const Route = createFileRoute("/api/landing-chat")({
             : finishAiUsage(auth.supabase, usage.usageId, true, { model: MODEL, input: totalUsage.inputTokens ?? null, cached: totalUsage.inputTokenDetails?.cacheReadTokens ?? null, output: totalUsage.outputTokens ?? null }),
           onError: () => query ? finishWeb(auth.supabase, usage.usageId, false, false) : finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "stream_error"),
           onAbort: () => query ? finishWeb(auth.supabase, usage.usageId, false, false) : finishAiUsage(auth.supabase, usage.usageId, false, { model: MODEL }, "aborted"),
-        });
+        }));
         const headers = new Headers({ "Cache-Control": "no-store" });
         if (usage.warning) headers.set("x-ai-usage-warning", encodeURIComponent(usage.warning));
         if (sources.length) headers.set("x-fin3a-web-sources", encodeURIComponent(JSON.stringify(sources)));
