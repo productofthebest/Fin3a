@@ -127,12 +127,6 @@ function Page() {
             <Icon className="size-4" /> {label}
           </button>
         ))}
-        <Link
-          to="/activity"
-          className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-secondary"
-        >
-          <History className="size-4" /> View transaction history
-        </Link>
       </div>
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
