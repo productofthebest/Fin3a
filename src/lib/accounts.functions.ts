@@ -22,7 +22,7 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
       if (error) throw new Error(error.message);
     }
 
-    const [{ data: accounts, error: accErr }, { data: ledger, error: ledErr }, { data: assets, error: assetErr }, { data: addresses, error: addrErr }, { data: fx, error: fxErr }, { data: settings, error: settingsErr }] =
+    const [{ data: accounts, error: accErr }, { data: ledger }, { data: assets, error: assetErr }, { data: addresses, error: addrErr }, { data: fx, error: fxErr }, { data: settings, error: settingsErr }] =
       await Promise.all([
         supabase.from("accounts").select("id, currency, created_at").eq("user_id", userId),
         collectPages((from, to) => supabase.from("account_ledger").select("id, account_id, kind, status, amount, currency, reference, created_at").eq("user_id", userId).order("created_at", { ascending: false }).order("id").range(from, to)).then(data => ({ data, error: null })),
@@ -32,7 +32,7 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
         supabase.from("user_settings").select("deposit_credit_currency").eq("user_id", userId).maybeSingle(),
       ]);
     if (accErr) throw new Error(accErr.message);
-    if (ledErr) throw new Error(ledErr.message);
+
     if (assetErr) throw new Error(assetErr.message);
     if (addrErr) throw new Error(addrErr.message);
     if (fxErr) throw new Error(fxErr.message);

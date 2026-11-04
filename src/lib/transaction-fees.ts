@@ -6,7 +6,7 @@ export const SERVICE_LABELS: Record<string, string> = { crypto_sell: "Crypto sel
 /** Exact nonnegative decimal parsing; never silently round a provider quote. */
 export function minorUnits(value: string, precision = 2): bigint {
   if (!Number.isInteger(precision) || precision < 0 || precision > 12 || !/^\d+(\.\d+)?$/.test(value)) throw new Error("Invalid monetary amount");
-  const [whole, fraction = ""] = value.split(".");
+  const [whole = "0", fraction = ""] = value.split(".");
   if (fraction.length > precision) throw new Error("Unsupported amount precision");
   return BigInt(whole) * 10n ** BigInt(precision) + BigInt(fraction.padEnd(precision, "0") || "0");
 }

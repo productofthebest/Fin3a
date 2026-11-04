@@ -54,7 +54,7 @@ function RevenuePage() {
     {editing && <FeeEditor setting={editing} close={()=>setEditing(null)} saved={async()=>{const result=await fetchReport({data:{from,to}});setReport(result);}}/>}
   </AdminShell>;
 }
-function Picker({label,value,set,choices}:{label:string;value:string;set:(v:string)=>void;choices:string[][]}) { return <div><Label>{label}</Label><Select value={value} onValueChange={set}><SelectTrigger aria-label={label} className="mt-1 w-44"><SelectValue/></SelectTrigger><SelectContent>{choices.map(([v,text])=><SelectItem value={v} key={v}>{text}</SelectItem>)}</SelectContent></Select></div>; }
+function Picker({label,value,set,choices}:{label:string;value:string;set:(v:string)=>void;choices:string[][]}) { return <div><Label>{label}</Label><Select value={value} onValueChange={set}><SelectTrigger aria-label={label} className="mt-1 w-44"><SelectValue/></SelectTrigger><SelectContent>{choices.map(([v = "",text = ""])=><SelectItem value={v} key={v}>{text}</SelectItem>)}</SelectContent></Select></div>; }
 function FeeEditor({setting,close,saved}:{setting:FeeSetting;close:()=>void;saved:()=>Promise<void>}) {
   const [low,setLow]=useState(String(setting.rate_bps/100)),[high,setHigh]=useState(String(setting.high_rate_bps/100)),[flat,setFlat]=useState(String(setting.flat_ngn)),[confirm,setConfirm]=useState(false),[key]=useState(()=>crypto.randomUUID());
   const change=useServerFn(changeFee);const client=useQueryClient();
