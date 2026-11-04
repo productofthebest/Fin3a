@@ -225,6 +225,13 @@
       "when": 1793822499928,
       "tag": "0031_retire_global_deposit_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793826419680,
+      "tag": "0032_admin_user_management",
+      "breakpoints": true
     }
   ]
 }
