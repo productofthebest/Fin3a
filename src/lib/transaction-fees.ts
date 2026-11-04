@@ -45,3 +45,8 @@ export function calculateFee(input: { service: string; asset?: string; currency:
   if (final <= 0n) throw new Error("Charges leave no positive payout");
   return { feeVersionId: version, feeRateBps: bps, fin3aFee: decimalUnits(fee), providerCharge: decimalUnits(provider), networkCharge: decimalUnits(network), finalAmount: decimalUnits(final) };
 }
+/** Services that only exist in one currency; others (deposits, swaps, bills) can appear in both. */
+const SINGLE_CURRENCY: Record<string, "NGN" | "USD"> = { ngn_withdrawal: "NGN", ngn_deposit: "NGN", crypto_withdrawal: "USD" };
+export function servicesForCurrency(currency: string): [string, string][] {
+  return Object.entries(SERVICE_LABELS).filter(([key]) => !SINGLE_CURRENCY[key] || SINGLE_CURRENCY[key] === currency);
+}

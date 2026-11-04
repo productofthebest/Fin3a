@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { servicesForCurrency, describe, expect, it } from "vitest";
 import { calculateFee, minorUnits, type FeeSetting } from "../lib/transaction-fees";
 import { summarizeRevenue } from "../lib/revenue-report";
 const settings: FeeSetting[] = ["crypto_deposit","crypto_withdrawal","crypto_swap","ngn_withdrawal","ngn_deposit"].map(service => ({ service: service as FeeSetting["service"], id:null,rate_bps:service === "crypto_swap" ? 10 : (service === "ngn_withdrawal" || service === "ngn_deposit") ? 0 : 100, high_rate_bps:service === "crypto_swap" ? 10 : (service === "ngn_withdrawal" || service === "ngn_deposit") ? 0 : 50, threshold_usd:5000,flat_ngn:(service === "ngn_withdrawal" || service === "ngn_deposit") ? 50 : 0,created_at:null }));
@@ -25,4 +25,9 @@ it("separates currency, estimates, settlement and refund from earned revenue", (
   const totals = summarizeRevenue([event,{...event,id:"s",event_kind:"settled"},{...event,id:"r",event_kind:"refund",fin3a_fee:"5",provider_charge:"0",related_event_id:"e"},{...event,id:"estimate",event_kind:"commission_estimate",fin3a_fee:"0",provider_commission:"10"},{...event,id:"ngn",snapshot_id:"b",fin3a_fee:"50",provider_charge:"0"}], quotes);
   expect(totals.find(t => t.currency === "USD")).toMatchObject({gross:"25.00",net:"18.00",estimated:"10.00",volume:"5000.00",settled:"25.00"});
   expect(totals.find(t => t.currency === "NGN")).toMatchObject({gross:"50.00",net:"50.00"});
+});
+describe("revenue by service currency", () => {
+  it("hides NGN bank services from USD", () => expect(servicesForCurrency("USD").map(s=>s[0])).not.toContain("ngn_deposit"));
+  it("hides NGN withdrawals from USD", () => expect(servicesForCurrency("USD").map(s=>s[0])).not.toContain("ngn_withdrawal"));
+  it("hides USD withdrawals from NGN", () => expect(servicesForCurrency("NGN").map(s=>s[0])).not.toContain("crypto_withdrawal"));
 });
