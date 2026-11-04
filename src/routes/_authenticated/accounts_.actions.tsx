@@ -13,14 +13,16 @@ import { CryptoQrReview } from "@/components/crypto-qr-review";
 const Scanner = lazy(() => import("@/components/qr-scanner").then(m => ({ default: m.QrScanner })));
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
-  head: () => pageMeta("Account details & payments", "Securely review your Fin3a balances, crypto deposit availability and NGN bank or USDC/USDT withdrawals."),
+  head: () => pageMeta("Deposits & withdrawals", "Your secure Fin3a NGN and USD deposit and withdrawal options."),
+  validateSearch: (search: Record<string, unknown>): { action: "deposit" | "withdraw" } => ({ action: search.action === "withdraw" ? "withdraw" : "deposit" }),
   loader: ({ context }) => context.queryClient.ensureQueryData(overview),
   component: Page,
 });
 
 function Page() {
   const { data } = useSuspenseQuery(overview);
-  const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
+  const { action: mode } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
   const [asset, setAsset] = useState<"USDC" | "USDT">("USDC");
   const [scanning, setScanning] = useState(false);
@@ -41,10 +43,10 @@ function Page() {
     </header>
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-10 sm:px-6">
       <div className="mb-7 flex size-12 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary"><ShieldCheck className="size-6" /></div>
-      <h1 className="font-display text-3xl font-semibold">Your account</h1>
+      <h1 className="font-display text-3xl font-semibold">{mode === "deposit" ? "Deposit" : "Withdrawal"}</h1>
       <dl className="my-6 divide-y divide-border text-sm">{data.accounts.map(a => <div key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><dt>{a.currency === "NGN" ? "₦" : a.currency === "USD" ? "$" : a.currency} available balance</dt><dd className="break-all font-semibold">{new Intl.NumberFormat("en", { style: "currency", currency: a.currency, currencyDisplay: "narrowSymbol" }).format(a.balance.available)}</dd></div>)}</dl>
-      <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Account action">{(["deposit", "withdraw"] as const).map(v => <Button key={v} variant={mode === v ? "default" : "outline"} aria-pressed={mode === v} onClick={() => setMode(v)}>{v === "deposit" ? "Deposit" : "Withdraw"}</Button>)}</div>
-      <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Balance currency">{(["NGN", "USD"] as const).map(v => <Button key={v} variant={currency === v ? "default" : "outline"} aria-pressed={currency === v} onClick={() => setCurrency(v)}>{v === "NGN" ? "₦" : "$"}</Button>)}</div>
+      <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Account action">{(["deposit", "withdraw"] as const).map(v => <Button key={v} variant={mode === v ? "default" : "outline"} aria-pressed={mode === v} onClick={() => void navigate({ search: { action: v }, replace: true })}>{v === "deposit" ? "Deposit" : "Withdrawal"}</Button>)}</div>
+      <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Balance currency">{(["NGN", "USD"] as const).map(v => <Button key={v} variant={currency === v ? "default" : "outline"} aria-pressed={currency === v} onClick={() => setCurrency(v)}>{v} {v === "NGN" ? "₦" : "$"}</Button>)}</div>
       <h2 className="mb-3 font-display text-xl font-semibold">{mode === "deposit" ? currency === "NGN" ? "NGN top-up" : "Crypto deposit" : currency === "NGN" ? "Bank withdrawal" : "USD withdrawal"}</h2>
       {mode === "withdraw" && currency === "USD" && <div className="mb-4 grid grid-cols-2 gap-2" role="group" aria-label="Withdrawal stablecoin">{(["USDC", "USDT"] as const).map(v => <Button key={v} variant={asset === v ? "default" : "outline"} aria-pressed={asset === v} onClick={() => setAsset(v)}>{v}</Button>)}</div>}
       <div role="status" className="space-y-3 text-sm text-muted-foreground">
