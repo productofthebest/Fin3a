@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { settingsQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+import { currencySymbol } from "@/lib/fin3a";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
@@ -63,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
             {settings?.currency ? (
               <span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">
-                {settings.currency}
+                {currencySymbol(settings.currency)}
               </span>
             ) : null}
             {settings?.display_name ? (
