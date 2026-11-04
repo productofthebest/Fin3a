@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, Check, Loader2, Plus, Users, X } from "lucide-react";
+import { Bell, Check, Loader2, Plus, ScanLine, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { QrScanner } from "@/components/qr-scanner";
+import { parseScannedQr } from "@/lib/qr-payments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,14 +57,15 @@ function Page() {
   const [identifier, setIdentifier] = useState("");
   const [participants, setParticipants] = useState<DraftParticipant[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts", "split-bills"] });
 
-  async function addParticipant() {
+  async function addParticipantByIdentifier(value: string) {
     setBusy("lookup");
     try {
-      const result = await lookup({ data: { identifier } });
+      const result = await lookup({ data: { identifier: value } });
       if (!result.found) {
         toast.error("No Fin3a account found for that ID, email or phone number");
         return;
@@ -78,6 +81,24 @@ function Page() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function addParticipant() {
+    void addParticipantByIdentifier(identifier);
+  }
+
+  function handleScan(text: string) {
+    const parsed = parseScannedQr(text);
+    if (parsed.kind === "fin3a_profile") {
+      setScanning(false);
+      void addParticipantByIdentifier(parsed.fin3aId);
+      return;
+    }
+    if (parsed.kind === "fin3a_request") {
+      toast.error("That QR code is a payment request, not a person — scan their personal Fin3a QR code");
+      return;
+    }
+    toast.error("That is not a Fin3a QR code");
   }
 
   async function submit() {
@@ -210,6 +231,9 @@ function Page() {
             />
             <Button type="button" variant="outline" onClick={() => void addParticipant()} disabled={busy === "lookup" || identifier.trim().length < 3}>
               {busy === "lookup" ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} Add
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setScanning(true)} aria-label="Scan a Fin3a QR code to add a participant">
+              <ScanLine className="size-4" /> Scan
             </Button>
           </div>
           {participants.length > 0 ? (
@@ -354,6 +378,14 @@ function Page() {
           </div>
         )}
       </section>
+
+      {scanning ? (
+        <QrScanner
+          title="Scan to add a participant"
+          onScan={handleScan}
+          onClose={() => setScanning(false)}
+        />
+      ) : null}
 
       <section className="mt-10">
         <h2 className="font-display text-xl font-semibold">Payment history</h2>
