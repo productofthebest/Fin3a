@@ -140,7 +140,7 @@ function Page() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Swap</DialogTitle>
-            <DialogDescription>Breet is not connected. No swap quote or settlement is available.</DialogDescription>
+            <DialogDescription>Swaps are currently unavailable. A live quote is required before confirmation.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2" role="group" aria-label="Swap direction">
             {(["NGN", "USD"] as const).map(currency => <Button key={currency} variant={swapCurrency === currency ? "default" : "outline"} aria-pressed={swapCurrency === currency} onClick={() => setSwapCurrency(currency)}>{currency} → {currency === "NGN" ? "USD" : "NGN"}</Button>)}
@@ -150,7 +150,7 @@ function Page() {
             <Input id="swap-amount" inputMode="decimal" autoComplete="off" placeholder="0.00" value={swapAmount} onChange={event => setSwapAmount(event.target.value)} />
           </div>
           <dl className="divide-y divide-border text-sm">
-            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Breet rate</dt><dd>Unavailable</dd></div>
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Rate</dt><dd>Unavailable</dd></div>
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fin3a fee</dt><dd>0.1%</dd></div>
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fee amount</dt><dd>Awaiting quote</dd></div>
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Provider / network charges</dt><dd>Unavailable</dd></div>
