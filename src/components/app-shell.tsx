@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {settings?.display_name ? (
               <span className="hidden text-sm text-muted-foreground md:inline">{settings.display_name}</span>
             ) : null}
-            <Link to="/security" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Phone</Link>
+            <Link to="/security" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Settings</Link>
             {isAdmin ? <Link to="/admin-overview" className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground">Admin</Link> : null}
             <Link
               to="/accounts/qr"
