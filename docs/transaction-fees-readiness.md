@@ -17,12 +17,14 @@
 
 ## Unsupported/deferred work
 - No Breet/Flutterwave adapter or provider API calls added. No automated credit/debit/fee collection activated.
-- Per-deposit NGN/USD instructions and quote summaries await business capability validation. Existing receiving preference is not an operational deposit route.
+- Per-deposit NGN/USD instructions and quote summaries await business capability validation. The account-wide selector, read and server setter were removed at the owner's 20:00 UTC follow-up. Legacy settings data is retained and marked deprecated, never used for deposit destination.
 - Public Breet docs describe wallet currencies and stablecoin withdrawals; account rights, authenticated webhook verification, crypto-to-crypto swaps and commission-sharing terms remain unconfirmed.
 - Agreement commission configuration/reconciliation, detailed crypto status/network/asset reports and recorded-rate consolidated exports are not implemented yet. Do not claim a complete revenue engine or all brief requirements fulfilled.
 - Trusted provider writers must use the exact fee calculator and immutable snapshots, verify quote/settlement/lifecycle and atomically coordinate existing ledger writes before enabling money movement. Current schema is a protected foundation, not an operational payment authority.
 
 ## External blockers and activation gate
+20:02 UTC follow-up verification: no Breet secret or connector configured; source has no provider adapter. Signed-in desktop/393px Accounts confirms no permanent currency chooser, Deposit disabled and both balance cards retained, with no page errors/overflow. All 254 tests passed; preview build OK. No financial data changed. Actual receiving-currency options/rates/instructions/settlement cannot be enabled or end-to-end tested until these provider dependencies are supplied.
+
 Approved provider business credentials/services, actual commercial terms, authentic event verification and an isolated funded sandbox. Verify real NGN/USD deposits and withdrawals, all fee/refund/idempotency/authorization cases and receipts before separate explicit owner approval for production activation. No publication performed.
 
 ## Official references reviewed
