@@ -49,7 +49,7 @@ export const getShareProfile = createServerFn({ method: "GET" })
 export const lookupRecipient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { identifier: string }) => {
-    if (!input.identifier || input.identifier.trim().length < 3) throw new Error("Enter a Fin3a ID, email or phone number");
+    if (!input.identifier || input.identifier.trim().length < 3) throw new Error("Enter a Fin3a ID or email");
     return { identifier: input.identifier.trim() };
   })
   .handler(async ({ data, context }) => {
