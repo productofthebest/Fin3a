@@ -143,5 +143,5 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 ## Flutterwave (live keys; owner chose all features)
 - [x] Bank list + account-name check in Transfer
 - [ ] NGN bank transfer sending: wallet hold, payout, webhook-verified settle/refund (needs webhook secret + owner small real test)
-- [ ] NGN bank top-up via virtual accounts (needs BVN/KYC decision + webhook)
+- [x] NGN bank top-up via dynamic one-time virtual accounts (owner real ₦ test pending)
 - [ ] Bill payments (after payouts verified)
