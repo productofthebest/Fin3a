@@ -145,7 +145,6 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
 
   const busy = status === "submitted" || status === "streaming";
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
   useEffect(() => () => { void stop(); }, [stop]);
   useEffect(() => {
     const chat = chatScrollRef.current;
