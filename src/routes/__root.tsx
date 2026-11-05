@@ -64,6 +64,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     }
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
     recoverBrowserModuleLoad(error);
+    return undefined;
   }, [error, connectionDrop, router, reset]);
 
   return (
