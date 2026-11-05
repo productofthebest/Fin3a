@@ -55,7 +55,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
         <Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
       </> : <>
         <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{options.map(c => <Button key={c} variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c} {c === "NGN" ? "₦" : "$"}</Button>)}</div>
-        {local && <p className="text-xs text-muted-foreground">{local} transfers are not supported in your country yet. You can transfer from your USD account.</p>}
+        {local && <p className="text-xs text-muted-foreground">{local} transfers are not supported in your country yet. You can transfer from your USD wallet.</p>}
         <p className="text-sm text-muted-foreground">Available: {money(available)}</p>
         <Label htmlFor="transfer-recipient">Fin3a ID, email or phone number</Label>
         <Input id="transfer-recipient" value={identifier} onChange={e => { setIdentifier(e.target.value); setRecipient(null); }} maxLength={254} />

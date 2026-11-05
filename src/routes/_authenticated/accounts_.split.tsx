@@ -72,7 +72,7 @@ function Page() {
     try {
       const result = await lookup({ data: { identifier: value } });
       if (!result.found) {
-        toast.error("No Fin3a account found for that ID, email or phone number");
+        toast.error("No Fin3a wallet found for that ID, email or phone number");
         return;
       }
       if (participants.some((p) => p.user_id === result.participant.user_id)) {
@@ -402,7 +402,7 @@ function Page() {
       <section className="mt-10">
         <h2 className="font-display text-xl font-semibold">Payment history</h2>
         {data.transfers.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No payments between Fin3a accounts yet.</p>
+          <p className="mt-3 text-sm text-muted-foreground">No payments between Fin3a wallets yet.</p>
         ) : (
           <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card shadow-sm">
             {data.transfers.map((t) => {

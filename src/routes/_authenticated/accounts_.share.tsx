@@ -66,7 +66,7 @@ function Page() {
           <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground">Wallet name</p>
             <p className="mt-1 font-display text-xl font-semibold">{data.displayName ?? "Fin3a user"}</p>
-            <p className="mt-4 text-xs text-muted-foreground">Your unique Fin3a account ID</p>
+            <p className="mt-4 text-xs text-muted-foreground">Your unique Fin3a wallet ID</p>
             <p className="mt-1 font-mono text-2xl font-bold tracking-wide text-primary">{data.fin3aId ?? "Unavailable"}</p>
             {payLink ? (
               <>
@@ -154,7 +154,7 @@ function ShareMoney() {
     setBusy("lookup");
     try {
       const r = await lookup({ data: { identifier: value } });
-      if (!r.found) return void toast.error("No Fin3a account found for that ID, email or phone number");
+      if (!r.found) return void toast.error("No Fin3a wallet found for that ID, email or phone number");
       if (people.some((p) => p.user_id === r.participant.user_id)) return void toast.error("That person is already added");
       setPeople((prev) => {
         const next = [...prev, { ...r.participant, percent: "" }];
