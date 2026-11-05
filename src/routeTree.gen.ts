@@ -41,6 +41,7 @@ import { Route as AuthenticatedAccountsShareRouteImport } from './routes/_authen
 import { Route as AuthenticatedAccountsSplitRouteImport } from './routes/_authenticated/accounts_.split'
 import { Route as AuthenticatedAssistantIndexRouteImport } from './routes/_authenticated/assistant.index'
 import { Route as AuthenticatedAssistantThreadIdRouteImport } from './routes/_authenticated/assistant.$threadId'
+import { Route as ApiPublicFlutterwaveWebhookRouteImport } from './routes/api/public/flutterwave-webhook'
 import { Route as ApiPublicGuestChatRouteImport } from './routes/api/public/guest-chat'
 import { Route as PayQrRequestIdRouteImport } from './routes/pay.qr.$requestId'
 
@@ -211,6 +212,12 @@ const AuthenticatedAssistantThreadIdRoute =
     path: '/assistant/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicFlutterwaveWebhookRoute =
+  ApiPublicFlutterwaveWebhookRouteImport.update({
+    id: '/api/public/flutterwave-webhook',
+    path: '/api/public/flutterwave-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicGuestChatRoute = ApiPublicGuestChatRouteImport.update({
   id: '/api/public/guest-chat',
   path: '/api/public/guest-chat',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
+  '/api/public/flutterwave-webhook': typeof ApiPublicFlutterwaveWebhookRoute
   '/api/public/guest-chat': typeof ApiPublicGuestChatRoute
   '/pay/qr/$requestId': typeof PayQrRequestIdRoute
   '/assistant/': typeof AuthenticatedAssistantIndexRoute
@@ -288,6 +296,7 @@ export interface FileRoutesByTo {
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
   '/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
+  '/api/public/flutterwave-webhook': typeof ApiPublicFlutterwaveWebhookRoute
   '/api/public/guest-chat': typeof ApiPublicGuestChatRoute
   '/pay/qr/$requestId': typeof PayQrRequestIdRoute
   '/assistant': typeof AuthenticatedAssistantIndexRoute
@@ -325,6 +334,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts_/share': typeof AuthenticatedAccountsShareRoute
   '/_authenticated/accounts_/split': typeof AuthenticatedAccountsSplitRoute
   '/_authenticated/assistant/$threadId': typeof AuthenticatedAssistantThreadIdRoute
+  '/api/public/flutterwave-webhook': typeof ApiPublicFlutterwaveWebhookRoute
   '/api/public/guest-chat': typeof ApiPublicGuestChatRoute
   '/pay/qr/$requestId': typeof PayQrRequestIdRoute
   '/_authenticated/assistant/': typeof AuthenticatedAssistantIndexRoute
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/accounts/share'
     | '/accounts/split'
     | '/assistant/$threadId'
+    | '/api/public/flutterwave-webhook'
     | '/api/public/guest-chat'
     | '/pay/qr/$requestId'
     | '/assistant/'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/accounts/share'
     | '/accounts/split'
     | '/assistant/$threadId'
+    | '/api/public/flutterwave-webhook'
     | '/api/public/guest-chat'
     | '/pay/qr/$requestId'
     | '/assistant'
@@ -433,6 +445,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts_/share'
     | '/_authenticated/accounts_/split'
     | '/_authenticated/assistant/$threadId'
+    | '/api/public/flutterwave-webhook'
     | '/api/public/guest-chat'
     | '/pay/qr/$requestId'
     | '/_authenticated/assistant/'
@@ -447,6 +460,7 @@ export interface RootRouteChildren {
   ApiLandingChatRoute: typeof ApiLandingChatRoute
   ApiTranscribeRoute: typeof ApiTranscribeRoute
   PayFin3aIdRoute: typeof PayFin3aIdRoute
+  ApiPublicFlutterwaveWebhookRoute: typeof ApiPublicFlutterwaveWebhookRoute
   ApiPublicGuestChatRoute: typeof ApiPublicGuestChatRoute
   PayQrRequestIdRoute: typeof PayQrRequestIdRoute
 }
@@ -677,6 +691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssistantThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/flutterwave-webhook': {
+      id: '/api/public/flutterwave-webhook'
+      path: '/api/public/flutterwave-webhook'
+      fullPath: '/api/public/flutterwave-webhook'
+      preLoaderRoute: typeof ApiPublicFlutterwaveWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/guest-chat': {
       id: '/api/public/guest-chat'
       path: '/api/public/guest-chat'
@@ -760,6 +781,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLandingChatRoute: ApiLandingChatRoute,
   ApiTranscribeRoute: ApiTranscribeRoute,
   PayFin3aIdRoute: PayFin3aIdRoute,
+  ApiPublicFlutterwaveWebhookRoute: ApiPublicFlutterwaveWebhookRoute,
   ApiPublicGuestChatRoute: ApiPublicGuestChatRoute,
   PayQrRequestIdRoute: PayQrRequestIdRoute,
 }

@@ -940,6 +940,88 @@ export type Database = {
           },
         ]
       }
+      ngn_topup_requests: {
+        Row: {
+          account_id: string
+          account_number: string
+          amount_paid: number | null
+          bank_name: string
+          created_at: string
+          credited_amount: number | null
+          expires_at: string
+          fee_version_id: string | null
+          fin3a_fee: number
+          id: string
+          ledger_id: string | null
+          provider_tx_id: string | null
+          requested_amount: number
+          status: string
+          tx_ref: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          account_number: string
+          amount_paid?: number | null
+          bank_name: string
+          created_at?: string
+          credited_amount?: number | null
+          expires_at: string
+          fee_version_id?: string | null
+          fin3a_fee: number
+          id?: string
+          ledger_id?: string | null
+          provider_tx_id?: string | null
+          requested_amount: number
+          status?: string
+          tx_ref: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          account_number?: string
+          amount_paid?: number | null
+          bank_name?: string
+          created_at?: string
+          credited_amount?: number | null
+          expires_at?: string
+          fee_version_id?: string | null
+          fin3a_fee?: number
+          id?: string
+          ledger_id?: string | null
+          provider_tx_id?: string | null
+          requested_amount?: number
+          status?: string
+          tx_ref?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ngn_topup_requests_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ngn_topup_requests_fee_version_id_fkey"
+            columns: ["fee_version_id"]
+            isOneToOne: false
+            referencedRelation: "fee_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ngn_topup_requests_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "account_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_fee_snapshots: {
         Row: {
           account_id: string
@@ -1857,6 +1939,10 @@ export type Database = {
           _expires_in_minutes?: number
         }
         Returns: string
+      }
+      credit_ngn_topup: {
+        Args: { _amount_paid: number; _provider_tx_id: string; _tx_ref: string }
+        Returns: Json
       }
       current_fee_schedule: { Args: never; Returns: Json }
       execute_currency_swap: {
