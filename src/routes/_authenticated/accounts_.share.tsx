@@ -233,6 +233,7 @@ function ShareMoney() {
             <ScanLine className="size-4" /> Scan
           </Button>
         </div>
+        <SendToContact disabled={busy !== null} recipients={people} onSelect={value => void add(value)} />
         {people.length ? (
           <ul className="mt-3 space-y-2">
             {people.map((p, i) => (
