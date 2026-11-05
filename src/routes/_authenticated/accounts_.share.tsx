@@ -153,7 +153,7 @@ function ShareMoney() {
     setBusy("lookup");
     try {
       const r = await lookup({ data: { identifier: value } });
-      if (!r.found) return void toast.error("No Fin3a account found for that ID, email or phone number");
+      if (!r.found) return void toast.error("No Fin3a account found for that ID or email");
       if (people.some((p) => p.user_id === r.participant.user_id)) return void toast.error("That person is already added");
       setPeople((prev) => {
         const next = [...prev, { ...r.participant, percent: "" }];
@@ -221,7 +221,7 @@ function ShareMoney() {
       </div>
 
       <div className="mt-4 border-t border-border pt-4">
-        <Label htmlFor="sh-identifier">Add people by Fin3a ID, email or phone number</Label>
+        <Label htmlFor="sh-identifier">Add people by Fin3a ID or email</Label>
         <div className="mt-1 flex gap-2">
           <Input id="sh-identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} placeholder="FIN-XXXXXXXX, name@email.com or 0801…"
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void add(identifier); } }} />
