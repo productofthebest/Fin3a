@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
 import { useEffect, useState } from "react";
@@ -168,7 +169,10 @@ function Page() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-bold">Split Bill</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-bold">Split Bill</h1>
+        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
+      </div>
       <p className="mt-2 text-sm text-muted-foreground">
         Share an expense with other Fin3a users and collect their shares from their Fin3a balance.
       </p>

@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
 import { useEffect, useState } from "react";
@@ -46,7 +47,10 @@ function Page() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-bold">Share Payment</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-bold">Share Payment</h1>
+        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
+      </div>
       <p className="mt-2 text-sm text-muted-foreground">
         Send money from your Fin3a balance to several Fin3a users at once, split by percentage.
       </p>
