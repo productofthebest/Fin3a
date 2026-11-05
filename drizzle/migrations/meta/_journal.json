@@ -309,6 +309,13 @@
       "when": 1793905862659,
       "tag": "0043_flutterwave_snapshot_charge_evidence",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793906391700,
+      "tag": "0044_allow_ngn_topup_rate_limit",
+      "breakpoints": true
     }
   ]
 }
