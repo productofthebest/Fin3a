@@ -160,6 +160,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
             <div><dt className="text-muted-foreground">Account status</dt><dd><StatusBadge value={p.status} /></dd></div>
           </dl>
           <div className="grid gap-3 sm:grid-cols-2">{(["NGN", "USD"] as const).map((c) => <div key={c} className="rounded-xl border border-border bg-card p-4"><p className="text-muted-foreground">{sym(c)} balance</p><p className="mt-1 text-xl font-bold tabular-nums">{money(c, d.balances[c].available)}</p><p className="text-xs text-muted-foreground">Including pending: {money(c, d.balances[c].with_pending)}</p></div>)}</div>
+          <p className="text-xs text-muted-foreground">Transfers, Share Payment and Split Bill move only NGN and USD. Local-currency accounts outside Nigeria (for example GHS or KES) can't be moved yet.</p>
           <div><h3 className="font-semibold">Crypto wallets</h3>{d.crypto.length ? <ul className="mt-2 space-y-1">{d.crypto.map((w) => <li key={w.address} className="break-all">{w.symbol} · {w.network} · {w.address} ({w.status})</li>)}</ul> : <p className="mt-1 text-muted-foreground">No crypto wallet addresses issued.</p>}</div>
 
           <div className="space-y-3 rounded-xl border border-border p-4">
