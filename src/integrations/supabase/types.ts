@@ -1146,6 +1146,91 @@ export type Database = {
           },
         ]
       }
+      ngn_withdrawals: {
+        Row: {
+          account_id: string
+          account_name: string
+          account_number: string
+          amount: number
+          bank_code: string
+          bank_name: string
+          created_at: string
+          fee_version_id: string | null
+          fin3a_fee: number
+          id: string
+          idempotency_key: string
+          ledger_id: string
+          payout: number
+          provider_transfer_id: string | null
+          reference: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          account_name: string
+          account_number: string
+          amount: number
+          bank_code: string
+          bank_name: string
+          created_at?: string
+          fee_version_id?: string | null
+          fin3a_fee: number
+          id?: string
+          idempotency_key: string
+          ledger_id: string
+          payout: number
+          provider_transfer_id?: string | null
+          reference: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          account_name?: string
+          account_number?: string
+          amount?: number
+          bank_code?: string
+          bank_name?: string
+          created_at?: string
+          fee_version_id?: string | null
+          fin3a_fee?: number
+          id?: string
+          idempotency_key?: string
+          ledger_id?: string
+          payout?: number
+          provider_transfer_id?: string | null
+          reference?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ngn_withdrawals_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ngn_withdrawals_fee_version_id_fkey"
+            columns: ["fee_version_id"]
+            isOneToOne: false
+            referencedRelation: "fee_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ngn_withdrawals_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "account_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_fee_snapshots: {
         Row: {
           account_id: string
@@ -2112,6 +2197,16 @@ export type Database = {
         }
         Returns: Json
       }
+      finish_ngn_withdrawal: {
+        Args: {
+          _amount: number
+          _currency: string
+          _outcome: string
+          _provider_transfer_id: string
+          _reference: string
+        }
+        Returns: Json
+      }
       get_public_share_profile: {
         Args: { _fin3a_id: string }
         Returns: {
@@ -2167,6 +2262,18 @@ export type Database = {
           _refund_state: string
           _refund_status: string
           _tx_ref: string
+        }
+        Returns: Json
+      }
+      reserve_ngn_withdrawal: {
+        Args: {
+          _account_name: string
+          _account_number: string
+          _amount: number
+          _bank_code: string
+          _bank_name: string
+          _idempotency_key: string
+          _user_id: string
         }
         Returns: Json
       }

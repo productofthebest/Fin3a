@@ -70,3 +70,45 @@ export async function retrieveRefund(id: string) {
   if (!parsed.success) throw new Error("PROVIDER_ERROR");
   return parsed.data;
 }
+
+const transferSchema = z.object({ id: providerId, reference: z.string().min(1).max(200), status: z.string().min(1).max(40), currency: z.string().min(3).max(10), amount: money });
+export type VerifiedTransfer = z.infer<typeof transferSchema>;
+/** Maps Flutterwave transfer status to a final Fin3a outcome; anything else stays pending. */
+export function transferOutcome(status: string): "successful" | "failed" | "pending" {
+  const s = status.toUpperCase();
+  if (s === "SUCCESSFUL") return "successful";
+  if (s === "FAILED") return "failed";
+  return "pending";
+}
+export class ProviderRejected extends Error {}
+/** Sends an NGN payout. Throws ProviderRejected only when Flutterwave clearly refused (no transfer created). */
+export async function createNgnTransfer(input: { bankCode: string; accountNumber: string; amount: number; reference: string }) {
+  const key = process.env["FLW_SECRET_KEY"];
+  if (!key) throw new ProviderRejected("not configured");
+  const res = await fetch(`${BASE}/transfers`, {
+    method: "POST", signal: AbortSignal.timeout(20_000),
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ account_bank: input.bankCode, account_number: input.accountNumber, amount: input.amount, currency: "NGN", debit_currency: "NGN", reference: input.reference, narration: "Fin3a wallet withdrawal" }),
+  });
+  const body = (await res.json().catch(() => null)) as { status?: string; data?: unknown; message?: string } | null;
+  if (res.ok && body?.status === "success") {
+    const parsed = transferSchema.safeParse(body.data);
+    return parsed.success ? parsed.data : null;
+  }
+  if (res.status >= 400 && res.status < 500 && body?.status === "error") {
+    console.error("flw transfer rejected", res.status, body.message);
+    throw new ProviderRejected(body.message ?? "rejected");
+  }
+  throw new Error("PROVIDER_UNCERTAIN");
+}
+export async function getTransfer(id: string) {
+  if (!/^[1-9]\d{0,19}$/.test(id)) throw new Error("INVALID_PROVIDER_ID");
+  const parsed = transferSchema.safeParse(await flw<unknown>(`/transfers/${id}`));
+  if (!parsed.success) throw new Error("PROVIDER_ERROR");
+  return parsed.data;
+}
+export async function findTransferByReference(reference: string) {
+  const list = await flw<unknown[]>(`/transfers?reference=${encodeURIComponent(reference)}`);
+  const match = list.map(x => transferSchema.safeParse(x)).find(p => p.success && p.data.reference === reference);
+  return match?.success ? match.data : null;
+}
