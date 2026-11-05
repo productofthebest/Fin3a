@@ -1,0 +1,2 @@
+/** Test-runner-only fixtures; never imported into application modules or migrations. */
+export const topupFixture = { requestedAmount: 200, fee: 50, bankName: "Test-only bank", accountNumber: "0000000000" };

@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.18"
-  }
   public: {
     Tables: {
       account_ledger: {
@@ -810,6 +805,100 @@ export type Database = {
         }
         Relationships: []
       }
+      flw_topup_refunds: {
+        Row: {
+          amount: number
+          provider_created_at: string | null
+          provider_refund_id: string
+          provider_status: string
+          provider_tx_id: string
+          refund_state: string
+          request_id: string
+          review_state: string
+          verified_at: string
+        }
+        Insert: {
+          amount: number
+          provider_created_at?: string | null
+          provider_refund_id: string
+          provider_status: string
+          provider_tx_id: string
+          refund_state: string
+          request_id: string
+          review_state?: string
+          verified_at?: string
+        }
+        Update: {
+          amount?: number
+          provider_created_at?: string | null
+          provider_refund_id?: string
+          provider_status?: string
+          provider_tx_id?: string
+          refund_state?: string
+          request_id?: string
+          review_state?: string
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flw_topup_refunds_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "ngn_topup_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flw_webhook_events: {
+        Row: {
+          amount: number | null
+          currency: string | null
+          event_key: string
+          event_kind: string
+          id: string
+          outcome: string
+          provider_refund_id: string | null
+          provider_status: string
+          provider_tx_id: string
+          request_id: string | null
+          verified_at: string
+        }
+        Insert: {
+          amount?: number | null
+          currency?: string | null
+          event_key: string
+          event_kind: string
+          id?: string
+          outcome: string
+          provider_refund_id?: string | null
+          provider_status: string
+          provider_tx_id: string
+          request_id?: string | null
+          verified_at?: string
+        }
+        Update: {
+          amount?: number | null
+          currency?: string | null
+          event_key?: string
+          event_kind?: string
+          id?: string
+          outcome?: string
+          provider_refund_id?: string | null
+          provider_status?: string
+          provider_tx_id?: string
+          request_id?: string | null
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flw_webhook_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "ngn_topup_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fx_settings: {
         Row: {
           id: boolean
@@ -953,12 +1042,22 @@ export type Database = {
           fin3a_fee: number
           id: string
           ledger_id: string | null
+          provider_created_at: string | null
+          provider_state: string | null
           provider_tx_id: string | null
+          provider_verified_at: string | null
           requested_amount: number
+          review_reason: string | null
+          review_state: string
           status: string
           tx_ref: string
           updated_at: string
           user_id: string
+          verified_amount: number | null
+          verified_app_fee: number | null
+          verified_charged_amount: number | null
+          verified_currency: string | null
+          verified_merchant_fee: number | null
         }
         Insert: {
           account_id: string
@@ -972,12 +1071,22 @@ export type Database = {
           fin3a_fee: number
           id?: string
           ledger_id?: string | null
+          provider_created_at?: string | null
+          provider_state?: string | null
           provider_tx_id?: string | null
+          provider_verified_at?: string | null
           requested_amount: number
+          review_reason?: string | null
+          review_state?: string
           status?: string
           tx_ref: string
           updated_at?: string
           user_id: string
+          verified_amount?: number | null
+          verified_app_fee?: number | null
+          verified_charged_amount?: number | null
+          verified_currency?: string | null
+          verified_merchant_fee?: number | null
         }
         Update: {
           account_id?: string
@@ -991,12 +1100,22 @@ export type Database = {
           fin3a_fee?: number
           id?: string
           ledger_id?: string | null
+          provider_created_at?: string | null
+          provider_state?: string | null
           provider_tx_id?: string | null
+          provider_verified_at?: string | null
           requested_amount?: number
+          review_reason?: string | null
+          review_state?: string
           status?: string
           tx_ref?: string
           updated_at?: string
           user_id?: string
+          verified_amount?: number | null
+          verified_app_fee?: number | null
+          verified_charged_amount?: number | null
+          verified_currency?: string | null
+          verified_merchant_fee?: number | null
         }
         Relationships: [
           {
@@ -1051,6 +1170,8 @@ export type Database = {
           service: string
           usd_value: number | null
           user_id: string
+          verified_network_charge: number | null
+          verified_provider_charge: number | null
         }
         Insert: {
           account_id: string
@@ -1080,6 +1201,8 @@ export type Database = {
           service: string
           usd_value?: number | null
           user_id: string
+          verified_network_charge?: number | null
+          verified_provider_charge?: number | null
         }
         Update: {
           account_id?: string
@@ -1109,6 +1232,8 @@ export type Database = {
           service?: string
           usd_value?: number | null
           user_id?: string
+          verified_network_charge?: number | null
+          verified_provider_charge?: number | null
         }
         Relationships: [
           {
@@ -1923,6 +2048,22 @@ export type Database = {
         Args: { _guest: boolean; _id: string }
         Returns: boolean
       }
+      apply_flw_topup_evidence: {
+        Args: {
+          _amount: number
+          _app_fee: number
+          _charged_amount: number
+          _currency: string
+          _merchant_fee: number
+          _notice_tx_id: string
+          _provider_date: string
+          _provider_tx_id: string
+          _reference_matches: boolean
+          _status: string
+          _tx_ref: string
+        }
+        Returns: Json
+      }
       consume_ai_quota: {
         Args: { _bucket: string; _limit: number; _window_seconds: number }
         Returns: boolean
@@ -2006,6 +2147,22 @@ export type Database = {
       }
       pay_split_share: {
         Args: { _idempotency_key: string; _participant_id: string }
+        Returns: Json
+      }
+      record_flw_topup_refund: {
+        Args: {
+          _amount: number
+          _charge_amount: number
+          _charge_currency: string
+          _charge_status: string
+          _matches: boolean
+          _provider_date: string
+          _provider_tx_id: string
+          _refund_id: string
+          _refund_state: string
+          _refund_status: string
+          _tx_ref: string
+        }
         Returns: Json
       }
       resolve_qr_request: { Args: { _request_id: string }; Returns: Json }
@@ -2165,3 +2322,4 @@ export const Constants = {
     },
   },
 } as const
+
