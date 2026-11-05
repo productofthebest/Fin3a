@@ -139,3 +139,9 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 - Scan button beside Add on /accounts/split; reuses QrScanner + parseScannedQr; fin3a_profile codes feed lookupRecipient, request/external codes rejected with a toast.
 
 - [x] Admin User Statistics & User Management (manual verification, 100-day active window, two-admin adjustments, logged profile views)
+
+## Flutterwave (live keys; owner chose all features)
+- [x] Bank list + account-name check in Transfer
+- [ ] NGN bank transfer sending: wallet hold, payout, webhook-verified settle/refund (needs webhook secret + owner small real test)
+- [ ] NGN bank top-up via virtual accounts (needs BVN/KYC decision + webhook)
+- [ ] Bill payments (after payouts verified)
