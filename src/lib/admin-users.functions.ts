@@ -53,7 +53,18 @@ export const getUserDetail = createServerFn({ method: "POST" }).middleware([requ
     const { data: r, error } = await context.supabase.rpc("admin_user_detail", { _user_id: data.userId });
     if (error) fail(error.message);
     const { data: country } = await context.supabase.rpc("admin_user_country", { _user_id: data.userId });
-    return { ...clean<UserDetail>(r), country: (country as string | null) ?? "NG" };
+    const c = (country as string | null) ?? "NG";
+    const { localCurrency } = await import("./country-currency");
+    const { computeAccountBalance } = await import("./accounts");
+    const local = localCurrency(c);
+    let localBalance: { currency: string; available: number; with_pending: number } | null = null;
+    if (local !== "NGN" && local !== "USD") {
+      const { data: rows, error: lErr } = await context.supabase.rpc("admin_user_currency_ledger", { _user_id: data.userId, _currency: local });
+      if (lErr) fail(lErr.message);
+      const b = computeAccountBalance((rows ?? []).map((x) => ({ kind: x.kind as never, status: x.status as never, amount: Number(x.amount) })));
+      localBalance = { currency: local, available: b.available, with_pending: b.total };
+    }
+    return { ...clean<UserDetail>(r), country: c, localBalance };
   });
 
 export const setAccountStatus = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
