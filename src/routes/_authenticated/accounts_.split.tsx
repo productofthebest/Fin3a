@@ -71,7 +71,7 @@ function Page() {
     try {
       const result = await lookup({ data: { identifier: value } });
       if (!result.found) {
-        toast.error("No Fin3a account found for that ID or email");
+        toast.error("No Fin3a account found for that ID, email or phone number");
         return;
       }
       if (participants.some((p) => p.user_id === result.participant.user_id)) {
@@ -230,7 +230,7 @@ function Page() {
         </div>
 
         <div className="mt-4 border-t border-border pt-4">
-          <Label htmlFor="sb-identifier">Add participants by Fin3a ID or email</Label>
+          <Label htmlFor="sb-identifier">Add participants by Fin3a ID, email or phone number</Label>
           <div className="mt-1 flex gap-2">
             <Input
               id="sb-identifier"
