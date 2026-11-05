@@ -148,7 +148,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
   const [name, setName] = useState("");
   const [adj, setAdj] = useState({ currency: "NGN" as "NGN" | "USD", direction: "credit" as "credit" | "debit", amount: "" });
   const refresh = () => { void qc.invalidateQueries({ queryKey: ["admin"] }); };
-  const d: UserDetail | undefined = detail.data;
+  const d: (UserDetail & { country: string }) | undefined = detail.data;
   const p = d?.profile;
   const amount = validAdjustmentAmount(adj.amount);
   return (
