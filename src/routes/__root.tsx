@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createSessionCacheHandler } from "@/lib/session-cache";
 import { Button } from "@/components/ui/button";
 import { isModuleLoadError, recoverBrowserModuleLoad } from "@/lib/module-load-recovery";
+import { isTransientNetworkError } from "@/lib/network-retry";
 
 function NotFoundComponent() {
   return (
@@ -42,19 +43,39 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  const connectionDrop = isTransientNetworkError(error);
   useEffect(() => {
+    if (connectionDrop) {
+      // A dropped connection is not an app defect: retry when the phone is back online or visible.
+      const retry = () => {
+        if (!navigator.onLine || document.visibilityState !== "visible") return;
+        router.invalidate();
+        reset();
+      };
+      const onVisible = () => { if (document.visibilityState === "visible") retry(); };
+      const timer = window.setTimeout(retry, 3_000);
+      window.addEventListener("online", retry);
+      document.addEventListener("visibilitychange", onVisible);
+      return () => {
+        window.clearTimeout(timer);
+        window.removeEventListener("online", retry);
+        document.removeEventListener("visibilitychange", onVisible);
+      };
+    }
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
     recoverBrowserModuleLoad(error);
-  }, [error]);
+  }, [error, connectionDrop, router, reset]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          {connectionDrop ? "Connection interrupted" : "This page didn't load"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {connectionDrop
+            ? "Your connection dropped for a moment. Fin3a will reconnect automatically, or tap Try again."
+            : "Something went wrong on our end. You can try refreshing or head back home."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
