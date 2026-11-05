@@ -148,7 +148,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
   const [name, setName] = useState("");
   const [adj, setAdj] = useState({ currency: "NGN" as "NGN" | "USD", direction: "credit" as "credit" | "debit", amount: "" });
   const refresh = () => { void qc.invalidateQueries({ queryKey: ["admin"] }); };
-  const d: (UserDetail & { country: string }) | undefined = detail.data;
+  const d: (UserDetail & { country: string; localBalance: { available: number; with_pending: number } | null }) | undefined = detail.data;
   const p = d?.profile;
   const amount = validAdjustmentAmount(adj.amount);
   return (
@@ -160,7 +160,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
             {[["Email", p.email], ["Phone", p.phone], ["Fin3a ID", p.fin3a_id], ["User ID", p.user_id], ["Registered", when(p.created_at)], ["Last activity", when(p.last_active)], ["Preferred currency", p.currency], ["Verification", `${p.verification}${p.verification_note ? ` — ${p.verification_note}` : ""}`]].map(([k, v]) => <div key={k}><dt className="text-muted-foreground">{k}</dt><dd className="break-all font-medium">{v || "—"}</dd></div>)}
             <div><dt className="text-muted-foreground">Account status</dt><dd><StatusBadge value={p.status} /></dd></div>
           </dl>
-          <div className="grid gap-3 sm:grid-cols-2">{(["NGN", "USD"] as const).map((c) => <div key={c} className="rounded-xl border border-border bg-card p-4"><p className="text-muted-foreground">{sym(c)} balance</p><p className="mt-1 text-xl font-bold tabular-nums">{money(c, d.balances[c].available)}</p><p className="text-xs text-muted-foreground">Including pending: {money(c, d.balances[c].with_pending)}</p></div>)}</div>
+          <div className="grid gap-3 sm:grid-cols-2">{accountCurrencies(d.country).map((c) => { const b = c === "NGN" || c === "USD" ? d.balances[c] : d.localBalance; const f = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency: c, currencyDisplay: "narrowSymbol" }).format(n); return <div key={c} className="rounded-xl border border-border bg-card p-4"><p className="text-muted-foreground">{c} balance</p><p className="mt-1 text-xl font-bold tabular-nums">{f(b?.available ?? 0)}</p><p className="text-xs text-muted-foreground">Including pending: {f(b?.with_pending ?? 0)}</p></div>; })}</div>
           <p className="text-xs text-muted-foreground">Country: {d.country} · Accounts: {accountCurrencies(d.country).join(" and ")}{localCurrency(d.country) !== "NGN" && localCurrency(d.country) !== "USD" ? ` · ${localCurrency(d.country)} account can't be moved yet` : ""}</p>
                     <p className="text-xs text-muted-foreground">Transfers, Share Payment and Split Bill move only NGN and USD. Local-currency accounts outside Nigeria (for example GHS or KES) can't be moved yet.</p>
           <div><h3 className="font-semibold">Crypto wallets</h3>{d.crypto.length ? <ul className="mt-2 space-y-1">{d.crypto.map((w) => <li key={w.address} className="break-all">{w.symbol} · {w.network} · {w.address} ({w.status})</li>)}</ul> : <p className="mt-1 text-muted-foreground">No crypto wallet addresses issued.</p>}</div>
