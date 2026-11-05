@@ -6,6 +6,7 @@ describe("failed page asset recovery", () => {
     "Importing a module script failed.",
     "Failed to fetch dynamically imported module: /assets/page.js",
     "error loading dynamically imported module",
+    "Load failed",
   ])("recognizes browser module failure: %s", (message) => {
     expect(isModuleLoadError(new TypeError(message))).toBe(true);
   });
