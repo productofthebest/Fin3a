@@ -3,7 +3,7 @@ const RETRY_WINDOW_MS = 60_000;
 
 export function isModuleLoadError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
-  return /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS|Load failed|evaluating '[a-z]\[[a-z]\s*\?\?\s*[`'"]default[`'"]\]'|Cannot read properties of undefined \(reading 'default'\)/i.test(message);
+  return /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS|evaluating '[a-z]\[[a-z]\s*\?\?\s*[`'"]default[`'"]\]'|Cannot read properties of undefined \(reading 'default'\)/i.test(message);
 }
 
 // Reload only failed page assets, never failed account requests or mutations.
