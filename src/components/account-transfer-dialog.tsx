@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { lookupRecipient, sendTransfer, type ResolvedParticipant } from "@/lib/share-split.functions";
 import { canTransfer } from "@/lib/account-transfer";
+import { SendToContact } from "@/components/send-to-contact";
 
 export function AccountTransferDialog({ open, onOpenChange, balances }: { open: boolean; onOpenChange: (open: boolean) => void; balances: { currency: string; balance: { available: number } }[] }) {
   const qc = useQueryClient();
@@ -22,10 +23,11 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
   const money = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).format(n);
   const valid = canTransfer(Number(amount), available, recipient ? 1 : 0);
 
-  async function findRecipient() {
+  async function findRecipient(value = identifier) {
+    setRecipient(null);
     setBusy(true);
     try {
-      const result = await lookupRecipient({ data: { identifier } });
+      const result = await lookupRecipient({ data: { identifier: value } });
       if (!result.found) { toast.error("No Fin3a user found."); return; }
       setRecipient(result.participant);
     } catch { toast.error("Could not find this Fin3a user. Please try again."); }
@@ -58,6 +60,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
         <Label htmlFor="transfer-recipient">Fin3a ID, email or phone number</Label>
         <Input id="transfer-recipient" value={identifier} onChange={e => { setIdentifier(e.target.value); setRecipient(null); }} maxLength={254} />
         <Button variant="outline" disabled={busy || identifier.trim().length < 3} onClick={() => void findRecipient()}>{busy ? "Finding…" : "Find user"}</Button>
+        <SendToContact disabled={busy} recipients={recipient ? [recipient] : []} onSelect={value => { setIdentifier(value); void findRecipient(value); }} />
         {recipient && <p role="status" className="break-words text-sm">{recipient.display_name ?? "Fin3a user"} · {recipient.fin3a_id}</p>}
         <Label htmlFor="transfer-amount">Amount ({currency === "NGN" ? "₦" : "$"})</Label>
         <Input id="transfer-amount" type="number" min="0.01" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />

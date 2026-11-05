@@ -23,6 +23,7 @@ import {
 import { billProgress, shareDisplayStatus, type SplitCurrency } from "@/lib/split-bill";
 import { pageMeta } from "@/lib/page-meta";
 import { cn } from "@/lib/utils";
+import { SendToContact } from "@/components/send-to-contact";
 
 const splitQuery = () =>
   queryOptions({ queryKey: ["accounts", "split-bills"], queryFn: () => getSplitBills(), staleTime: 15_000 });
@@ -246,6 +247,7 @@ function Page() {
               <ScanLine className="size-4" /> Scan
             </Button>
           </div>
+          <SendToContact disabled={busy !== null} recipients={participants} onSelect={value => void addParticipantByIdentifier(value)} />
           {participants.length > 0 ? (
             <ul className="mt-3 space-y-2">
               {participants.map((p) => (
