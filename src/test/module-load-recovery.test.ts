@@ -39,3 +39,12 @@ describe("failed page asset recovery", () => {
     expect(reload).not.toHaveBeenCalled();
   });
 });
+import { describe as d2, it as i2, expect as e2 } from "vitest";
+import { isModuleLoadError as isMLE } from "@/lib/module-load-recovery";
+d2("stale lazy route chunk", () => {
+  i2("treats a missing lazy route export as a page-asset failure", () => {
+    e2(isMLE(new Error("undefined is not an object (evaluating 'e[t??`default`]')"))).toBe(true);
+    e2(isMLE(new Error("Cannot read properties of undefined (reading 'default')"))).toBe(true);
+    e2(isMLE(new Error("Insufficient balance"))).toBe(false);
+  });
+});
