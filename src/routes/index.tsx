@@ -60,7 +60,7 @@ function Landing() {
       </div>
 
       <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
-        © 2026 Fin3a AI. All rights reserved.
+        © 2026 Fin3a. All rights reserved.
       </footer>
     </div>
   );
