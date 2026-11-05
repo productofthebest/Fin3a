@@ -1757,6 +1757,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_user_country: { Args: { _user_id: string }; Returns: string }
       admin_user_detail: { Args: { _user_id: string }; Returns: Json }
       admin_user_stats: { Args: never; Returns: Json }
       ai_admin_overview: { Args: never; Returns: Json }
