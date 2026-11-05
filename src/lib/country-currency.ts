@@ -13,4 +13,12 @@ export function accountCurrencies(country: string | null | undefined): string[] 
   return local === "USD" ? ["USD"] : [local, "USD"];
 }
 
+/** Presentation only: retain original account objects; never alter stored wallets or ledger. */
+export function selectCountryAccounts<T extends { currency: string }>(accounts: readonly T[], country: string | null | undefined): T[] {
+  const wanted = accountCurrencies(country);
+  return accounts
+    .filter((account) => wanted.includes(account.currency))
+    .sort((a, b) => wanted.indexOf(a.currency) - wanted.indexOf(b.currency));
+}
+
 export const COUNTRIES = Object.keys(COUNTRY_CURRENCY);

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { collectPages } from "./pagination";
-import { accountCurrencies } from "./country-currency";
+import { accountCurrencies, selectCountryAccounts } from "./country-currency";
 import {
   ACCOUNT_CURRENCIES,
   DEFAULT_NGN_PER_USD,
@@ -40,12 +40,7 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
     if (fxErr) throw new Error(fxErr.message);
 
     const entries = ledger ?? [];
-    const accountCards = (accounts ?? [])
-      .filter((a) => wanted.includes(a.currency) || entries.some((e) => e.account_id === a.id))
-      .sort((a, b) => {
-        const rank = (c: string) => (wanted.includes(c) ? wanted.indexOf(c) : 99);
-        return rank(a.currency) - rank(b.currency);
-      })
+    const accountCards = selectCountryAccounts(accounts ?? [], prefs?.country)
       .map((account) => {
       const own = entries.filter((e) => e.account_id === account.id);
       const balance = computeAccountBalance(own as LedgerEntry[]);
