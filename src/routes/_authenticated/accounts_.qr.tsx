@@ -1,3 +1,4 @@
+import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
@@ -59,7 +60,9 @@ function Page() {
 
   // Fixed request form
   const [amount, setAmount] = useState("");
+  const { options: currencyOptions, local } = useTransferCurrencies();
   const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+  useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
   const [description, setDescription] = useState("");
   const [expiry, setExpiry] = useState<number | null>(1440);
   const [creating, setCreating] = useState(false);
@@ -222,9 +225,9 @@ function Page() {
             onChange={(e) => setCurrency(e.target.value as "NGN" | "USD")}
             aria-label="Currency"
           >
-            <option value="NGN">₦</option>
-            <option value="USD">$</option>
+            {currencyOptions.map((c) => <option key={c} value={c}>{c === "NGN" ? "₦" : "$"}</option>)}
           </select>
+          {local && <p className="text-xs text-muted-foreground">{local} payment requests are not supported in your country yet. Use your USD account.</p>}
           <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} aria-label="Description" />
           <select
             className="h-9 rounded-md border border-input bg-background px-3 text-sm"
