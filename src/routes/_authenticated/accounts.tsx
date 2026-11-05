@@ -17,7 +17,7 @@ const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 
 export const Route = createFileRoute("/_authenticated/accounts")({
-  head: () => pageMeta("Wallet", "Your Fin3a NGN and USD wallet balances, activity and crypto deposit addresses."),
+  head: () => pageMeta("Wallet", "Your Fin3a local-currency and USD wallet balances, activity and crypto deposit addresses."),
   loader: ({ context }) => context.queryClient.ensureQueryData(accountsQuery()),
   component: Page,
 });
