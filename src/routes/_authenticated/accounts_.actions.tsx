@@ -1,17 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useState } from "react";
-import { ShieldCheck, QrCode, Loader2, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
-import { parseCryptoQr, type CryptoQr } from "@/lib/crypto-qr";
-import { CryptoQrReview } from "@/components/crypto-qr-review";
 import { accountCurrencies } from "@/lib/country-currency";
 
-const Scanner = lazy(() => import("@/components/qr-scanner").then(m => ({ default: m.QrScanner })));
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
   head: () => pageMeta("Deposits & withdrawals", "Your secure Fin3a NGN and USD deposit and withdrawal options."),
@@ -28,17 +23,6 @@ function Page() {
   const [currency, setCurrency] = useState<string>(options[0] ?? "USD");
   const unsupported = currency !== "NGN" && currency !== "USD";
   const [asset, setAsset] = useState<"USDC" | "USDT">("USDC");
-  const [scanning, setScanning] = useState(false);
-  const [review, setReview] = useState<CryptoQr | null>(null);
-  const [error, setError] = useState("");
-  const [payload, setPayload] = useState("");
-  function scan(text: string) {
-    setScanning(false);
-    const result = parseCryptoQr(text);
-    setReview(result);
-    setPayload("");
-    setError(result ? "" : "This is not a supported crypto address format, or its checksum is invalid.");
-  }
   return <div className="flex min-h-screen flex-col bg-background">
     <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
       <Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link>
@@ -57,19 +41,6 @@ function Page() {
         <p>Rate and third-party / network charges: unavailable. No funds will move without a verified quote and confirmation.</p>
       </div>}
       <Button className="mt-5 w-full" disabled>{mode === "deposit" ? "Deposit unavailable" : "Withdrawal unavailable"}</Button>
-      <section className="mt-8 border-t border-border pt-6">
-        <h2 className="font-display text-lg font-semibold">Review a crypto QR</h2>
-        <Button className="mt-3" variant="outline" onClick={() => setScanning(true)}><QrCode className="size-4" />Scan crypto QR</Button>
-        <form className="mt-4 space-y-3" onSubmit={e => { e.preventDefault(); scan(payload); }}>
-          <Label htmlFor="crypto-payload">Crypto address or payment URI</Label>
-          <Input id="crypto-payload" value={payload} maxLength={2048} autoComplete="off" spellCheck={false} onChange={e => setPayload(e.target.value)} />
-          <Button type="submit" variant="outline" disabled={!payload.trim()}>Review address</Button>
-        </form>
-        {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-        <p className="mt-4 text-xs text-muted-foreground">Never enter passwords, verification codes, private keys or recovery phrases. An external QR is not a Fin3a deposit address.</p>
-      </section>
     </main>
-    <CryptoQrReview value={review} onClose={() => setReview(null)} />
-    {scanning && <Suspense fallback={<Loader2 className="size-5 animate-spin" />}><Scanner title="Scan crypto address" onScan={scan} onClose={() => setScanning(false)} /></Suspense>}
   </div>;
 }
