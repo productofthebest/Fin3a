@@ -1,2 +1,3 @@
 - Read retries for connection drops live in `network-retry.ts` (loaders, query defaults, root error screen); never retry money movements.
 - Wallet overview uses `selectCountryAccounts` for country-only presentation; payment selectors consume that overview without mutating hidden balances or ledger history.
+- Flutterwave V3 uses only `verif-hash`; provider-verified evidence enters atomic service-role RPCs, with nullable facts retained through a local RPC type adapter because generated args omit nullability. Refund evidence never changes ledger/fee/revenue; charge verification failures return retry 5xx.

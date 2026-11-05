@@ -1,0 +1,5 @@
+ALTER TABLE public.payment_fee_snapshots ADD COLUMN verified_provider_charge numeric(20,2) CHECK(verified_provider_charge>=0), ADD COLUMN verified_network_charge numeric(20,2) CHECK(verified_network_charge>=0);
+COMMENT ON COLUMN public.payment_fee_snapshots.verified_provider_charge IS 'Actual verified provider charge if known, otherwise NULL. Legacy provider_charge is a deducted quote allocation, not proof of provider fees.';
+COMMENT ON COLUMN public.payment_fee_snapshots.verified_network_charge IS 'Actual verified network charge if known, otherwise NULL. Zero quote allocation is not proof that network charges are zero.';
+COMMENT ON COLUMN public.ngn_topup_requests.verified_app_fee IS 'Flutterwave app_fee reported by verification; not assumed deducted from the customer wallet.';
+COMMENT ON COLUMN public.ngn_topup_requests.verified_merchant_fee IS 'Flutterwave merchant_fee reported by verification; NULL when unavailable.';

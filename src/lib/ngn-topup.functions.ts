@@ -11,7 +11,8 @@ const toView = (r: { tx_ref: string; requested_amount: number; fin3a_fee: number
 export const getLatestTopup = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase.from("ngn_topup_requests").select("tx_ref, requested_amount, fin3a_fee, bank_name, account_number, expires_at, status, credited_amount").eq("user_id", context.userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const { data, error } = await context.supabase.from("ngn_topup_requests").select("tx_ref, requested_amount, fin3a_fee, bank_name, account_number, expires_at, status, credited_amount").eq("user_id", context.userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (error) throw new Error("Top-up details are unavailable. Please try again.");
     return data ? toView(data) : null;
   });
 
