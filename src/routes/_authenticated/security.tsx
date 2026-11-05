@@ -14,6 +14,10 @@ import { getLinkedPhone, requestLinkCode, verifyLinkCode } from "@/lib/phone-aut
 import { pageMeta } from "@/lib/page-meta";
 import { updateSettings } from "@/lib/settings.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { COUNTRIES, localCurrency } from "@/lib/country-currency";
+
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+const sortedCountries = [...COUNTRIES].sort((a, b) => (regionNames.of(a) ?? a).localeCompare(regionNames.of(b) ?? b));
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/security")({
@@ -31,6 +35,7 @@ function SecurityPage() {
     return data.user;
   } });
   const [name, setName] = useState(settings?.display_name ?? "");
+  const [homeCountry, setHomeCountry] = useState(settings?.country ?? "NG");
   const [email, setEmail] = useState("");
   const [emailReview, setEmailReview] = useState(false);
   const [emailPending, setEmailPending] = useState<string | null>(null);
@@ -60,6 +65,22 @@ function SecurityPage() {
             <Label htmlFor="settings-name">Full name</Label>
             <Input id="settings-name" value={name} maxLength={60} autoComplete="name" onChange={e => setName(e.target.value)} />
             <Button disabled={busy || name === (settings?.display_name ?? "")} type="submit">Save details</Button>
+          </form>
+        </section>
+        <section className="space-y-4 border-b border-border pb-8">
+          <h2 className="font-display text-xl font-semibold">Country</h2>
+          <form className="space-y-3" onSubmit={e => { e.preventDefault(); void run(async () => {
+            await updateSettings({ data: { country: homeCountry } });
+            await qc.invalidateQueries({ queryKey: ["settings"] });
+            await qc.invalidateQueries({ queryKey: ["accounts"] });
+            toast.success("Country saved.");
+          }); }}>
+            <Label htmlFor="settings-country">Country</Label>
+            <select id="settings-country" value={homeCountry} disabled={busy} onChange={e => setHomeCountry(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              {sortedCountries.map(c => <option key={c} value={c}>{regionNames.of(c) ?? c}</option>)}
+            </select>
+            <p className="text-sm text-muted-foreground">Your accounts: {localCurrency(homeCountry) === "USD" ? "USD" : `${localCurrency(homeCountry)} and USD`}</p>
+            <Button disabled={busy || homeCountry === (settings?.country ?? "NG")} type="submit">Save country</Button>
           </form>
         </section>
         <section className="space-y-4 border-b border-border pb-8">

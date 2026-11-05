@@ -51,6 +51,7 @@ export interface UserSettings {
   currency: string;
   onboarding_completed: boolean;
   display_name: string | null;
+  country?: string | null;
 }
 
 export interface CurrencyOption {

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { collectPages } from "./pagination";
+import { accountCurrencies } from "./country-currency";
 import {
   ACCOUNT_CURRENCIES,
   DEFAULT_NGN_PER_USD,
@@ -14,8 +15,10 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    // Ensure the two currency accounts exist (idempotent per user+currency).
-    for (const currency of ACCOUNT_CURRENCIES) {
+    // Every user holds their local-currency account plus USD (idempotent per user+currency).
+    const { data: prefs } = await supabase.from("user_settings").select("country").eq("user_id", userId).maybeSingle();
+    const wanted = accountCurrencies(prefs?.country);
+    for (const currency of wanted) {
       const { error } = await supabase
         .from("accounts")
         .upsert({ user_id: userId, currency }, { onConflict: "user_id,currency", ignoreDuplicates: true });
@@ -37,7 +40,13 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
     if (fxErr) throw new Error(fxErr.message);
 
     const entries = ledger ?? [];
-    const accountCards = (accounts ?? []).map((account) => {
+    const accountCards = (accounts ?? [])
+      .filter((a) => wanted.includes(a.currency) || entries.some((e) => e.account_id === a.id))
+      .sort((a, b) => {
+        const rank = (c: string) => (wanted.includes(c) ? wanted.indexOf(c) : 99);
+        return rank(a.currency) - rank(b.currency);
+      })
+      .map((account) => {
       const own = entries.filter((e) => e.account_id === account.id);
       const balance = computeAccountBalance(own as LedgerEntry[]);
       return { ...account, balance, recent: own.slice(0, 5) };
@@ -45,6 +54,7 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
 
     return {
       accounts: accountCards,
+      country: prefs?.country ?? "NG",
       cryptoAssets: (assets ?? []).map((asset) => ({
         ...asset,
         address: (addresses ?? []).find((a) => a.asset_id === asset.id) ?? null,

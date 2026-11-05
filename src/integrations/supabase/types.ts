@@ -1650,6 +1650,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          country: string
           created_at: string
           currency: string
           deposit_credit_currency: string | null
@@ -1661,6 +1662,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          country?: string
           created_at?: string
           currency?: string
           deposit_credit_currency?: string | null
@@ -1672,6 +1674,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          country?: string
           created_at?: string
           currency?: string
           deposit_credit_currency?: string | null
