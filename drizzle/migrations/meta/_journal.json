@@ -253,6 +253,13 @@
       "when": 1793838762997,
       "tag": "0035_user_country_local_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793840559332,
+      "tag": "0036_admin_user_country",
+      "breakpoints": true
     }
   ]
 }
