@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { settingsQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { currencySymbol } from "@/lib/fin3a";
+import { localCurrency } from "@/lib/country-currency";
 import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
@@ -62,9 +63,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
-            {settings?.currency ? (
-              <span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">
-                {currencySymbol(settings.currency)}
+            {settings ? (
+              <span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground" title="Your local currency">
+                {localCurrency(settings.country)} {currencySymbol(localCurrency(settings.country))}
               </span>
             ) : null}
             {settings?.display_name ? (
