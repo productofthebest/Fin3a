@@ -48,7 +48,7 @@ function Page() {
   return (
     <AppShell>
       <h1 className="font-display text-3xl font-bold">Accounts</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Your ₦ and $ balances, activity and deposit addresses</p>
+      <p className="mt-2 text-sm text-muted-foreground">Your local currency and USD balances, activity and deposit addresses</p>
 
       <div className="mt-6 grid gap-4">
         {data.accounts.map((account) => (
