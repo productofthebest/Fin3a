@@ -1,7 +1,7 @@
 import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { queryOptions, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 import { Camera, Download, Loader2, QrCode, ShieldCheck, Ticket } from "lucide-react";
 import { toast } from "sonner";
