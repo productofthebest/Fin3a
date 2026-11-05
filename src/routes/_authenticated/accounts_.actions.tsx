@@ -25,7 +25,7 @@ function Page() {
   const { action = "deposit" } = Route.useSearch();
   const mode = action;
   const options = accountCurrencies(data.country);
-  const [currency, setCurrency] = useState<string>(options[0]);
+  const [currency, setCurrency] = useState<string>(options[0] ?? "USD");
   const unsupported = currency !== "NGN" && currency !== "USD";
   const [asset, setAsset] = useState<"USDC" | "USDT">("USDC");
   const [scanning, setScanning] = useState(false);
