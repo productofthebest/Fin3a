@@ -26,7 +26,7 @@ function Page() {
   return <div className="flex min-h-screen flex-col bg-background">
     <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
       <Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link>
-      <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
+      <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Wallet</Link></Button>
     </header>
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-10 sm:px-6">
       <div className="mb-7 flex size-12 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary"><ShieldCheck className="size-6" /></div>

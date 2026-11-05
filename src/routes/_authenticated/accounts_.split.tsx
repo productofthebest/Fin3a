@@ -171,7 +171,7 @@ function Page() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link>
-        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
+        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Wallet</Link></Button>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 sm:px-6">
       <h1 className="font-display text-3xl font-bold">Split Bill</h1>

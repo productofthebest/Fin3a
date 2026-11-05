@@ -49,7 +49,7 @@ function Page() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link>
-        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
+        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Wallet</Link></Button>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 sm:px-6">
       <h1 className="font-display text-3xl font-bold">Share Payment</h1>
@@ -64,7 +64,7 @@ function Page() {
       <section className="mt-3 rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground">Account name</p>
+            <p className="text-xs text-muted-foreground">Wallet name</p>
             <p className="mt-1 font-display text-xl font-semibold">{data.displayName ?? "Fin3a user"}</p>
             <p className="mt-4 text-xs text-muted-foreground">Your unique Fin3a account ID</p>
             <p className="mt-1 font-mono text-2xl font-bold tracking-wide text-primary">{data.fin3aId ?? "Unavailable"}</p>
@@ -75,14 +75,14 @@ function Page() {
               </>
             ) : null}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" disabled={!data.fin3aId} onClick={() => copy("Account ID", data.fin3aId!)}>
-                {copied === "Account ID" ? <Check className="size-4" /> : <Copy className="size-4" />} Copy ID
+              <Button variant="outline" size="sm" disabled={!data.fin3aId} onClick={() => copy("Wallet ID", data.fin3aId!)}>
+                {copied === "Wallet ID" ? <Check className="size-4" /> : <Copy className="size-4" />} Copy ID
               </Button>
               <Button variant="outline" size="sm" disabled={!payLink} onClick={() => copy("Payment link", payLink!)}>
                 {copied === "Payment link" ? <Check className="size-4" /> : <Copy className="size-4" />} Copy link
               </Button>
-              <Button variant="outline" size="sm" disabled={!shareText} onClick={() => copy("Account details", shareText!)}>
-                {copied === "Account details" ? <Check className="size-4" /> : <Copy className="size-4" />} Copy details
+              <Button variant="outline" size="sm" disabled={!shareText} onClick={() => copy("Wallet details", shareText!)}>
+                {copied === "Wallet details" ? <Check className="size-4" /> : <Copy className="size-4" />} Copy details
               </Button>
             </div>
           </div>
