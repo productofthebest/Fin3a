@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell, Check, Loader2, Plus, ScanLine, Users, X } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +20,7 @@ import {
   sendSplitReminder,
   type ResolvedParticipant,
 } from "@/lib/share-split.functions";
-import { billProgress, shareDisplayStatus, SPLIT_CURRENCIES, type SplitCurrency } from "@/lib/split-bill";
+import { billProgress, shareDisplayStatus, type SplitCurrency } from "@/lib/split-bill";
 import { pageMeta } from "@/lib/page-meta";
 import { cn } from "@/lib/utils";
 

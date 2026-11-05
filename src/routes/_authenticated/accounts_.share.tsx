@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import QRCode from "react-qr-code";
 import { Check, Copy, Loader2, MessageCircle, MessageSquare, Plus, ScanLine, Share2, ShieldCheck, Users, X } from "lucide-react";
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { QrScanner } from "@/components/qr-scanner";
 import { parseScannedQr } from "@/lib/qr-payments";
 import { getShareProfile, lookupRecipient, shareMoneyByPercent, type ResolvedParticipant } from "@/lib/share-split.functions";
-import { fromCents, percentSplit, SPLIT_CURRENCIES, toCents, type SplitCurrency } from "@/lib/split-bill";
+import { fromCents, percentSplit, toCents, type SplitCurrency } from "@/lib/split-bill";
 import { pageMeta } from "@/lib/page-meta";
 
 const shareQuery = () =>
