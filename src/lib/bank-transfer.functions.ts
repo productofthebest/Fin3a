@@ -19,8 +19,8 @@ export const verifyBankAccount = createServerFn({ method: "POST" })
     z.object({ accountNumber: z.string().regex(/^\d{10}$/), bankCode: z.string().min(2).max(12).regex(/^[A-Za-z0-9]+$/) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: allowed } = await context.supabase.rpc("consume_rate_limit" as never, { _action: "bank_resolve", _limit: 20, _window_seconds: 600 } as never);
-    if (allowed === false) return { found: false as const, error: "Too many checks. Please wait a few minutes." };
+    const { data: allowed, error: limitErr } = await context.supabase.rpc("consume_rate_limit", { _bucket: "bank_resolve", _limit: 20, _window_seconds: 600 });
+    if (limitErr || allowed === false) return { found: false as const, error: "Too many checks. Please wait a few minutes." };
     const { resolveBankAccount } = await import("./flutterwave.server");
     try {
       const r = await resolveBankAccount(data.accountNumber, data.bankCode);
