@@ -19,6 +19,9 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [mode, setMode] = useState<"fin3a" | "bank">("fin3a");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
   const available = balances.find(a => a.currency === currency)?.balance.available ?? 0;
   const money = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).format(n);
   const valid = canTransfer(Number(amount), available, recipient ? 1 : 0);
@@ -48,8 +51,23 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
 
   return <Dialog open={open} onOpenChange={value => { if (!busy) { setConfirming(false); onOpenChange(value); } }}>
     <DialogContent className="sm:max-w-sm">
-      <DialogHeader><DialogTitle>{confirming ? "Confirm transfer" : "Transfer"}</DialogTitle><DialogDescription>One Fin3a user to another. No external bank or crypto transfers.</DialogDescription></DialogHeader>
-      {confirming ? <>
+      <DialogHeader><DialogTitle>{confirming ? "Confirm transfer" : "Transfer"}</DialogTitle><DialogDescription>{mode === "bank" ? "Send from your NGN wallet to any Nigerian bank account." : "Send to another Fin3a user."}</DialogDescription></DialogHeader>
+      {!confirming && options.includes("NGN") && <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer destination">
+        <Button variant={mode === "fin3a" ? "default" : "outline"} aria-pressed={mode === "fin3a"} onClick={() => setMode("fin3a")}>Fin3a user</Button>
+        <Button variant={mode === "bank" ? "default" : "outline"} aria-pressed={mode === "bank"} onClick={() => { setMode("bank"); setCurrency("NGN"); }}>NGN bank</Button>
+      </div>}
+      {mode === "bank" && !confirming ? <>
+        <p className="text-sm text-muted-foreground">Available: {new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(balances.find(a => a.currency === "NGN")?.balance.available ?? 0)}</p>
+        <Label htmlFor="bank-name">Bank</Label>
+        <Input id="bank-name" value={bankName} onChange={e => setBankName(e.target.value)} maxLength={80} placeholder="e.g. Access Bank" />
+        <Label htmlFor="bank-account">Account number</Label>
+        <Input id="bank-account" inputMode="numeric" value={accountNumber} onChange={e => setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10 digits" />
+        <Label htmlFor="bank-amount">Amount (₦)</Label>
+        <Input id="bank-amount" type="number" min="1" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
+        <p className="text-xs text-muted-foreground">Fee: ₦50, deducted from the amount sent. The account name is confirmed before you send.</p>
+        <p role="status" className="rounded-md border border-border p-3 text-sm text-muted-foreground">Bank transfers are not available yet. They open once our bank partner is connected and tested. No money will leave your wallet.</p>
+        <Button disabled>Review bank transfer</Button>
+      </> : confirming ? <>
         <dl className="space-y-3 text-sm"><div><dt className="text-muted-foreground">Recipient</dt><dd className="break-words">{recipient?.display_name ?? "Fin3a user"} · {recipient?.fin3a_id}</dd></div><div><dt className="text-muted-foreground">Amount</dt><dd>{money(Number(amount))}</dd></div><div><dt className="text-muted-foreground">Fin3a fee</dt><dd>{money(0)}</dd></div></dl>
         <Button disabled={busy || !valid} onClick={() => void transfer()}>{busy ? "Sending…" : "Confirm transfer"}</Button>
         <Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
