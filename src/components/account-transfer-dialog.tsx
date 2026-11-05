@@ -14,13 +14,15 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
   const qc = useQueryClient();
   const options = (["NGN", "USD"] as const).filter(c => balances.some(a => a.currency === c));
   const local = balances.find(a => a.currency !== "NGN" && a.currency !== "USD")?.currency;
-  const [currency, setCurrency] = useState<"NGN" | "USD">(options[0] ?? "USD");
+  const [selectedCurrency, setCurrency] = useState<"NGN" | "USD">(options[0] ?? "USD");
+  const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "USD");
   const [identifier, setIdentifier] = useState("");
   const [recipient, setRecipient] = useState<ResolvedParticipant | null>(null);
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [mode, setMode] = useState<"fin3a" | "bank">("fin3a");
+  const [selectedMode, setMode] = useState<"fin3a" | "bank">("fin3a");
+  const mode = options.includes("NGN") ? selectedMode : "fin3a";
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);

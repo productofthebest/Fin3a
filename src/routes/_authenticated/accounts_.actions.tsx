@@ -10,7 +10,7 @@ import { NgnTopupPanel } from "@/components/ngn-topup-panel";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
-  head: () => pageMeta("Deposits & withdrawals", "Your secure Fin3a NGN and USD deposit and withdrawal options."),
+  head: () => pageMeta("Deposits & withdrawals", "Your secure Fin3a local-currency and USD deposit and withdrawal options."),
   validateSearch: (search: Record<string, unknown>): { action?: "deposit" | "withdraw" } => ({ action: search["action"] === "withdraw" ? "withdraw" : "deposit" }),
   loader: ({ context }) => context.queryClient.ensureQueryData(overview),
   component: Page,
@@ -21,7 +21,8 @@ function Page() {
   const { action = "deposit" } = Route.useSearch();
   const mode = action;
   const options = accountCurrencies(data.country);
-  const [currency, setCurrency] = useState<string>(options[0] ?? "USD");
+  const [selectedCurrency, setCurrency] = useState<string>(options[0] ?? "USD");
+  const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "USD");
   const unsupported = currency !== "NGN" && currency !== "USD";
   const [asset, setAsset] = useState<"USDC" | "USDT">("USDC");
   return <div className="flex min-h-screen flex-col bg-background">
