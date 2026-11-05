@@ -42,7 +42,10 @@ export const getAccountsOverview = createServerFn({ method: "GET" })
     const entries = ledger ?? [];
     const accountCards = (accounts ?? [])
       .filter((a) => wanted.includes(a.currency) || entries.some((e) => e.account_id === a.id))
-      .sort((a, b) => (wanted.indexOf(a.currency) + 99) % 100 - (wanted.indexOf(b.currency) + 99) % 100)
+      .sort((a, b) => {
+        const rank = (c: string) => (wanted.includes(c) ? wanted.indexOf(c) : 99);
+        return rank(a.currency) - rank(b.currency);
+      })
       .map((account) => {
       const own = entries.filter((e) => e.account_id === account.id);
       const balance = computeAccountBalance(own as LedgerEntry[]);
