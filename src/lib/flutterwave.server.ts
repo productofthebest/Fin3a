@@ -32,3 +32,22 @@ export async function resolveBankAccount(accountNumber: string, bankCode: string
   });
   return { accountName: data.account_name, accountNumber: data.account_number };
 }
+
+export async function createDynamicVirtualAccount(input: { email: string; amount: number; txRef: string }) {
+  const data = await flw<{ account_number: string; bank_name: string; expiry_date: string; amount: string | number }>("/virtual-account-numbers", {
+    method: "POST",
+    body: JSON.stringify({ email: input.email, amount: input.amount, tx_ref: input.txRef, is_permanent: false, currency: "NGN", narration: "Fin3a wallet top-up" }),
+  });
+  return { accountNumber: data.account_number, bankName: data.bank_name, expiresAt: data.expiry_date };
+}
+
+/** Re-checks a payment with Flutterwave. Only a successful NGN charge for this exact reference counts. */
+export async function verifyPaymentByReference(txRef: string) {
+  try {
+    const data = await flw<{ id: number; tx_ref: string; status: string; currency: string; amount: number }>(`/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`);
+    if (data.tx_ref !== txRef || data.status !== "successful" || data.currency !== "NGN" || !(Number(data.amount) > 0)) return null;
+    return { providerTxId: String(data.id), amount: Number(data.amount) };
+  } catch {
+    return null;
+  }
+}
