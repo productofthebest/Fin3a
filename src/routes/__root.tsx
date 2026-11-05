@@ -48,9 +48,10 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     if (connectionDrop) {
       // A dropped connection is not an app defect: retry when the phone is back online or visible.
       const retry = () => {
-        if (!navigator.onLine || document.visibilityState !== "visible") return;
-        router.invalidate();
-        reset();
+        if (navigator.onLine && document.visibilityState === "visible") {
+          router.invalidate();
+          reset();
+        }
       };
       const onVisible = () => { if (document.visibilityState === "visible") retry(); };
       const timer = window.setTimeout(retry, 3_000);
