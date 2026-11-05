@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import QRCode from "react-qr-code";
 import { Check, Copy, Loader2, MessageCircle, MessageSquare, Plus, ScanLine, Share2, ShieldCheck, Users, X } from "lucide-react";
@@ -12,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { QrScanner } from "@/components/qr-scanner";
 import { parseScannedQr } from "@/lib/qr-payments";
 import { getShareProfile, lookupRecipient, shareMoneyByPercent, type ResolvedParticipant } from "@/lib/share-split.functions";
-import { fromCents, percentSplit, SPLIT_CURRENCIES, toCents, type SplitCurrency } from "@/lib/split-bill";
+import { fromCents, percentSplit, toCents, type SplitCurrency } from "@/lib/split-bill";
 import { pageMeta } from "@/lib/page-meta";
 
 const shareQuery = () =>
@@ -133,7 +134,9 @@ function ShareMoney() {
   const lookup = useServerFn(lookupRecipient);
   const send = useServerFn(shareMoneyByPercent);
   const [total, setTotal] = useState("");
+  const { options: currencyOptions, local } = useTransferCurrencies();
   const [currency, setCurrency] = useState<SplitCurrency>("NGN");
+  useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
   const [note, setNote] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [people, setPeople] = useState<(ResolvedParticipant & { percent: string })[]>([]);
@@ -201,8 +204,9 @@ function ShareMoney() {
         <div>
           <Label htmlFor="sh-currency">Currency</Label>
           <select id="sh-currency" value={currency} onChange={(e) => setCurrency(e.target.value as SplitCurrency)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
-            {SPLIT_CURRENCIES.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
+            {currencyOptions.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
           </select>
+          {local && <p className="mt-1 text-xs text-muted-foreground">{local} payments are not supported in your country yet. Use your USD account.</p>}
         </div>
         <div>
           <Label htmlFor="sh-note">Note (optional)</Label>

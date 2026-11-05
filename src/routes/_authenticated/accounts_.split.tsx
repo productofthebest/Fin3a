@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useTransferCurrencies } from "@/hooks/use-transfer-currencies";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell, Check, Loader2, Plus, ScanLine, Users, X } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +20,7 @@ import {
   sendSplitReminder,
   type ResolvedParticipant,
 } from "@/lib/share-split.functions";
-import { billProgress, shareDisplayStatus, SPLIT_CURRENCIES, type SplitCurrency } from "@/lib/split-bill";
+import { billProgress, shareDisplayStatus, type SplitCurrency } from "@/lib/split-bill";
 import { pageMeta } from "@/lib/page-meta";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +51,9 @@ function Page() {
 
   const [title, setTitle] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
+  const { options: currencyOptions, local } = useTransferCurrencies();
   const [currency, setCurrency] = useState<SplitCurrency>("NGN");
+  useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
   const [deadline, setDeadline] = useState("");
   const [note, setNote] = useState("");
   const [mode, setMode] = useState<"equal" | "custom">("equal");
@@ -189,8 +192,9 @@ function Page() {
               onChange={(e) => setCurrency(e.target.value as SplitCurrency)}
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
-              {SPLIT_CURRENCIES.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
+              {currencyOptions.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
             </select>
+            {local && <p className="mt-1 text-xs text-muted-foreground">{local} payments are not supported in your country yet. Use your USD account.</p>}
           </div>
           <div>
             <Label htmlFor="sb-deadline">Payment deadline (optional)</Label>
