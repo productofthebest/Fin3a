@@ -65,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
             {settings ? (
               <span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground" title="Your local currency">
-                {localCurrency(settings.country)} {currencySymbol(localCurrency(settings.country))}
+                {currencySymbol(localCurrency(settings.country))}
               </span>
             ) : null}
             {settings?.display_name ? (
