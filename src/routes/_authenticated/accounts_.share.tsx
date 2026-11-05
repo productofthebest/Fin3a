@@ -15,6 +15,7 @@ import { parseScannedQr } from "@/lib/qr-payments";
 import { getShareProfile, lookupRecipient, shareMoneyByPercent, type ResolvedParticipant } from "@/lib/share-split.functions";
 import { fromCents, percentSplit, toCents, type SplitCurrency } from "@/lib/split-bill";
 import { pageMeta } from "@/lib/page-meta";
+import { SendToContact } from "@/components/send-to-contact";
 
 const shareQuery = () =>
   queryOptions({ queryKey: ["accounts", "share-profile"], queryFn: () => getShareProfile(), staleTime: 60_000 });
