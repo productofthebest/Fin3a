@@ -142,6 +142,7 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 - [x] Admin User Statistics & User Management (manual verification, 100-day active window, two-admin adjustments, logged profile views)
 
 ## Flutterwave (live keys; owner chose all features)
+- [ ] Webhook connection (Nov 5): inspect V3 signature, harden verification/retries/exact amounts, persist verified statuses without editing history, test duplicate credits/refunds in isolation, deploy and check exact HTTPS URL, request shared secret after deployment. Live refund accounting and full-app publishing require explicit scoped approval; no automatic refund debit without approved reversal policy.
 - [x] Bank list + account-name check in Transfer
 - [ ] NGN bank transfer sending: wallet hold, payout, webhook-verified settle/refund (needs webhook secret + owner small real test)
 - [x] NGN bank top-up via dynamic one-time virtual accounts (owner real ₦ test pending)
