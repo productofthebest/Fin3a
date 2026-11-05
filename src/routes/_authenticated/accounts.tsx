@@ -24,14 +24,17 @@ export const Route = createFileRoute("/_authenticated/accounts")({
 
 const fmt = (currency: string, amount: number) =>
   new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format(amount);
-const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
+const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : (new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).formatToParts(0).find(p => p.type === "currency")?.value ?? currency));
 
 function Page() {
   const { data } = useSuspenseQuery(accountsQuery());
+  const swapLocal = data.accounts.find(a => a.currency !== "USD")?.currency ?? null;
   const [swapOpen, setSwapOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [swapAmount, setSwapAmount] = useState("");
-  const [swapCurrency, setSwapCurrency] = useState<"NGN" | "USD">("NGN");
+  const [swapCurrency, setSwapCurrency] = useState<string>("local");
+  const swapFrom = swapCurrency === "USD" ? "USD" : (swapLocal ?? "USD");
+  const swapTo = swapFrom === "USD" ? (swapLocal ?? "USD") : "USD";
   const splitRef = useRef<HTMLAnchorElement>(null);
   const walletsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -134,11 +137,12 @@ function Page() {
             <DialogTitle>Swap</DialogTitle>
             <DialogDescription>Swaps are currently unavailable. A live quote is required before confirmation.</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-2" role="group" aria-label="Swap direction">
-            {(["NGN", "USD"] as const).map(currency => <Button key={currency} variant={swapCurrency === currency ? "default" : "outline"} aria-pressed={swapCurrency === currency} onClick={() => setSwapCurrency(currency)}>{sym(currency)} → {sym(currency === "NGN" ? "USD" : "NGN")}</Button>)}
-          </div>
+          {swapLocal ? <div className="grid grid-cols-2 gap-2" role="group" aria-label="Swap direction">
+            {[swapLocal, "USD"].map(currency => <Button key={currency} variant={swapFrom === currency ? "default" : "outline"} aria-pressed={swapFrom === currency} onClick={() => setSwapCurrency(currency)}>{sym(currency)} → {sym(currency === "USD" ? swapLocal : "USD")}</Button>)}
+          </div> : null}
+          {swapLocal !== "NGN" && <p role="status" className="rounded-md border border-border bg-secondary/40 p-3 text-sm text-muted-foreground">{swapLocal ? `Swap is not available for ${swapLocal} yet. Swaps currently work only between ₦ and $.` : "Swap is not available for your country yet. Swaps currently work only between ₦ and $."}</p>}
           <div className="space-y-2">
-            <Label htmlFor="swap-amount">Amount ({sym(swapCurrency)})</Label>
+            <Label htmlFor="swap-amount">Amount ({sym(swapFrom)})</Label>
             <Input id="swap-amount" inputMode="decimal" autoComplete="off" placeholder="0.00" value={swapAmount} onChange={event => setSwapAmount(event.target.value)} />
           </div>
           <dl className="divide-y divide-border text-sm">
@@ -146,9 +150,9 @@ function Page() {
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fin3a fee</dt><dd>0.1%</dd></div>
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Fee amount</dt><dd>Awaiting quote</dd></div>
             <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">Provider / network charges</dt><dd>Unavailable</dd></div>
-            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">You receive ({sym(swapCurrency === "NGN" ? "USD" : "NGN")})</dt><dd>Awaiting quote</dd></div>
+            <div className="flex justify-between gap-3 py-2"><dt className="text-muted-foreground">You receive ({sym(swapTo)})</dt><dd>Awaiting quote</dd></div>
           </dl>
-          <Button disabled>Confirm swap</Button>
+          <Button disabled>{swapLocal === "NGN" ? "Confirm swap" : "Swap unavailable"}</Button>
         </DialogContent>
       </Dialog>
       {!data.providerConnected ? (
