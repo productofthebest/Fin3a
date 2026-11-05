@@ -7,7 +7,6 @@ import { useServerFn } from "@tanstack/react-start";
 import QRCode from "react-qr-code";
 import { Check, Copy, Loader2, MessageCircle, MessageSquare, Plus, ScanLine, Share2, ShieldCheck, Users, X } from "lucide-react";
 import { toast } from "sonner";
-import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,11 +45,13 @@ function Page() {
   }
 
   return (
-    <AppShell>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-3xl font-bold">Share Payment</h1>
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link>
         <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
-      </div>
+      </header>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 sm:px-6">
+      <h1 className="font-display text-3xl font-bold">Share Payment</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Send money from your Fin3a balance to several Fin3a users at once, split by percentage.
       </p>
@@ -126,7 +127,8 @@ function Page() {
           details are never visible to people you share with. Incoming payments appear in your account activity.
         </p>
       </div>
-    </AppShell>
+    </main>
+    </div>
   );
 }
 

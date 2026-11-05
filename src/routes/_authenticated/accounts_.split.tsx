@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell, Check, Loader2, Plus, ScanLine, Users, X } from "lucide-react";
 import { toast } from "sonner";
-import { AppShell } from "@/components/app-shell";
 import { QrScanner } from "@/components/qr-scanner";
 import { parseScannedQr } from "@/lib/qr-payments";
 import { Button } from "@/components/ui/button";
@@ -168,11 +167,13 @@ function Page() {
   const sharedWithMe = data.memberships.filter((m) => !m.is_creator && m.split_bills);
 
   return (
-    <AppShell>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-3xl font-bold">Split Bill</h1>
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link>
         <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
-      </div>
+      </header>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 sm:px-6">
+      <h1 className="font-display text-3xl font-bold">Split Bill</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Share an expense with other Fin3a users and collect their shares from their Fin3a balance.
       </p>
@@ -421,6 +422,7 @@ function Page() {
           </ul>
         )}
       </section>
-    </AppShell>
+    </main>
+    </div>
   );
 }
