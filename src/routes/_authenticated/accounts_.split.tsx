@@ -72,7 +72,7 @@ function Page() {
     try {
       const result = await lookup({ data: { identifier: value } });
       if (!result.found) {
-        toast.error("No Fin3a account found for that ID, email or phone number");
+        toast.error("No Fin3a wallet found for that ID, email or phone number");
         return;
       }
       if (participants.some((p) => p.user_id === result.participant.user_id)) {
@@ -171,7 +171,7 @@ function Page() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link>
-        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Accounts</Link></Button>
+        <Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Wallet</Link></Button>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-10 sm:px-6">
       <h1 className="font-display text-3xl font-bold">Split Bill</h1>
@@ -402,7 +402,7 @@ function Page() {
       <section className="mt-10">
         <h2 className="font-display text-xl font-semibold">Payment history</h2>
         {data.transfers.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No payments between Fin3a accounts yet.</p>
+          <p className="mt-3 text-sm text-muted-foreground">No payments between Fin3a wallets yet.</p>
         ) : (
           <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card shadow-sm">
             {data.transfers.map((t) => {

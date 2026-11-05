@@ -375,7 +375,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
             ) : qrCard.kind === "profile" ? (
               <>
                 <p className="font-medium">I've detected a Fin3a payment profile.</p>
-                <p className="mt-2 text-muted-foreground">Account: <span className="font-mono text-primary">{qrCard.fin3aId}</span></p>
+                <p className="mt-2 text-muted-foreground">Wallet: <span className="font-mono text-primary">{qrCard.fin3aId}</span></p>
                 <div className="mt-3 flex gap-2">
                   <Button asChild size="sm"><Link to="/pay/$fin3aId" params={{ fin3aId: qrCard.fin3aId }}>Review Payment</Link></Button>
                   <Button variant="ghost" size="sm" onClick={() => setQrCard(null)}>Dismiss</Button>
@@ -405,7 +405,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       <CryptoQrReview value={cryptoReview} onClose={() => setCryptoReview(null)} />
       {accountHelp && <div role="status" className="order-2 my-4 space-y-3 border-y border-border py-4 text-sm">
         <p>{ACCOUNT_HELP_TEXT[accountHelp]}</p>
-        <Button asChild><Link to="/accounts/actions">Open account details &amp; payments</Link></Button>
+        <Button asChild><Link to="/accounts/actions">Open wallet details &amp; payments</Link></Button>
         <Button variant="ghost" onClick={() => setAccountHelp(null)}>Dismiss</Button>
       </div>}
 

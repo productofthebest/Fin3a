@@ -17,7 +17,7 @@ const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 
 export const Route = createFileRoute("/_authenticated/accounts")({
-  head: () => pageMeta("Accounts", "Your Fin3a NGN and USD account balances, activity and crypto deposit addresses."),
+  head: () => pageMeta("Wallet", "Your Fin3a NGN and USD wallet balances, activity and crypto deposit addresses."),
   loader: ({ context }) => context.queryClient.ensureQueryData(accountsQuery()),
   component: Page,
 });
@@ -50,7 +50,7 @@ function Page() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-bold">Accounts</h1>
+      <h1 className="font-display text-3xl font-bold">Wallet</h1>
       <p className="mt-2 text-sm text-muted-foreground">Your local currency and USD balances, activity and deposit addresses</p>
 
       <div className="mt-6 grid gap-4">
@@ -59,7 +59,7 @@ function Page() {
           <div className="col-start-1 row-start-1"><AssistantComposerSizeReference /></div>
           <section className="col-start-1 row-start-1 min-w-0 rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5" aria-label={`${account.currency} balance card`}>
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-sm font-semibold">{account.currency} Account</h2>
+              <h2 className="font-display text-sm font-semibold">{account.currency} Wallet</h2>
               <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{sym(account.currency)}</span>
             </div>
             <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
@@ -77,7 +77,7 @@ function Page() {
               </div>
             </div>
             <div className="mt-1 text-[11px] leading-4">
-              <p className="font-medium text-muted-foreground">Recent activity{account.recent.length === 0 ? ": No account transactions yet." : ""}</p>
+              <p className="font-medium text-muted-foreground">Recent activity{account.recent.length === 0 ? ": No wallet transactions yet." : ""}</p>
               {account.recent.length === 0 ? (
                 null
               ) : (

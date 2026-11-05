@@ -9,7 +9,7 @@ export function accountHelpIntent(text: string): AccountHelpIntent | null {
 }
 
 export const ACCOUNT_HELP_TEXT: Record<AccountHelpIntent, string> = {
-  deposit: "Crypto deposits convert to your chosen NGN or USD balance for that deposit. Only verified provider-supported coins and networks can be used. Deposit instructions are not available yet. Open your account page to review availability and fees.",
-  withdraw: "NGN bank withdrawals and USD withdrawals using USDC or USDT require a verified provider quote and your confirmation. Withdrawals are not available yet. Enter payment details only on your signed-in account page, never in chat.",
-  details: "Your balances and any available deposit addresses belong on your signed-in account page. Bank details and crypto deposit addresses are not available yet. Never share passwords, verification codes, private keys or recovery phrases in chat.",
+  deposit: "Crypto deposits convert to your chosen NGN or USD balance for that deposit. Only verified provider-supported coins and networks can be used. Deposit instructions are not available yet. Open your wallet page to review availability and fees.",
+  withdraw: "NGN bank withdrawals and USD withdrawals using USDC or USDT require a verified provider quote and your confirmation. Withdrawals are not available yet. Enter payment details only on your signed-in wallet page, never in chat.",
+  details: "Your balances and any available deposit addresses belong on your signed-in wallet page. Bank details and crypto deposit addresses are not available yet. Never share passwords, verification codes, private keys or recovery phrases in chat.",
 };
