@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { UserSettings } from "./fin3a";
+import { COUNTRY_CURRENCY } from "./country-currency";
 
 export const DEFAULT_EXPENSE_CATEGORIES: { name: string; icon: string }[] = [
   { name: "Shopping", icon: "🛍️" },
@@ -29,7 +30,7 @@ export const getSettings = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<UserSettings | null> => {
     const { data, error } = await context.supabase
       .from("user_settings")
-      .select("id, user_id, currency, onboarding_completed, display_name")
+      .select("id, user_id, currency, onboarding_completed, display_name, country")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -56,7 +57,7 @@ export const completeOnboarding = createServerFn({ method: "POST" })
         },
         { onConflict: "user_id" },
       )
-      .select("id, user_id, currency, onboarding_completed, display_name")
+      .select("id, user_id, currency, onboarding_completed, display_name, country")
       .single();
     if (error) throw new Error(error.message);
 
@@ -84,20 +85,22 @@ export const updateSettings = createServerFn({ method: "POST" })
       .object({
         currency: z.string().trim().length(3).optional(),
         display_name: z.string().trim().max(60).optional(),
+        country: z.string().trim().toUpperCase().refine((c) => c in COUNTRY_CURRENCY, "Unsupported country").optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const patch: { currency?: string; display_name?: string | null; updated_at: string } = {
+    const patch: { currency?: string; display_name?: string | null; country?: string; updated_at: string } = {
       updated_at: new Date().toISOString(),
     };
     if (data.currency) patch.currency = data.currency;
+    if (data.country) patch.country = data.country;
     if (data.display_name !== undefined) patch.display_name = data.display_name;
     const { data: settings, error } = await context.supabase
       .from("user_settings")
       .update(patch)
       .eq("user_id", context.userId)
-      .select("id, user_id, currency, onboarding_completed, display_name")
+      .select("id, user_id, currency, onboarding_completed, display_name, country")
       .single();
     if (error) throw new Error(error.message);
     return settings as UserSettings;
