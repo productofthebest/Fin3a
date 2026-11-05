@@ -10,7 +10,9 @@ import { canTransfer } from "@/lib/account-transfer";
 
 export function AccountTransferDialog({ open, onOpenChange, balances }: { open: boolean; onOpenChange: (open: boolean) => void; balances: { currency: string; balance: { available: number } }[] }) {
   const qc = useQueryClient();
-  const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+  const options = (["NGN", "USD"] as const).filter(c => balances.some(a => a.currency === c));
+  const local = balances.find(a => a.currency !== "NGN" && a.currency !== "USD")?.currency;
+  const [currency, setCurrency] = useState<"NGN" | "USD">(options[0] ?? "USD");
   const [identifier, setIdentifier] = useState("");
   const [recipient, setRecipient] = useState<ResolvedParticipant | null>(null);
   const [amount, setAmount] = useState("");
@@ -50,7 +52,8 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
         <Button disabled={busy || !valid} onClick={() => void transfer()}>{busy ? "Sending…" : "Confirm transfer"}</Button>
         <Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
       </> : <>
-        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{(["NGN", "USD"] as const).map(c => <Button key={c} variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c} {c === "NGN" ? "₦" : "$"}</Button>)}</div>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{options.map(c => <Button key={c} variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c} {c === "NGN" ? "₦" : "$"}</Button>)}</div>
+        {local && <p className="text-xs text-muted-foreground">{local} transfers are not supported in your country yet. You can transfer from your USD account.</p>}
         <p className="text-sm text-muted-foreground">Available: {money(available)}</p>
         <Label htmlFor="transfer-recipient">Fin3a ID, email or phone number</Label>
         <Input id="transfer-recipient" value={identifier} onChange={e => { setIdentifier(e.target.value); setRecipient(null); }} maxLength={254} />
