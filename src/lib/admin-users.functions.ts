@@ -52,7 +52,8 @@ export const getUserDetail = createServerFn({ method: "POST" }).middleware([requ
   .handler(async ({ data, context }) => {
     const { data: r, error } = await context.supabase.rpc("admin_user_detail", { _user_id: data.userId });
     if (error) fail(error.message);
-    return clean<UserDetail>(r);
+    const { data: country } = await context.supabase.rpc("admin_user_country", { _user_id: data.userId });
+    return { ...clean<UserDetail>(r), country: (country as string | null) ?? "NG" };
   });
 
 export const setAccountStatus = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
