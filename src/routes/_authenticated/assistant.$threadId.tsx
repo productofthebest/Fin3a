@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { logQrScan, resolveQrRequest, type QrRequestDetails } from "@/lib/qr-payments.functions";
 import { formatQrAmount, parseScannedQr } from "@/lib/qr-payments";
 import { cn } from "@/lib/utils";
+import { withNetworkRetry } from "@/lib/network-retry";
 import { metadataWebSources, safeWebSources } from "@/lib/web-access";
 import robot from "@/assets/fin3a-robot.png";
 import { CryptoQrReview } from "@/components/crypto-qr-review";
@@ -65,7 +66,7 @@ export const Route = createFileRoute("/_authenticated/assistant/$threadId")({
     ],
   }),
   loader: async ({ params, context }) => {
-    return getThreadMessages({ data: { threadId: params.threadId } });
+    return withNetworkRetry(() => getThreadMessages({ data: { threadId: params.threadId } }));
   },
   component: AssistantPage,
 });

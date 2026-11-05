@@ -1,0 +1,1 @@
+- Read retries for connection drops live in `network-retry.ts` (loaders, query defaults, root error screen); never retry money movements.
