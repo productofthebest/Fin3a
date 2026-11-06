@@ -25,8 +25,8 @@ describe("Flutterwave country capabilities", () => {
     expect(getBankPayoutCurrency("GB")).toBe("GBP");
     expect(getBankPayoutCurrency("CI")).toBe("XOF");
     expect(getBankPayoutCurrency("SN")).toBe("XOF");
-    expect(getBankPayoutCurrency("SL")).toBe("SLL");
-    expect(getBankPayoutCurrency("ZM")).toBe("ZMW");
+    expect(getBankPayoutCurrency("SL")).toBeNull();
+    expect(getBankPayoutCurrency("ZM")).toBeNull();
   });
 
   it("fails closed for unknown countries", () => {
