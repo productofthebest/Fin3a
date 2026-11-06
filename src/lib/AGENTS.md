@@ -2,3 +2,4 @@
 - Wallet overview uses `selectCountryAccounts` for country-only presentation; payment selectors consume that overview without mutating hidden balances or ledger history.
 - Flutterwave V3 uses only `verif-hash`; provider-verified evidence enters atomic service-role RPCs, with nullable facts retained through a local RPC type adapter because generated args omit nullability. Refund evidence never changes ledger/fee/revenue; charge verification failures return retry 5xx.
 - Activity joins explicitly owner-scoped source histories and deduplicates ledger postings by persisted IDs/provider links, never by amount/date; requests are not money movements. Removal checks import provenance on the server; payment histories have no delete action.
+- Imported document entries in Activity reuse private-file-first document cleanup; file deletion retains imported financial records, which can be removed separately through the protected record action.
