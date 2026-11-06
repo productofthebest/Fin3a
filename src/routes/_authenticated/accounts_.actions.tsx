@@ -8,7 +8,6 @@ import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
 import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
 import { getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
-import { NgnTopupPanel } from "@/components/ngn-topup-panel";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
@@ -76,11 +75,6 @@ function Page() {
       <dl className="my-6 divide-y divide-border text-sm">{data.accounts.map(a => <div key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><dt>{a.currency === "NGN" ? "₦" : a.currency === "USD" ? "$" : a.currency} available balance</dt><dd className="break-all font-semibold">{new Intl.NumberFormat("en", { style: "currency", currency: a.currency, currencyDisplay: "narrowSymbol" }).format(a.balance.available)}</dd></div>)}</dl>
       <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Balance currency">{options.map(v => <Button key={v} variant={currency === v ? "default" : "outline"} aria-pressed={currency === v} onClick={() => setCurrency(v)}>{v} {v === "NGN" ? "₦" : v === "USD" ? "$" : ""}</Button>)}</div>
 
-      <section className="mb-6 rounded-xl border border-border bg-card p-4" aria-label="Country payment methods">
-        <div className="mb-2 flex items-center gap-2 font-medium"><CreditCard className="size-4" />Payment options for {country}</div>
-        <p className="text-xs text-muted-foreground">Choose a payment method available for your selected country and currency.</p>
-      </section>
-
       <section aria-label="Choose deposit method" className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Payment method</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -104,10 +98,7 @@ function Page() {
         <p className="mt-2 text-xs text-muted-foreground">Country: {country} · Currency: {currency}. This payment method is not enabled until Fin3a confirms that it can accept and verify the payment.</p>
       </section>}
 
-      {currency === "NGN" ? <div className="mt-6">
-        <h2 className="mb-3 font-display text-xl font-semibold">NGN top-up</h2>
-        <NgnTopupPanel />
-      </div> : unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. This payment route is not active for this currency yet.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div>}
+      {unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. This payment route is not active for this currency yet.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : currency !== "NGN" ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div> : null}
       {currency !== "NGN" && <Button className="mt-5 w-full" disabled>Local deposit unavailable</Button>}
       <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Fin3a only credits your wallet after the payment has been securely verified.</p>
     </main>
