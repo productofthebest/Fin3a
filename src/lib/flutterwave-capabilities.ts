@@ -25,7 +25,7 @@ export const FLUTTERWAVE_COLLECTIONS = [
 /** Countries/currencies listed in Flutterwave V3 bank-account transfer documentation. */
 export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "NG", name: "Nigeria", currency: "NGN" },
-  { country: "US", name: "United States (domiciliary accounts)", currency: "USD" },
+  { country: "US", name: "United States", currency: "USD" },
   { country: "GB", name: "United Kingdom", currency: "GBP" },
   { country: "EU", name: "SEPA countries", currency: "EUR" },
   { country: "GH", name: "Ghana", currency: "GHS" },
@@ -36,9 +36,7 @@ export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "CM", name: "Cameroon", currency: "XAF" },
   { country: "CI", name: "Côte d’Ivoire", currency: "XOF" },
   { country: "SN", name: "Senegal", currency: "XOF" },
-  { country: "SL", name: "Sierra Leone", currency: "SLL" },
   { country: "ZA", name: "South Africa", currency: "ZAR" },
-  { country: "ZM", name: "Zambia", currency: "ZMW" },
 ] as const;
 
 export type FlutterwaveCollection = (typeof FLUTTERWAVE_COLLECTIONS)[number];
