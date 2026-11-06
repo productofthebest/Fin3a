@@ -19,7 +19,7 @@ import {
   getDocumentReference,
   getScannerStatus,
 } from "@/lib/documents.functions";
-import { settingsQuery } from "@/lib/queries";
+import { categoriesQuery, settingsQuery } from "@/lib/queries";
 import { formatMoney } from "@/lib/fin3a";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +58,7 @@ function DocumentsPage() {
   const qc = useQueryClient();
   const { data: docs } = useSuspenseQuery(docsQuery());
   const { data: settings } = useSuspenseQuery(settingsQuery());
+  const { data: categories = [] } = useQuery(categoriesQuery());
   const { data: scannerStatus, isLoading: scannerStatusLoading } = useQuery(queryOptions({ queryKey: ["scanner-status"], queryFn: () => getScannerStatus(), staleTime: 30_000 }));
   const currency = settings?.currency ?? "USD";
   const [selected, setSelected] = useState<string | null>(null);
@@ -177,15 +178,16 @@ function DocumentsPage() {
           </CardContent>
         </Card>
 
-        {selected ? <DraftReview documentId={selected} doc={docs.find((d) => d.id === selected)} currency={currency} onDeleted={() => setSelected(null)} />
+        {selected ? <DraftReview documentId={selected} doc={docs.find((d) => d.id === selected)} currency={currency} categories={categories} scannerActive={!!scannerStatus?.active} onDeleted={() => setSelected(null)} />
           : <Card><CardContent className="py-16 text-center text-muted-foreground">Select a document to review its transactions.</CardContent></Card>}
       </div>
     </AppShell>
   );
 }
 
-function DraftReview({ documentId, doc, currency, onDeleted }: {
-  documentId: string; doc: Awaited<ReturnType<typeof listDocuments>>[number] | undefined; currency: string; onDeleted: () => void;
+function DraftReview({ documentId, doc, currency, categories, scannerActive, onDeleted }: {
+  documentId: string; doc: Awaited<ReturnType<typeof listDocuments>>[number] | undefined; currency: string;
+  categories: Awaited<ReturnType<typeof import("@/lib/categories.functions").listCategories>>; scannerActive: boolean; onDeleted: () => void;
 }) {
   const qc = useQueryClient();
   const { data: drafts = [], isLoading } = useQuery(draftsQuery(documentId));
@@ -193,7 +195,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
   const ready=pending.filter(d=>draftImportEligible(d,new Date().toISOString().slice(0,10)));
   const refresh = () => { qc.invalidateQueries({ queryKey: ["drafts", documentId] }); qc.invalidateQueries({ queryKey: ["documents"] }); };
 
-  const save = useMutation({ mutationFn: (p: { id: string; txn_date?: string | null; merchant?: string | null; amount?: number; type?: "income" | "expense"; currency?:string|null; classification?:typeof CLASSIFICATIONS[number]; review_confirmed?:boolean; not_duplicate?: true }) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
+  const save = useMutation({ mutationFn: (p: { id: string; txn_date?: string | null; merchant?: string | null; amount?: number; type?: "income" | "expense"; currency?:string|null; classification?:typeof CLASSIFICATIONS[number]; category_hint?:string|null; review_confirmed?:boolean; not_duplicate?: true }) => updateDraft({ data: p }), onSuccess: refresh, onError: (e: Error) => toast.error(e.message) });
   const remove = useMutation({ mutationFn: (id: string) => deleteDraft({ data: { id } }), onSuccess: refresh });
   const imp = useMutation({
     mutationFn: () => importDrafts({ data: { documentId } }),
@@ -214,7 +216,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={async()=>{try{const link=await getDocumentReference({data:{documentId}});window.open(link.url,"_blank","noopener,noreferrer");}catch(e){toast.error(e instanceof Error?e.message:"Could not open original.");}}}>Original</Button>
-          <Button variant="outline" size="sm" onClick={() => rescan.mutate()} disabled={rescan.isPending || !scannerStatus?.active}>
+          <Button variant="outline" size="sm" onClick={() => rescan.mutate()} disabled={rescan.isPending || !scannerActive}>
             {rescan.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Rescan
           </Button>
           <Button variant="ghost" size="icon" aria-label="Delete document" onClick={() => del.mutate()}><Trash2 className="h-4 w-4" /></Button>
@@ -251,6 +253,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
             </select>
             <Button variant="ghost" size="icon" aria-label="Remove line" onClick={() => remove.mutate(d.id)}><Trash2 className="h-4 w-4" /></Button>
             <Input aria-label="Transaction currency" maxLength={3} placeholder="Currency (NGN / USD)" defaultValue={d.currency??""} onBlur={e=>{const value=e.target.value.trim().toUpperCase();if(value!==(d.currency??""))save.mutate({id:d.id,currency:value||null,review_confirmed:false});}}/>
+            <select aria-label="Transaction category" className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={d.category_hint ?? ""} onChange={e=>save.mutate({id:d.id,category_hint:e.target.value || null,review_confirmed:false})}><option value="">Uncategorized</option>{categories.filter(c=>c.kind===d.type).map(c=><option key={c.id} value={c.name}>{c.name}</option>)}</select>
             <select aria-label="Transaction classification" className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={d.classification} onChange={e=>save.mutate({id:d.id,classification:e.target.value as typeof CLASSIFICATIONS[number],review_confirmed:false})}>{CLASSIFICATIONS.map(c=><option key={c} value={c}>{c.replaceAll("_"," ")}</option>)}</select>
             <div className="flex items-center gap-2"><Checkbox id={`review-${d.id}`} checked={d.review_confirmed} disabled={!!d.duplicate_of||save.isPending} onCheckedChange={v=>save.mutate({id:d.id,review_confirmed:v===true})}/><label htmlFor={`review-${d.id}`} className="text-xs">I checked this line's date, currency and classification</label></div>
           </div>
