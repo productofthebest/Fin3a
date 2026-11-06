@@ -95,6 +95,10 @@ function route(path, method) {
     const reference = u.searchParams.get("reference") || "";
     if (/^F3W-[0-9a-f-]{36}$/.test(reference)) return { method: "GET", providerPath: `/transfers?reference=${encodeURIComponent(reference)}`, kind: "status" };
   }
+  if (method === "GET" && /^\/v1\/flutterwave\/transactions\/[1-9]\d{0,19}\/verify$/.test(u.pathname) && !u.search) {
+    const transactionId = u.pathname.split("/").at(-2);
+    return { method: "GET", providerPath: `/transactions/${transactionId}/verify`, kind: "verification" };
+  }
   if (method === "POST" && u.pathname === "/v1/flutterwave/payments" && !u.search) return { method: "POST", providerPath: "/payments", kind: "collection" };
   return null;
 }

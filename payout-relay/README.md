@@ -19,6 +19,9 @@ The relay rejects unsupported currencies/operators, malformed beneficiary data, 
 ### Incoming payments / account funding
 
 - `POST /v1/flutterwave/payments`
+- `GET /v1/flutterwave/transactions/{numeric-transaction-id}/verify`
+
+The verification route performs a server-to-server Flutterwave V3 transaction lookup through the fixed provider origin. It is authenticated with the relay token and accepts only a numeric transaction ID. The Fin3a application must still validate the verified response against its own pending deposit record (reference, exact amount, currency, user, and successful final status) and settle the ledger idempotently. The relay response itself never credits a wallet.
 
 This route creates a Flutterwave-hosted checkout session. It accepts only an allowlisted country/currency combination and a customer email/name, then returns the provider response containing the hosted checkout link. It does **not** accept or process raw card numbers, CVV, PIN, or expiry data; card entry and authentication stay on Flutterwave's hosted checkout.
 
