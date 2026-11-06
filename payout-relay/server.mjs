@@ -4,11 +4,62 @@ import { timingSafeEqual } from "node:crypto";
 const PORT = Number(process.env.PORT || 8080);
 const TOKEN = process.env.RELAY_SHARED_TOKEN || "";
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || "";
+const PAYMENT_REDIRECT_URL = process.env.PAYMENT_REDIRECT_URL || "";
 const ALLOWED_SOURCE_IPS = new Set((process.env.RELAY_ALLOWED_SOURCE_IPS || "").split(",").map(x => x.trim()).filter(Boolean));
 const MAX_BODY_BYTES = 16 * 1024;
 const FLW_ORIGIN = "https://api.flutterwave.com/v3";
 
+const PAYOUT_CURRENCIES = new Set(["NGN", "GHS", "KES", "MWK", "TZS", "UGX", "USD", "EUR", "GBP", "XAF", "XOF", "ZAR"]);
+const DEBIT_CURRENCIES = new Set(["NGN", "GHS", "KES", "MWK", "TZS", "UGX", "USD", "EUR", "GBP", "XAF", "XOF", "ZAR"]);
+const MOBILE_NETWORKS = {
+  KES: new Set(["SAFARICOM", "T-KASH", "AIRTEL", "MPS"]),
+  GHS: new Set(["AIRTELTIGO", "MTN", "TELECEL", "VODAFONE"]),
+  XOF: new Set(["FMM", "MOOV", "ORANGEMONEY", "WAVE", "FREEMONEY"]),
+  RWF: new Set(["MPS", "MTN"]),
+  UGX: new Set(["AIRTEL", "MPS", "MTN"]),
+  EGP: new Set(["EGPWALLETS"]),
+};
+
+const PAYMENT_OPTIONS = {
+  NG: { NGN: ["card", "banktransfer"] },
+  GH: { GHS: ["card", "mobilemoneyghana"] },
+  KE: { KES: ["card", "mpesa"] },
+  GB: { GBP: ["card", "account"] },
+  US: { USD: ["card", "account"] },
+  ZA: { ZAR: ["card", "account"] },
+  MW: { MWK: ["card", "mobilemoneymalawi"] },
+  UG: { UGX: ["card", "mobilemoneyuganda"] },
+  RW: { RWF: ["card", "mobilemoneyrwanda"] },
+  TZ: { TZS: ["card", "mobilemoneytanzania"] },
+  CI: { XOF: ["card", "mobilemoneyxof"] },
+  SN: { XOF: ["card", "mobilemoneyxof"] },
+  CM: { XAF: ["card", "mobilemoneyxaf"] },
+  FR: { EUR: ["card", "account"] },
+  DE: { EUR: ["card", "account"] },
+  IE: { EUR: ["card", "account"] },
+  NL: { EUR: ["card", "account"] },
+  BE: { EUR: ["card", "account"] },
+  AT: { EUR: ["card", "account"] },
+  ES: { EUR: ["card", "account"] },
+  IT: { EUR: ["card", "account"] },
+  PT: { EUR: ["card", "account"] },
+  FI: { EUR: ["card", "account"] },
+  GR: { EUR: ["card", "account"] },
+  LU: { EUR: ["card", "account"] },
+  LT: { EUR: ["card", "account"] },
+  LV: { EUR: ["card", "account"] },
+  EE: { EUR: ["card", "account"] },
+  SK: { EUR: ["card", "account"] },
+  SI: { EUR: ["card", "account"] },
+  CY: { EUR: ["card", "account"] },
+  MT: { EUR: ["card", "account"] },
+};
+
 function ready() { return TOKEN.length >= 32 && FLW_SECRET_KEY.length >= 20; }
+function paymentReady() {
+  if (!ready() || !PAYMENT_REDIRECT_URL) return false;
+  try { return new URL(PAYMENT_REDIRECT_URL).protocol === "https:"; } catch { return false; }
+}
 function equalSecret(a, b) {
   const aa = Buffer.from(a); const bb = Buffer.from(b);
   return aa.length === bb.length && timingSafeEqual(aa, bb);
@@ -35,27 +86,67 @@ async function readJson(req) {
   catch { throw Object.assign(new Error("INVALID_JSON"), { status: 400 }); }
 }
 function route(path, method) {
-  if (method === "POST" && path === "/v1/flutterwave/transfers") return { method: "POST", providerPath: "/transfers" };
-  if (method === "GET" && /^\/v1\/flutterwave\/transfers\/[1-9]\d{0,19}$/.test(path)) {
-    return { method: "GET", providerPath: `/transfers/${path.split("/").at(-1)}` };
+  const u = new URL(path, "http://relay.invalid");
+  if (method === "POST" && u.pathname === "/v1/flutterwave/transfers" && !u.search) return { method: "POST", providerPath: "/transfers", kind: "payout" };
+  if (method === "GET" && /^\/v1\/flutterwave\/transfers\/[1-9]\d{0,19}$/.test(u.pathname) && !u.search) {
+    return { method: "GET", providerPath: `/transfers/${u.pathname.split("/").at(-1)}`, kind: "status" };
   }
-  if (method === "GET" && path.startsWith("/v1/flutterwave/transfers?")) {
-    const u = new URL(path, "http://relay.invalid");
-    const entries = [...u.searchParams.entries()];
-    if (entries.length !== 1 || entries[0][0] !== "reference" || !/^F3W-[0-9a-f-]{36}$/.test(entries[0][1])) return null;
-    return { method: "GET", providerPath: `/transfers?reference=${encodeURIComponent(entries[0][1])}` };
+  if (method === "GET" && u.pathname === "/v1/flutterwave/transfers" && [...u.searchParams.keys()].length === 1) {
+    const reference = u.searchParams.get("reference") || "";
+    if (/^F3W-[0-9a-f-]{36}$/.test(reference)) return { method: "GET", providerPath: `/transfers?reference=${encodeURIComponent(reference)}`, kind: "status" };
   }
+  if (method === "POST" && u.pathname === "/v1/flutterwave/payments" && !u.search) return { method: "POST", providerPath: "/payments", kind: "collection" };
   return null;
 }
+function validAmount(amount) {
+  return typeof amount === "number" && Number.isFinite(amount) && amount > 0 && Math.round(amount * 100) === amount * 100;
+}
+function safeText(value, max = 120) {
+  return typeof value === "string" && value.trim().length > 0 && value.length <= max;
+}
+const INTERNATIONAL_META_KEYS = new Set([
+  "routing_number", "swift_code", "bank_name", "account_type", "email", "mobile_number",
+  "beneficiary_address", "sender_address", "sender_mobile_number", "postal_code",
+  "street_number", "street_name", "city", "first_name", "last_name", "beneficiary_merchant_name",
+]);
+function validInternationalMeta(currency, meta) {
+  if (!Array.isArray(meta) || !meta[0] || typeof meta[0] !== "object" || Array.isArray(meta[0])) return false;
+  const m = meta[0];
+  if (Object.keys(m).some(k => !INTERNATIONAL_META_KEYS.has(k))) return false;
+  if (!safeText(m.routing_number, 40) || !safeText(m.bank_name, 120)) return false;
+  if ((currency === "USD" || currency === "EUR") && !safeText(m.swift_code, 20)) return false;
+  if (currency === "USD" && (!safeText(m.beneficiary_address, 180) || !safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100))) return false;
+  if (currency === "EUR" && (!safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100) || !safeText(m.city, 100))) return false;
+  if (currency === "GBP") {
+    if (!["personal", "corporate"].includes(m.account_type)) return false;
+    if (m.account_type === "personal" && (!safeText(m.first_name, 80) || !safeText(m.last_name, 80))) return false;
+    if (m.account_type === "corporate" && !safeText(m.beneficiary_merchant_name, 120)) return false;
+  }
+  return true;
+}
 function validTransfer(body) {
-  return body && typeof body === "object" && !Array.isArray(body)
-    && typeof body.account_bank === "string" && /^[A-Za-z0-9]{2,12}$/.test(body.account_bank)
-    && typeof body.account_number === "string" && /^\d{10}$/.test(body.account_number)
-    && typeof body.amount === "number" && Number.isFinite(body.amount) && body.amount > 0
-    && Math.round(body.amount * 100) === body.amount * 100
-    && body.currency === "NGN" && body.debit_currency === "NGN"
-    && typeof body.reference === "string" && /^F3W-[0-9a-f-]{36}$/.test(body.reference)
-    && typeof body.narration === "string" && body.narration.length <= 80;
+  if (!body || typeof body !== "object" || Array.isArray(body) || !validAmount(body.amount)) return false;
+  if (!PAYOUT_CURRENCIES.has(body.currency) || !DEBIT_CURRENCIES.has(body.debit_currency || body.currency)) return false;
+  if (!safeText(body.account_number, 34) || !/^[A-Za-z0-9-]{5,34}$/.test(body.account_number)) return false;
+  if (!safeText(body.beneficiary_name, 120) || !safeText(body.reference, 80) || !safeText(body.narration || "Fin3a payout", 80)) return false;
+  if (body.currency === "NGN" && (!/^\d{10}$/.test(body.account_number) || !safeText(body.account_bank, 12))) return false;
+  if (["USD", "GBP", "EUR"].includes(body.currency)) return validInternationalMeta(body.currency, body.meta);
+  if (body.account_bank && typeof body.account_bank === "string" && MOBILE_NETWORKS[body.currency]) {
+    return MOBILE_NETWORKS[body.currency].has(body.account_bank.toUpperCase());
+  }
+  return safeText(body.account_bank, 12);
+}
+function validPayment(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body) || !validAmount(body.amount)) return false;
+  const country = typeof body.country === "string" ? body.country.toUpperCase() : "";
+  const currency = typeof body.currency === "string" ? body.currency.toUpperCase() : "";
+  const options = PAYMENT_OPTIONS[country]?.[currency];
+  return Boolean(options)
+    && safeText(body.tx_ref, 100)
+    && typeof body.customer === "object" && body.customer !== null && !Array.isArray(body.customer)
+    && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.customer.email || "")
+    && safeText(body.customer.name, 120)
+    && (!body.customer.phonenumber || safeText(body.customer.phonenumber, 30));
 }
 async function callFlutterwave(spec, body) {
   const response = await fetch(FLW_ORIGIN + spec.providerPath, {
@@ -75,7 +166,7 @@ async function callFlutterwave(spec, body) {
 const server = http.createServer(async (req, res) => {
   const path = req.url || "/";
   if (req.method === "GET" && path === "/health") {
-    return json(res, ready() ? 200 : 503, { ready: ready() });
+    return json(res, ready() ? 200 : 503, { ready: ready(), payments_ready: paymentReady() });
   }
   if (!ready()) return json(res, 503, { status: "error", message: "Payout relay is not configured" });
   if (!allowedSource(req)) return json(res, 403, { status: "error", message: "Forbidden" });
@@ -90,7 +181,25 @@ const server = http.createServer(async (req, res) => {
     if (spec.method === "POST") {
       if (!/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"] || "")) return json(res, 415, { status: "error", message: "JSON required" });
       body = await readJson(req);
-      if (!validTransfer(body)) return json(res, 400, { status: "error", message: "Invalid NGN transfer request" });
+      if (spec.kind === "payout" && !validTransfer(body)) return json(res, 400, { status: "error", message: "Invalid or unsupported payout request" });
+      if (spec.kind === "collection") {
+        if (!paymentReady()) return json(res, 503, { status: "error", message: "Hosted payment checkout is not configured" });
+        if (!validPayment(body)) return json(res, 400, { status: "error", message: "Unsupported country/currency or invalid payment request" });
+        body = {
+          tx_ref: body.tx_ref,
+          amount: body.amount,
+          currency: body.currency.toUpperCase(),
+          country: body.country.toUpperCase(),
+          redirect_url: PAYMENT_REDIRECT_URL,
+          payment_options: PAYMENT_OPTIONS[body.country.toUpperCase()][body.currency.toUpperCase()].join(", "),
+          customer: {
+            email: body.customer.email,
+            name: body.customer.name,
+            ...(body.customer.phonenumber ? { phonenumber: body.customer.phonenumber } : {}),
+          },
+          customizations: { title: "Fin3a", description: "Fin3a account funding" },
+        };
+      }
     }
     const result = await callFlutterwave(spec, body);
     return json(res, result.status, result.payload);
@@ -103,5 +212,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log("payout relay listening", { port: PORT, configured: ready() });
+  console.log("payout relay listening", { port: PORT, configured: ready(), paymentsConfigured: paymentReady() });
 });
