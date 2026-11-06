@@ -14,6 +14,10 @@ This is a small, fixed-destination HTTPS relay for the Fin3a server. It is **not
 - Does not retry a transfer POST. A timeout is an unknown outcome; Fin3a must reconcile by the unique transfer reference before any retry.
 - Returns a minimal health/readiness response at `GET /health`.
 
+## Railway deployment
+
+Create a new Railway service from this GitHub repository and select the branch containing this PR. Set the service **Root Directory** to `/payout-relay`; Railway will detect the Dockerfile in that directory. Configure the service healthcheck path as `/health`. The server listens on Railway's injected `PORT` (with 8080 as a local fallback). Add the runtime secrets listed below through Railway's Variables interface, never through Git. Deploy initially with placeholder/non-production credentials only, confirm `/health` responds, and do not add a real Flutterwave key until the service is access-controlled and reviewed. Railway's healthcheck gates deployment activation but is not continuous monitoring.
+
 ## Run locally (mock-only)
 
 Requires Node.js 20 or newer.
