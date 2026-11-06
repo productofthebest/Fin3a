@@ -7,6 +7,7 @@ import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
 import { NgnTopupPanel } from "@/components/ngn-topup-panel";
+import { NgnWithdrawalPanel } from "@/components/ngn-withdrawal-panel";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
@@ -42,7 +43,7 @@ function Page() {
         <p>{currency === "NGN" ? mode === "deposit" ? "NGN bank top-up fee: ₦50, deducted from the credited amount." : "NGN bank withdrawal fee: ₦50, deducted from the payout." : mode === "deposit" ? "Crypto conversion fee: 1% below $5,000; 0.5% at or above $5,000, for all supported crypto." : "USD withdrawal fee: 1% below $5,000; 0.5% at or above $5,000."}</p>
         <p>Rate and third-party / network charges: unavailable. No funds will move without a verified quote and confirmation.</p>
       </div>}
-      {!(mode === "deposit" && currency === "NGN") && <Button className="mt-5 w-full" disabled>{mode === "deposit" ? "Deposit unavailable" : "Withdrawal unavailable"}</Button>}
+      {!(currency === "NGN") && <Button className="mt-5 w-full" disabled>{mode === "deposit" ? "Deposit unavailable" : "Withdrawal unavailable"}</Button>}
     </main>
   </div>;
 }
