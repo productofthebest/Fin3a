@@ -112,3 +112,42 @@ export async function findTransferByReference(reference: string) {
   const match = list.map(x => transferSchema.safeParse(x)).find(p => p.success && p.data.reference === reference);
   return match?.success ? match.data : null;
 }
+
+// ---- Bills (v3) ----
+const billerSchema = z.object({ biller_code: z.string().min(1).max(80), name: z.string().min(1).max(160), item_code: z.string().min(1).max(80), short_name: z.string().max(160).nullish(), amount: z.number().finite().nonnegative().nullish(), country: z.string().max(4).nullish(), label_name: z.string().max(120).nullish() });
+export type BillBiller = z.infer<typeof billerSchema>;
+/** Billers for a category query, e.g. "airtime=1" or "data_bundle=1". Nigerian billers only. */
+export async function getBillCategories(query: string) {
+  const data = await flw<unknown[]>(`/bill-categories?${query}`);
+  return data.map(x => billerSchema.safeParse(x)).filter(p => p.success).map(p => p.data).filter(b => !b.country || b.country === "NG");
+}
+export async function validateBillCustomer(billerCode: string, itemCode: string, customer: string) {
+  const data = await flw<unknown>(`/billers/${encodeURIComponent(billerCode)}/items/${encodeURIComponent(itemCode)}/validate`, {
+    method: "POST",
+    body: JSON.stringify({ customer, code: itemCode }),
+  });
+  const parsed = z.object({ response_code: z.string().optional(), name: z.string().max(200).nullish() }).safeParse(data);
+  return { valid: parsed.success, customerName: parsed.success ? (parsed.data.name ?? null) : null };
+}
+const billPaySchema = z.object({ id: providerId, tx_ref: z.string().min(1).max(200).nullish(), reference: z.string().min(1).max(200).nullish(), status: z.string().min(1).max(80), amount: money.nullish(), currency: z.string().max(10).nullish() });
+export type BillPayResult = z.infer<typeof billPaySchema>;
+/** Pays a bill, debiting the Flutterwave balance. Throws ProviderRejected only on a clear refusal. */
+export async function payBill(input: { billerName: string; type: string; customer: string; amount: number; reference: string }) {
+  const key = process.env["FLW_SECRET_KEY"];
+  if (!key) throw new ProviderRejected("not configured");
+  const res = await fetch(`${BASE}/bills`, {
+    method: "POST", signal: AbortSignal.timeout(20_000),
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ country: "NG", customer: input.customer, amount: input.amount, type: input.type, reference: input.reference, biller_name: input.billerName }),
+  });
+  const body = (await res.json().catch(() => null)) as { status?: string; data?: unknown; message?: string } | null;
+  if (res.ok && body?.status === "success") {
+    const parsed = billPaySchema.safeParse(body.data);
+    return parsed.success ? parsed.data : null;
+  }
+  if (res.status >= 400 && res.status < 500 && body?.status === "error") {
+    console.error("flw bill rejected", res.status, body.message);
+    throw new ProviderRejected(body.message ?? "rejected");
+  }
+  throw new Error("PROVIDER_UNCERTAIN");
+}
