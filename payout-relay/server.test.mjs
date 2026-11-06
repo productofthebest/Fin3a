@@ -57,12 +57,12 @@ test("rejects hosted payment collection when redirect is not configured", async 
     method: "POST", headers: { ...auth, "content-type": "application/json" },
     body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency: "KES", country: "KE", customer: { email: "test@example.com", name: "Test User" } }),
   });
-  assert.equal(r.status, 400);
+  assert.equal(r.status, 503);
 });
 test("rejects unsupported country and currency payment combination", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
     body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency: "CAD", country: "CA", customer: { email: "test@example.com", name: "Test User" } }),
   });
-  assert.equal(r.status, 503);
+  assert.equal(r.status, 400);
 });
