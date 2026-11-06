@@ -6,19 +6,41 @@ import { Button } from "@/components/ui/button";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
-import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
+import { getBankPayoutCapability, getCollectionCapability } from "@/lib/flutterwave-capabilities";
 import { getDepositMethodEligibility, type DepositMethodId } from "@/lib/deposit-method-eligibility";
 import { NgnTopupPanel } from "@/components/ngn-topup-panel";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
-  head: () => pageMeta("Deposits & withdrawals", "Your secure Fin3a local-currency deposit options."),
+  head: () => pageMeta("Deposits & withdrawals", "Your secure Fin3a local-currency and USD deposit and withdrawal options."),
   validateSearch: (search: Record<string, unknown>): { action?: "deposit" | "withdraw" } => ({ action: search["action"] === "withdraw" ? "withdraw" : "deposit" }),
   loader: ({ context }) => context.queryClient.ensureQueryData(overview),
   component: Page,
 });
 
-const depositMethods: { id: DepositMethodId; label: string; description: string; Icon: typeof CreditCard }[] = [
+const methodLabel: Record<string, string> = {
+  card: "Debit / credit card",
+  ussd: "USSD",
+  banktransfer: "Bank transfer",
+  account: "Pay by bank account",
+  internetbanking: "Internet banking",
+  nqr: "NQR",
+  enaira: "eNaira",
+  opay: "OPay",
+  ghanamobilemoney: "Ghana mobile money",
+  mobilemoneyxaf: "Francophone mobile money",
+  mobilemoneyxof: "Francophone mobile money",
+  "1voucher": "1Voucher",
+  mobilemoneymalawi: "Malawi mobile money",
+  mpesa: "M-Pesa",
+  mobilemoneyuganda: "Uganda mobile money",
+  mobilemoneyrwanda: "Rwanda mobile money",
+  mobilemoneytanzania: "Tanzania mobile money",
+  fawrypay: "FawryPay",
+  mobilemoneyzambia: "Zambia mobile money",
+};
+
+const featuredMethods: { id: DepositMethodId; label: string; description: string; Icon: typeof CreditCard }[] = [
   { id: "bank-transfer", label: "Bank Transfer", description: "Pay from your bank account", Icon: Landmark },
   { id: "debit-card", label: "Debit / Credit Card", description: "Pay with your card", Icon: CreditCard },
   { id: "apple-pay", label: "Apple Pay", description: "Pay securely with Apple Pay", Icon: WalletCards },
@@ -27,13 +49,18 @@ const depositMethods: { id: DepositMethodId; label: string; description: string;
 
 function Page() {
   const { data } = useSuspenseQuery(overview);
+  const mode = "deposit" as const;
   const options = [accountCurrencies(data.country)[0] ?? "NGN"];
-  const [selectedCurrency] = useState<string>(options[0] ?? "NGN");
+  const [selectedCurrency, setCurrency] = useState<string>(options[0] ?? "NGN");
   const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "NGN");
   const country = (data.country ?? "NG").toUpperCase();
   const collection = getCollectionCapability(country);
+  const payout = getBankPayoutCapability(country);
+  const collectionMethods = collection?.methods ?? [];
+  const otherCollectionMethods = collectionMethods.filter(method => !["banktransfer", "card"].includes(method));
   const [selectedMethod, setSelectedMethod] = useState<DepositMethodId | null>(null);
   const selectedEligibility = selectedMethod ? getDepositMethodEligibility(selectedMethod, country, currency) : null;
+  const unsupported = currency !== "NGN" && currency !== "USD";
 
   return <div className="flex min-h-screen flex-col bg-background">
     <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -45,11 +72,22 @@ function Page() {
       <h1 className="font-display text-3xl font-semibold">Deposit</h1>
       <p className="mt-2 text-sm text-muted-foreground">Choose how you want to add {currency} to your {country} balance.</p>
       <dl className="my-6 divide-y divide-border text-sm">{data.accounts.map(a => <div key={a.id} className="flex flex-wrap justify-between gap-2 py-3"><dt>{a.currency === "NGN" ? "₦" : a.currency === "USD" ? "$" : a.currency} available balance</dt><dd className="break-all font-semibold">{new Intl.NumberFormat("en", { style: "currency", currency: a.currency, currencyDisplay: "narrowSymbol" }).format(a.balance.available)}</dd></div>)}</dl>
+      <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Balance currency">{options.map(v => <Button key={v} variant={currency === v ? "default" : "outline"} aria-pressed={currency === v} onClick={() => setCurrency(v)}>{v} {v === "NGN" ? "₦" : v === "USD" ? "$" : ""}</Button>)}</div>
+
+      <section className="mb-6 rounded-xl border border-border bg-card p-4" aria-label="Country payment methods">
+        <div className="mb-2 flex items-center gap-2 font-medium"><CreditCard className="size-4" />Payment methods for {country}</div>
+        {mode === "deposit" ? collection ? <>
+          <p className="mb-2 text-xs text-muted-foreground">Other payment methods listed for {collection.name} ({collection.currency}):</p>
+          {otherCollectionMethods.length > 0
+            ? <div className="flex flex-wrap gap-2">{otherCollectionMethods.map(method => <span key={method} className="rounded-full border border-border px-2.5 py-1 text-xs">{methodLabel[method] ?? method}</span>)}</div>
+            : <p className="text-xs text-muted-foreground">No additional country-specific methods are listed.</p>}
+        </> : <p className="text-xs text-muted-foreground">No country-specific collection methods are currently listed for this country.</p> : payout ? <p className="text-xs text-muted-foreground">Bank payouts are listed in {payout.name} using {payout.currency}. Bank codes, account verification, merchant approval and live payout readiness must still be checked.</p> : <p className="text-xs text-muted-foreground">No bank-account payout is currently listed for this country.</p>}
+      </section>
 
       <section aria-label="Choose deposit method" className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Payment method</h2>
         <div className="grid grid-cols-2 gap-3">
-          {depositMethods.map(({ id, label, description, Icon }) => {
+          {featuredMethods.map(({ id, label, description, Icon }) => {
             const active = selectedMethod === id;
             return <button
               key={id}
@@ -72,7 +110,7 @@ function Page() {
 
       {selectedMethod && selectedEligibility && <section id="deposit-method-eligibility" aria-live="polite" className="mt-4 rounded-xl border border-border bg-card p-4">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold">{depositMethods.find(method => method.id === selectedMethod)?.label}</h3>
+          <h3 className="font-semibold">{featuredMethods.find(method => method.id === selectedMethod)?.label}</h3>
           <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility.usable ? "Available" : "Not enabled"}</span>
         </div>
         <p className="mt-3 text-sm text-muted-foreground">{selectedEligibility.message}</p>
@@ -84,8 +122,12 @@ function Page() {
         <NgnTopupPanel />
       </div>}
 
-      {!collection && <p className="mt-5 text-xs text-muted-foreground">Payment methods are not yet listed for this country. Select a method to see its eligibility details.</p>}
-      <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Payment options are checked against country coverage and Fin3a merchant eligibility. A displayed option does not mean the payment route is activated. Fin3a credits a wallet only after verified payment confirmation.</p>
+      {currency === "NGN" ? <div className="mt-6">
+        <h2 className="mb-3 font-display text-xl font-semibold">NGN top-up</h2>
+        <NgnTopupPanel />
+      </div> : unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. Payment-provider coverage alone does not activate a payment route.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div>}
+      {currency !== "NGN" && <Button className="mt-5 w-full" disabled>Local deposit unavailable</Button>}
+      <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Provider coverage is not the same as Fin3a activation. A method is usable only after the merchant account is approved and the country, currency, limits and payment route are verified. Fin3a credits a wallet only after verified payment confirmation.</p>
     </main>
   </div>;
 }
