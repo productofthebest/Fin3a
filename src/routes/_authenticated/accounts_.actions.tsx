@@ -50,7 +50,7 @@ function Page() {
   const collectionMethods = collection?.methods ?? [];
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const paymentCards = [
-    ...collectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: "Flutterwave " + (methodLabel[method] ?? method) + " payment", Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
+    ...collectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: method === "card" ? "Pay with your debit or credit card" : method === "banktransfer" ? "Pay directly from your bank" : "Pay using " + (methodLabel[method] ?? method), Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
     ...(collection?.applePay ? [{ id: "apple-pay", label: "Apple Pay", description: "Pay securely with Apple Pay", Icon: WalletCards }] : []),
     { id: "google-pay", label: "Google Pay", description: "Availability checked at merchant checkout", Icon: WalletCards },
   ];
@@ -60,7 +60,7 @@ function Page() {
     : selectedMethod === "apple-pay" ? getDepositMethodEligibility("apple-pay", country, currency)
     : selectedMethod === "google-pay" ? getDepositMethodEligibility("google-pay", country, currency)
     : selectedMethod && collectionMethods.includes(selectedMethod as typeof collectionMethods[number])
-      ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is listed in Flutterwave published collection options for " + (collection?.name ?? country) + ". Merchant activation, currency settlement and verified checkout are not confirmed, so it is not enabled for payments." }
+      ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is not enabled for this Fin3a account yet. Availability depends on country, currency and payment setup confirmation." }
       : null;
   const unsupported = currency !== "NGN" && currency !== "USD";
 
@@ -77,8 +77,8 @@ function Page() {
       <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Balance currency">{options.map(v => <Button key={v} variant={currency === v ? "default" : "outline"} aria-pressed={currency === v} onClick={() => setCurrency(v)}>{v} {v === "NGN" ? "₦" : v === "USD" ? "$" : ""}</Button>)}</div>
 
       <section className="mb-6 rounded-xl border border-border bg-card p-4" aria-label="Country payment methods">
-        <div className="mb-2 flex items-center gap-2 font-medium"><CreditCard className="size-4" />Flutterwave payment options for {country}</div>
-        {collection ? <p className="text-xs text-muted-foreground">{collection.name} · {collection.currency}. All country-listed options appear below.</p> : <p className="text-xs text-muted-foreground">No country-specific Flutterwave collection options are currently listed.</p>}
+        <div className="mb-2 flex items-center gap-2 font-medium"><CreditCard className="size-4" />Payment options for {country}</div>
+        <p className="text-xs text-muted-foreground">Choose a payment method available for your selected country and currency.</p>
       </section>
 
       <section aria-label="Choose deposit method" className="space-y-3">
@@ -95,13 +95,13 @@ function Page() {
             </button>;
           })}
         </div>
-        {paymentCards.length === 0 && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">No Flutterwave deposit methods are listed for this country yet.</p>}
+        {paymentCards.length === 0 && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">No deposit methods are currently available for this country.</p>}
       </section>
 
       {selectedMethod && selectedEligibility && <section id="deposit-method-eligibility" aria-live="polite" className="mt-4 rounded-xl border border-border bg-card p-4">
         <div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{selectedCard?.label ?? selectedMethod}</h3><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility.usable ? "Available" : "Not enabled"}</span></div>
         <p className="mt-3 text-sm text-muted-foreground">{selectedEligibility.message}</p>
-        <p className="mt-2 text-xs text-muted-foreground">Country: {country} · Currency: {currency}. Provider-listed support does not confirm merchant activation.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Country: {country} · Currency: {currency}. This payment method is not enabled until Fin3a confirms that it can accept and verify the payment.</p>
       </section>}
 
       {currency === "NGN" ? <div className="mt-6">
@@ -109,7 +109,7 @@ function Page() {
         <NgnTopupPanel />
       </div> : unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. Payment-provider coverage alone does not activate a payment route.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div>}
       {currency !== "NGN" && <Button className="mt-5 w-full" disabled>Local deposit unavailable</Button>}
-      <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Provider coverage is not the same as Fin3a activation. A method is usable only after the merchant account is approved and the country, currency, limits and payment route are verified. Fin3a credits a wallet only after verified payment confirmation.</p>
+      <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Fin3a only credits your wallet after the payment has been securely verified.</p>
     </main>
   </div>;
 }
