@@ -8,6 +8,7 @@ import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
 import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
 import { getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
+import { NgnTopupPanel } from "@/components/ngn-topup-panel";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
@@ -99,6 +100,7 @@ function Page() {
       </section>}
 
       {unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. This payment route is not active for this currency yet.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : currency !== "NGN" ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div> : null}
+      {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility?.usable && <section className="mt-6 space-y-3" aria-label="NGN bank transfer top-up"><h2 className="font-display text-xl font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
       {currency !== "NGN" && <Button className="mt-5 w-full" disabled>Local deposit unavailable</Button>}
       <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Fin3a only credits your wallet after the payment has been securely verified.</p>
     </main>
