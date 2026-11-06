@@ -4,7 +4,7 @@ import { activityPage, buildActivity, canDeleteRecord, type ActivitySources } fr
 const empty = (): ActivitySources => ({ records: [], ledger: [], transfers: [], topups: [], withdrawals: [], payments: [], splits: [], shares: [], requests: [], swaps: [], quotes: [], refunds: [] });
 describe("Activity retention and source union", () => {
   it("never adds an uploaded document as an Activity row; only its imported transactions belong there", () => {
-    const s = empty();
+    const s = { ...empty(), documents: [{ id: "doc", filename: "Statement.pdf", status: "imported", created_at: "2026-11-06T00:00:00Z" }] } as ActivitySources;
     s.records = [{ id: "tx-1", type: "expense", source: "document", import_identity: "fingerprint-1", amount: 1250, currency: "NGN", occurred_at: "2026-11-06", status: "completed", description: "Groceries", merchant: "Market", reference: null, category_id: "cat-1", categories: { name: "Groceries", icon: "shopping-basket" } }] as unknown as ActivitySources["records"];
     const rows = buildActivity(s,"u");
     expect(rows).toHaveLength(1);
