@@ -4,6 +4,7 @@ import { Zap } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { LandingAssistant } from "@/components/landing-assistant";
+import { SupportContact } from "@/components/support-contact";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -60,7 +61,10 @@ function Landing() {
       </div>
 
       <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
-        © 2026 Fin3a. All rights reserved.
+        <div className="flex flex-col items-center gap-2">
+          <span>© 2026 Fin3a. All rights reserved.</span>
+          <SupportContact className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline" />
+        </div>
       </footer>
     </div>
   );
