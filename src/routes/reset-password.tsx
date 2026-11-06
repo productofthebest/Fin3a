@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PasswordField } from "@/components/auth-fields";
 import { AUTH_DESTINATION } from "@/lib/auth-options";
+import { SupportContact } from "@/components/support-contact";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [
@@ -48,5 +49,6 @@ function ResetPassword() {
       <PasswordField id="confirm-password" label="Confirm password" value={confirm} onChange={setConfirm} autoComplete="new-password" disabled={busy} />
       <Button type="submit" className="w-full" disabled={busy}>{busy ? "Saving…" : "Save new password"}</Button>
     </form>}
+    <p className="mt-8 text-center text-xs text-muted-foreground"><SupportContact className="underline-offset-4 hover:text-foreground hover:underline" /></p>
   </main>;
 }
