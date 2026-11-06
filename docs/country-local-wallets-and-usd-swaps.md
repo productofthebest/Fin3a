@@ -69,3 +69,8 @@
 ## Release gates
 - This is not permission to move live customer funds. Keep international fiat deposits and non-NGN/USD swaps disabled until provider merchant enablement, FX/liquidity source, sandbox end-to-end evidence, reconciliation, and legal/compliance review are documented.
 - Do not deploy to Railway or sync/merge into the Lovable production project as part of this work.
+
+## Implementation progress (2026-11-06)
+- Added `src/lib/fx-quotes.ts` with currency-pair validation, explicit destination-per-source rate arithmetic, source-currency fee deduction, configurable decimal precision, and zero-output rejection.
+- Added `src/test/fx-quotes.test.ts` for NGN, GHS, GBP, EUR, KES, ZAR and XOF examples, reverse direction, fee handling, precision and invalid inputs.
+- This is calculation-only groundwork. It does not provide a live rate, quote ID/expiry, pair allow-list, liquidity check, atomic ledger execution, or deposit settlement. It must not be used to enable customer swaps until those controls are implemented and verified.
