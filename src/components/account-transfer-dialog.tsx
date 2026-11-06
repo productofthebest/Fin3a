@@ -13,10 +13,11 @@ import { SendToContact } from "@/components/send-to-contact";
 
 export function AccountTransferDialog({ open, onOpenChange, balances }: { open: boolean; onOpenChange: (open: boolean) => void; balances: { currency: string; balance: { available: number } }[] }) {
   const qc = useQueryClient();
-  const options = (["NGN", "USD"] as const).filter(c => balances.some(a => a.currency === c));
+  const options = [...new Set(balances.map(a => a.currency))];
   const local = balances.find(a => a.currency !== "NGN" && a.currency !== "USD")?.currency;
-  const [selectedCurrency, setCurrency] = useState<"NGN" | "USD">(options[0] ?? "USD");
+  const [selectedCurrency, setCurrency] = useState<string>(options[0] ?? "USD");
   const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "USD");
+  const currencyTransferEnabled = currency === "NGN" || currency === "USD";
   const [identifier, setIdentifier] = useState("");
   const [recipient, setRecipient] = useState<ResolvedParticipant | null>(null);
   const [amount, setAmount] = useState("");
@@ -45,7 +46,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
   }
   const available = balances.find(a => a.currency === currency)?.balance.available ?? 0;
   const money = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).format(n);
-  const valid = canTransfer(Number(amount), available, recipient ? 1 : 0);
+  const valid = currencyTransferEnabled && canTransfer(Number(amount), available, recipient ? 1 : 0);
   const bankValue = Number(amount);
   const bankValid = Number.isFinite(bankValue) && bankValue >= 100 && bankValue <= 5000000 && bankValue > 50 && bankValue <= available && Boolean(accountName);
 
@@ -77,7 +78,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
     if (!recipient || !valid || busy) return;
     setBusy(true);
     try {
-      await sendTransfer({ data: { toUserId: recipient.user_id, currency, amount: Number(amount) } });
+      await sendTransfer({ data: { toUserId: recipient.user_id, currency: currency as "NGN" | "USD", amount: Number(amount) } });
       await qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Transfer completed.");
       setAmount(""); setRecipient(null); setIdentifier(""); setConfirming(false); onOpenChange(false);
@@ -114,8 +115,9 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
         <Button disabled={busy || !valid} onClick={() => void transfer()}>{busy ? "Sending…" : "Confirm transfer"}</Button>
         <Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
       </> : <>
-        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{options.map(c => <Button key={c} variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c} {c === "NGN" ? "₦" : "$"}</Button>)}</div>
-        {local && <p className="text-xs text-muted-foreground">{local} transfers are not supported in your country yet. You can transfer from your USD wallet.</p>}
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{options.map(c => <Button key={c} variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c}</Button>)}</div>
+        {!currencyTransferEnabled && <p role="status" className="text-xs text-muted-foreground">{currency} Fin3a-user transfers are not activated yet. The wallet is visible, but sending is disabled until the currency is supported by the secure ledger transfer function.</p>}
+        {local && <p className="text-xs text-muted-foreground">{local} bank payouts and transfers are being added; provider country coverage alone does not activate them.</p>}
         <p className="text-sm text-muted-foreground">Available: {money(available)}</p>
         <Label htmlFor="transfer-recipient">Fin3a ID, email or phone number</Label>
         <Input id="transfer-recipient" value={identifier} onChange={e => { setIdentifier(e.target.value); setRecipient(null); }} maxLength={254} />

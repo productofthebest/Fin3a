@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { AccountTransferDialog } from "@/components/account-transfer-dialog";
-import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
 
 const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -51,7 +51,7 @@ function Page() {
   return (
     <AppShell>
       <h1 className="font-display text-3xl font-bold">Wallet</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Your local currency and USD balances, activity and deposit addresses</p>
+      <p className="mt-2 text-sm text-muted-foreground">Your local currency and USD balances, transfers, activity and crypto receiving addresses</p>
 
       <div className="mt-6 grid gap-4">
         {data.accounts.map((account) => (
@@ -127,8 +127,7 @@ function Page() {
       <div className="mt-6 flex flex-wrap gap-2">
         <Button onClick={() => setSwapOpen(true)}><ArrowLeftRight className="size-4" />Swap</Button>
         <Button asChild variant="outline"><Link to="/accounts/actions" search={{ action: "deposit" }}><ArrowDownToLine className="size-4" />Deposit</Link></Button>
-        <Button asChild variant="outline"><Link to="/accounts/actions" search={{ action: "withdraw" }}><ArrowUpFromLine className="size-4" />Withdrawal</Link></Button>
-        <Button variant="outline" onClick={() => setTransferOpen(true)}><ArrowLeftRight className="size-4" />Transfer</Button>
+                <Button variant="outline" onClick={() => setTransferOpen(true)}><ArrowLeftRight className="size-4" />Transfer</Button>
       </div>
       <AccountTransferDialog open={transferOpen} onOpenChange={setTransferOpen} balances={data.accounts} />
       <Dialog open={swapOpen} onOpenChange={setSwapOpen}>
@@ -157,7 +156,7 @@ function Page() {
       </Dialog>
       {!data.providerConnected ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          Deposits and withdrawals are unavailable until payment connections are verified. Transfers are between Fin3a users only. NGN bank transfer top-ups have a flat ₦50 fee deducted from the amount credited. Crypto deposits convert directly to your chosen ₦ or $ balance; a conversion fee of 1% below $5,000 (0.5% at or above) is deducted and shown before you confirm.
+          Local-currency deposits and external bank transfers appear when the relevant country and merchant payment routes are enabled. Use Transfer for Fin3a-user payments and supported bank payouts. Crypto receiving addresses are separate below.
         </p>
       ) : null}
 
