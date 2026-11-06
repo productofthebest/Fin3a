@@ -129,7 +129,7 @@ function Page() {
         <Button asChild variant="outline"><Link to="/accounts/actions" search={{ action: "deposit" }}><ArrowDownToLine className="size-4" />Deposit</Link></Button>
                 <Button variant="outline" onClick={() => setTransferOpen(true)}><ArrowLeftRight className="size-4" />Transfer</Button>
       </div>
-      <AccountTransferDialog open={transferOpen} onOpenChange={setTransferOpen} balances={data.accounts} />
+      <AccountTransferDialog open={transferOpen} onOpenChange={setTransferOpen} balances={data.accounts} country={data.country ?? "NG"} />
       <Dialog open={swapOpen} onOpenChange={setSwapOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
