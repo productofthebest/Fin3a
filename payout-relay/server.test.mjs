@@ -1,11 +1,11 @@
-import test from "node:test";
+import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
-import { createServer } from "node:http";
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const port = 19000 + Math.floor(Math.random() * 1000);
 const env = { ...process.env, PORT: String(port), RELAY_SHARED_TOKEN: "x".repeat(40), FLW_SECRET_KEY: "f".repeat(40), RELAY_ALLOWED_SOURCE_IPS: "" };
-const child = spawn(process.execPath, ["server.mjs"], { cwd: new URL(".", import.meta.url), env, stdio: "ignore" });
+const child = spawn(process.execPath, ["server.mjs"], { cwd: fileURLToPath(new URL(".", import.meta.url)), env, stdio: "ignore" });
 const base = `http://127.0.0.1:${port}`;
 async function waitReady() {
   for (let i = 0; i < 40; i++) {
@@ -14,9 +14,10 @@ async function waitReady() {
   }
   throw new Error("relay did not start");
 }
-test("relay exposes readiness without leaking configuration", async t => {
-  t.after(() => child.kill());
-  await waitReady();
+before(waitReady);
+after(() => child.kill());
+
+test("health exposes readiness without leaking configuration", async () => {
   const r = await fetch(base + "/health");
   assert.equal(r.status, 200);
   assert.deepEqual(await r.json(), { ready: true });
