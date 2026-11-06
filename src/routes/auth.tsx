@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { PhoneField, PasswordField } from "@/components/auth-fields";
 import { AUTH_DESTINATION, OTP_LENGTH, RESEND_COOLDOWN, authSearch, normalizedPhone, validOtp, type AuthMethod } from "@/lib/auth-options";
+import { SupportContact } from "@/components/support-contact";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: authSearch,
@@ -159,6 +160,9 @@ function AuthPage() {
         </>}
       </>}
     </main>
-    <footer className="flex items-center justify-center gap-2 px-4 py-6 text-xs text-muted-foreground"><Zap className="size-3.5 text-primary" />Powered by Top Floor</footer>
+    <footer className="flex flex-col items-center justify-center gap-2 px-4 py-6 text-xs text-muted-foreground">
+      <span className="flex items-center gap-2"><Zap className="size-3.5 text-primary" />Powered by Top Floor</span>
+      <SupportContact className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline" />
+    </footer>
   </div>;
 }
