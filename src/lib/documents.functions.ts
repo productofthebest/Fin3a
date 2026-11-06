@@ -422,6 +422,9 @@ export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => documentUploadInput.parse(input))
   .handler(async ({ data, context }) => {
+    if (process.env["DOCUMENT_SCANNER_ENABLED"] !== "true" || !process.env["OPENAI_API_KEY"]) {
+      throw new Error("Document scanning is temporarily unavailable while the secure scanner setup is verified.");
+    }
     assertOwnedDocumentPath(data.storage_path, context.userId);
     validateDocumentMetadata(data);
     const {data:file,error:downloadError}=await context.supabase.storage.from("documents").download(data.storage_path);
