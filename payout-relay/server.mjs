@@ -9,7 +9,7 @@ const ALLOWED_SOURCE_IPS = new Set((process.env.RELAY_ALLOWED_SOURCE_IPS || "").
 const MAX_BODY_BYTES = 16 * 1024;
 const FLW_ORIGIN = "https://api.flutterwave.com/v3";
 
-const PAYOUT_CURRENCIES = new Set(["NGN", "GHS", "KES", "MWK", "TZS", "UGX", "USD", "EUR", "GBP", "XAF", "XOF", "ZAR"]);
+const PAYOUT_CURRENCIES = new Set(["NGN", "GHS", "KES", "MWK", "TZS", "UGX", "USD", "EUR", "GBP", "XAF", "XOF", "ZAR", "RWF", "EGP"]);
 const DEBIT_CURRENCIES = new Set(["NGN", "GHS", "KES", "MWK", "TZS", "UGX", "USD", "EUR", "GBP", "XAF", "XOF", "ZAR"]);
 const MOBILE_NETWORKS = {
   KES: new Set(["SAFARICOM", "T-KASH", "AIRTEL", "MPS"]),
@@ -33,7 +33,7 @@ const PAYMENT_OPTIONS = {
   TZ: { TZS: ["card", "mobilemoneytanzania"] },
   CI: { XOF: ["card", "mobilemoneyxof"] },
   SN: { XOF: ["card", "mobilemoneyxof"] },
-  CM: { XAF: ["card", "mobilemoneyxaf"] },
+  CM: { XAF: ["card", "mobilemoneyxof"] },
   FR: { EUR: ["card", "account"] },
   DE: { EUR: ["card", "account"] },
   IE: { EUR: ["card", "account"] },
