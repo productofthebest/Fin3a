@@ -19,8 +19,7 @@ export async function planningContext(supabase:SupabaseClient<Database>,userId:s
   collectPages((a,b)=>client.from("saved_scenarios").select("*").eq("user_id",userId).order("id").range(a,b)),
  ]);
  const currencies=recordCurrencies(settings.data.currency,[...records,...balances,...commitments,...goals,...scenarios]);
- const currency=selectedCurrency??settings.data.currency;
- if(!currencies.includes(currency))throw new Error("Choose an available record currency.");
+ const currency=selectedCurrency && currencies.includes(selectedCurrency) ? selectedCurrency : settings.data.currency;
  return {client,today,currencies,currency,records,balances,commitments,goals,progress,scenarios,balance:currentBalance(balances,currency,today)};
 }
 export async function planningOverview(supabase:SupabaseClient<Database>,userId:string, currency?:string) {
