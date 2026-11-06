@@ -107,7 +107,7 @@ function Page() {
       {currency === "NGN" ? <div className="mt-6">
         <h2 className="mb-3 font-display text-xl font-semibold">NGN top-up</h2>
         <NgnTopupPanel />
-      </div> : unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. Payment-provider coverage alone does not activate a payment route.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div>}
+      </div> : unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. This payment route is not active for this currency yet.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div>}
       {currency !== "NGN" && <Button className="mt-5 w-full" disabled>Local deposit unavailable</Button>}
       <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Fin3a only credits your wallet after the payment has been securely verified.</p>
     </main>
