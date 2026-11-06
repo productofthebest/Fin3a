@@ -32,6 +32,7 @@ const DRAFT_FIELDS = [
   "reference",
   "payment_method",
   "classification",
+  "category_hint",
   "review_confirmed",
 ] as const;
 
@@ -48,6 +49,7 @@ const draftUpdateInput = z.object({
   reference: z.string().trim().max(120).nullable().optional(),
   payment_method: z.string().trim().max(80).nullable().optional(),
   classification: z.enum(CLASSIFICATIONS).optional(),
+  category_hint: z.string().trim().max(80).nullable().optional(),
   review_confirmed: z.boolean().optional(),
   not_duplicate: z.literal(true).optional(),
 });
