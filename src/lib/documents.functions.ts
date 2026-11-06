@@ -422,8 +422,8 @@ export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => documentUploadInput.parse(input))
   .handler(async ({ data, context }) => {
-    if (process.env["DOCUMENT_SCANNER_ENABLED"] !== "true" || !process.env["OPENAI_API_KEY"]) {
-      throw new Error("Document scanning is temporarily unavailable while the secure scanner setup is verified.");
+    if (!isDocumentScannerConfigured()) {
+      throw new Error("Document scanning is not configured. Please ask the administrator to verify the server-side OpenAI API key.");
     }
     assertOwnedDocumentPath(data.storage_path, context.userId);
     validateDocumentMetadata(data);
@@ -466,10 +466,15 @@ function guessDocType(filename: string): string {
   return recognizedDocumentType(filename);
 }
 
+function isDocumentScannerConfigured(): boolean {
+  // The OpenAI credential is read only on the server and is never returned to the client.
+  return Boolean(process.env["OPENAI_API_KEY"]?.trim());
+}
+
 export const getScannerStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => ({
-    active: process.env["DOCUMENT_SCANNER_ENABLED"] === "true" && Boolean(process.env["OPENAI_API_KEY"]),
+    active: isDocumentScannerConfigured(),
   }));
 
 export const analyzeDocument = createServerFn({ method: "POST" })
