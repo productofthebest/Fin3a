@@ -48,7 +48,7 @@ test("rejects unsupported international payout currency", async () => {
 test("rejects mobile-money payout when operator does not match currency", async () => {
   const r = await fetch(base + "/v1/flutterwave/transfers", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
-    body: JSON.stringify({ account_bank: "MPS", account_number: "254712345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
+    body: JSON.stringify({ destination_type: "mobile_money", account_bank: "MPS", account_number: "254712345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
   });
   assert.equal(r.status, 400);
 });
