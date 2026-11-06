@@ -4,7 +4,9 @@ import postgres from "postgres";
 import { topupFixture } from "./fixtures/flutterwave-db";
 
 describe("isolated Flutterwave database invariants", () => {
-  it("exact credit, duplicate identity, pending/failed and refunds preserve stored history", async () => {
+  it.skipIf(!process.env["PGHOST"] || !process.env["SUPABASE_SERVICE_ROLE_KEY"])(
+    "exact credit, duplicate identity, pending/failed and refunds preserve stored history",
+    async () => {
     const host = process.env["PGHOST"], key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
     const backend = new URL(process.env["SUPABASE_URL"] ?? "https://invalid.example");
     expect(["127.0.0.1","localhost","::1"]).toContain(host);
