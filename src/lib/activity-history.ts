@@ -3,7 +3,7 @@ import { HISTORY_PAGE_SIZE } from "./transaction-history";
 
 type Row<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"];
 export interface ActivityRow {
-  id: string; recordId?: string; kind: string; title: string; date: string;
+  id: string; recordId?: string; documentId?: string; kind: string; title: string; date: string;
   status: string; amount: number | null; currency: string | null;
   direction: "in" | "out" | "none"; reference: string | null;
   categoryId?: string | null; category?: { name: string; icon: string } | null | undefined;
@@ -17,6 +17,7 @@ export interface ActivitySources {
   shares: Row<"split_bill_participants">[]; requests: Row<"qr_payment_requests">[];
   swaps: Row<"currency_swaps">[]; quotes: Row<"payment_fee_snapshots">[];
   refunds: Row<"flw_topup_refunds">[];
+  documents?: Pick<Row<"documents">, "id" | "filename" | "created_at" | "status">[];
 }
 export function canDeleteRecord(record: { source: string; import_identity?: string | null }) {
   return record.source === "document" && Boolean(record.import_identity);
@@ -25,6 +26,10 @@ export function buildActivity(s: ActivitySources, userId: string): ActivityRow[]
   const rows: ActivityRow[] = [];
   const linkedLedger = new Set<string>();
   const add = (row: Omit<ActivityRow, "deletable"> & { deletable?: boolean }) => rows.push({ deletable: false, ...row });
+  for (const d of s.documents ?? []) {
+    if (d.status !== "imported") continue;
+    add({ id: `document:${d.id}`, documentId: d.id, kind: "document", title: d.filename, date: d.created_at, status: d.status, amount: null, currency: null, direction: "none", reference: null, deletable: true, detail: "Imported document" });
+  }
   for (const r of s.records) add({ id: `record:${r.id}`, recordId: r.id, kind: r.type, title: r.description || r.merchant || r.type, date: `${r.occurred_at}T00:00:00Z`, status: r.status, amount: Number(r.amount), currency: r.currency, direction: r.type === "income" ? "in" : "out", reference: r.reference, categoryId: r.category_id, category: r.categories, deletable: canDeleteRecord(r) });
   const splitTransfers = new Map(s.shares.filter(r => r.transfer_id).map(r => [r.transfer_id, r.bill_id]));
   const qrTransfers = new Set(s.requests.map(r => r.transfer_id).filter(Boolean));

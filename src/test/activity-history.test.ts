@@ -3,6 +3,14 @@ import { activityPage, buildActivity, canDeleteRecord, type ActivitySources } fr
 
 const empty = (): ActivitySources => ({ records: [], ledger: [], transfers: [], topups: [], withdrawals: [], payments: [], splits: [], shares: [], requests: [], swaps: [], quotes: [], refunds: [] });
 describe("Activity retention and source union", () => {
+  it("exposes imported document deletion in Activity without adding a money movement", () => {
+    const s = empty();
+    s.documents = [{ id: "doc", filename: "Statement.pdf", status: "imported", created_at: "2026-11-06T00:00:00Z" }, { id: "pending", filename: "Pending.pdf", status: "uploaded", created_at: "2026-11-06T00:00:00Z" }];
+    const rows = buildActivity(s,"u");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ documentId: "doc", kind: "document", deletable: true, amount: null, direction: "none" });
+    expect(activityPage(rows,{ page: 1, type: "document" }).total).toBe(1);
+  });
   it("manual history cannot be deleted", () => expect(canDeleteRecord({ source: "manual", import_identity: null })).toBe(false));
   it("only proven document imports can be deleted", () => {
     expect(canDeleteRecord({ source: "document", import_identity: "draft:123" })).toBe(true);

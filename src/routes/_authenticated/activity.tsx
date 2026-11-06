@@ -8,6 +8,9 @@ import { AppShell } from "@/components/app-shell";
 import { activityQuery, categoriesQuery, settingsQuery } from "@/lib/queries";
 import { HISTORY_PAGE_SIZE, pageCount } from "@/lib/transaction-history";
 import { deleteTransaction } from "@/lib/dashboard.functions";
+import { deleteDocument } from "@/lib/documents.functions";
+import type { ActivityRow } from "@/lib/activity-history";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { recordMoney } from "@/lib/record-currencies";
 import { RecordCurrencySelect } from "@/components/record-currency-select";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +50,7 @@ function ActivityPage() {
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
   const [currency, setCurrency] = useState("all");
+  const [deleteTarget, setDeleteTarget] = useState<ActivityRow | null>(null);
   const { data: categories } = useSuspenseQuery(categoriesQuery());
 
   const filters = {
@@ -67,13 +71,19 @@ function ActivityPage() {
   const hasFilters = currency !== "all" || type !== "all" || status !== "all" || categoryId !== "all" || from || to || search;
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteTransaction({ data: { id } }),
+    mutationFn: async (row: ActivityRow) => {
+      if (row.documentId) return deleteDocument({ data: { documentId: row.documentId } });
+      if (row.recordId) return deleteTransaction({ data: { id: row.recordId } });
+      throw new Error("Only imported documents and records can be deleted.");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["activity"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["bills"] });
-      toast.success("Transaction deleted");
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      setDeleteTarget(null);
+      toast.success("Imported item deleted");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to delete"),
   });
@@ -91,7 +101,7 @@ function ActivityPage() {
         <RecordCurrencySelect value={currency} currencies={["all", ...new Set([settings?.currency ?? "USD", "NGN", "USD", ...(result?.currencies ?? [])])]} onChange={resetPage(setCurrency)} />
         <Select value={type} onValueChange={resetPage(setType)}>
           <SelectTrigger className="w-44" aria-label="Activity type"><SelectValue /></SelectTrigger>
-          <SelectContent>{([["all", "All activity"], ["deposit", "Deposits"], ["withdrawal", "Withdrawals"], ["transfer", "Transfers"], ["share_payment", "Share Payment"], ["split_bill", "Split Bill"], ["bill_payment", "Bill payments"], ["crypto", "Crypto"], ["swap", "Swaps"], ["refund", "Refunds"], ["income", "Income records"], ["expense", "Expense records"]] as const).map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          <SelectContent>{([["all", "All activity"], ["document", "Imported documents"], ["deposit", "Deposits"], ["withdrawal", "Withdrawals"], ["transfer", "Transfers"], ["share_payment", "Share Payment"], ["split_bill", "Split Bill"], ["bill_payment", "Bill payments"], ["crypto", "Crypto"], ["swap", "Swaps"], ["refund", "Refunds"], ["income", "Income records"], ["expense", "Expense records"]] as const).map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={status} onValueChange={resetPage(setStatus)}>
           <SelectTrigger className="w-44" aria-label="Activity status"><SelectValue /></SelectTrigger>
@@ -161,14 +171,15 @@ function ActivityPage() {
                     tx.direction === "in" && "text-positive",
                   )}
                 >
-                  {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
+                  {tx.documentId ? null : tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
                 </span>
-                {tx.deletable && tx.recordId ? <Button
+                {tx.deletable && (tx.recordId || tx.documentId) ? <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Delete imported record"
+                  aria-label={tx.documentId ? "Delete imported document" : "Delete imported record"}
+                  title={tx.documentId ? "Delete imported document" : "Delete imported record"}
                   disabled={deleteMut.isPending}
-                  onClick={() => { if (tx.recordId && window.confirm("Remove this imported-document record? Your wallet payment history will not change.")) deleteMut.mutate(tx.recordId); }}
+                  onClick={() => setDeleteTarget(tx)}
                 >
                   <Trash2 className="size-4 text-muted-foreground" />
                 </Button> : null}
@@ -189,6 +200,18 @@ function ActivityPage() {
           </div>
         </div>
       ) : null}
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={open => { if (!open && !deleteMut.isPending) setDeleteTarget(null); }}>
+        <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{deleteTarget?.documentId ? "Delete imported document?" : "Delete imported record?"}</AlertDialogTitle>
+            <AlertDialogDescription>{deleteTarget?.documentId ? "The uploaded file will be permanently deleted. Previously imported records and wallet payment history will remain." : "This imported record will be removed from your recorded income or spending. Wallet payment history will remain."}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMut.isPending}>Cancel</AlertDialogCancel>
+            <Button variant="destructive" disabled={deleteMut.isPending || !deleteTarget} onClick={() => { if (deleteTarget) deleteMut.mutate(deleteTarget); }}>{deleteMut.isPending ? "Deleting…" : "Delete"}</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
