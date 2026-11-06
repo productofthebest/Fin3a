@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { lookupRecipient, sendTransfer, type ResolvedParticipant } from "@/lib/share-split.functions";
 import { canTransfer } from "@/lib/account-transfer";
 import { getNigerianBanks, verifyBankAccount } from "@/lib/bank-transfer.functions";
+import { createNgnWithdrawal } from "@/lib/ngn-withdrawal.functions";
 import { SendToContact } from "@/components/send-to-contact";
 
 export function AccountTransferDialog({ open, onOpenChange, balances }: { open: boolean; onOpenChange: (open: boolean) => void; balances: { currency: string; balance: { available: number } }[] }) {
@@ -45,6 +46,21 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
   const available = balances.find(a => a.currency === currency)?.balance.available ?? 0;
   const money = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).format(n);
   const valid = canTransfer(Number(amount), available, recipient ? 1 : 0);
+  const bankValue = Number(amount);
+  const bankValid = Number.isFinite(bankValue) && bankValue >= 100 && bankValue <= 5000000 && bankValue > 50 && bankValue <= available && Boolean(accountName);
+
+  async function bankTransfer() {
+    if (!bankCode || !accountName || !bankValid || busy) return;
+    setBusy(true);
+    try {
+      const r = await createNgnWithdrawal({ data: { amount: bankValue, bankCode, bankName: bankName.trim(), accountNumber, idempotencyKey: crypto.randomUUID() } });
+      if (!r.ok) { toast.error(r.error); setConfirming(false); return; }
+      await qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Bank transfer started. We'll confirm when the bank receives it.");
+      setAmount(""); setAccountName(null); setAccountNumber(""); setBankName(""); setConfirming(false); onOpenChange(false);
+    } catch { toast.error("Transfer could not be started. No money was moved."); setConfirming(false); }
+    finally { setBusy(false); }
+  }
 
   async function findRecipient(value = identifier) {
     setRecipient(null);
