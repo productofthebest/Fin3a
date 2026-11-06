@@ -1,28 +1,27 @@
 /**
- * Flutterwave V3 published collection options and bank-transfer payout coverage.
- * This is a capability reference, not a guarantee that a specific merchant account
- * has been approved or enabled for every rail. Verify merchant settings, settlement
- * currency, destination bank codes, KYC and limits before enabling any operation.
+ * Flutterwave's published V3 collection and bank-payout coverage.
+ * This matrix is provider documentation only: merchant approval, account settings,
+ * currency settlement, KYC, risk limits and actual API responses remain authoritative.
  */
 export const FLUTTERWAVE_COLLECTIONS = [
-  { country: "NG", name: "Nigeria", currency: "NGN", methods: ["card", "ussd", "banktransfer", "account", "internetbanking", "nqr", "enaira", "opay"] },
-  { country: "US", name: "United States", currency: "USD", methods: ["card", "account"] },
-  { country: "GB", name: "United Kingdom", currency: "GBP", methods: ["card", "account"] },
-  { country: "EU", name: "Europe / SEPA", currency: "EUR", methods: ["card", "account"] },
-  { country: "GH", name: "Ghana", currency: "GHS", methods: ["card", "ghanamobilemoney"] },
-  { country: "CM", name: "Cameroon", currency: "XAF", methods: ["card", "mobilemoneyxof"] },
-  { country: "CI", name: "Côte d’Ivoire", currency: "XOF", methods: ["card", "mobilemoneyxaf"] },
-  { country: "ZA", name: "South Africa", currency: "ZAR", methods: ["card", "account", "1voucher"] },
-  { country: "MW", name: "Malawi", currency: "MWK", methods: ["card", "mobilemoneymalawi"] },
-  { country: "KE", name: "Kenya", currency: "KES", methods: ["card", "mpesa"] },
-  { country: "UG", name: "Uganda", currency: "UGX", methods: ["card", "mobilemoneyuganda"] },
-  { country: "RW", name: "Rwanda", currency: "RWF", methods: ["card", "mobilemoneyrwanda"] },
-  { country: "TZ", name: "Tanzania", currency: "TZS", methods: ["card", "mobilemoneytanzania"] },
-  { country: "EG", name: "Egypt", currency: "EGP", methods: ["card", "fawrypay"] },
-  { country: "ZM", name: "Zambia", currency: "ZMW", methods: ["card", "mobilemoneyzambia"] },
+  { country: "NG", name: "Nigeria", currency: "NGN", methods: ["card", "ussd", "banktransfer", "account", "internetbanking", "nqr", "enaira", "opay"], applePay: true },
+  { country: "US", name: "United States", currency: "USD", methods: ["card", "account"], applePay: true },
+  { country: "GB", name: "United Kingdom", currency: "GBP", methods: ["card", "account"], applePay: true },
+  { country: "EU", name: "Europe / SEPA", currency: "EUR", methods: ["card", "account"], applePay: true },
+  { country: "GH", name: "Ghana", currency: "GHS", methods: ["card", "ghanamobilemoney"], applePay: false },
+  { country: "CM", name: "Cameroon", currency: "XAF", methods: ["card", "mobilemoneyxaf"], applePay: false },
+  { country: "CI", name: "Côte d’Ivoire", currency: "XOF", methods: ["card", "mobilemoneyxof"], applePay: false },
+  { country: "ZA", name: "South Africa", currency: "ZAR", methods: ["card", "account", "1voucher"], applePay: true },
+  { country: "MW", name: "Malawi", currency: "MWK", methods: ["card", "mobilemoneymalawi"], applePay: false },
+  { country: "KE", name: "Kenya", currency: "KES", methods: ["card", "mpesa"], applePay: false },
+  { country: "UG", name: "Uganda", currency: "UGX", methods: ["card", "mobilemoneyuganda"], applePay: false },
+  { country: "RW", name: "Rwanda", currency: "RWF", methods: ["card", "mobilemoneyrwanda"], applePay: false },
+  { country: "TZ", name: "Tanzania", currency: "TZS", methods: ["card", "mobilemoneytanzania"], applePay: false },
+  { country: "EG", name: "Egypt", currency: "EGP", methods: ["card", "fawrypay"], applePay: false },
+  { country: "ZM", name: "Zambia", currency: "ZMW", methods: ["card", "mobilemoneyzambia"], applePay: false },
 ] as const;
 
-/** Countries/currencies listed in Flutterwave V3 bank-account transfer documentation. */
+/** Bank payout coverage is separate from collection coverage. */
 export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "NG", name: "Nigeria", currency: "NGN" },
   { country: "US", name: "United States", currency: "USD" },
@@ -54,6 +53,23 @@ export function getBankPayoutCapability(country: string) {
 
 export function getCollectionPaymentOptions(country: string): string[] {
   return [...(getCollectionCapability(country)?.methods ?? [])];
+}
+
+export function supportsCollectionCards(country: string): boolean {
+  return getCollectionCapability(country)?.methods.includes("card") ?? false;
+}
+
+export function supportsApplePay(country: string): boolean {
+  return getCollectionCapability(country)?.applePay ?? false;
+}
+
+/**
+ * Google Pay is not a documented V3 payment_options value or country-specific
+ * method in the current V3 matrix. It may appear in hosted checkout only when
+ * Flutterwave enables it for the merchant/account and checkout session.
+ */
+export function googlePayAvailability(): "merchant-checkout-only" {
+  return "merchant-checkout-only";
 }
 
 /** Bank payout coverage is independent of collection coverage. */

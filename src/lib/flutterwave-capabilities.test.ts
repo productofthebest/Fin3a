@@ -4,6 +4,9 @@ import {
   getBankPayoutCurrency,
   getCollectionCapability,
   getCollectionPaymentOptions,
+  googlePayAvailability,
+  supportsApplePay,
+  supportsCollectionCards,
 } from "./flutterwave-capabilities";
 
 describe("Flutterwave country capabilities", () => {
@@ -11,8 +14,24 @@ describe("Flutterwave country capabilities", () => {
     expect(getCollectionPaymentOptions("ke")).toEqual(["card", "mpesa"]);
     expect(getCollectionPaymentOptions("NG")).toContain("banktransfer");
     expect(getCollectionPaymentOptions("GH")).toContain("ghanamobilemoney");
-    expect(getCollectionPaymentOptions("CM")).toContain("mobilemoneyxof");
-    expect(getCollectionPaymentOptions("CI")).toContain("mobilemoneyxaf");
+    expect(getCollectionPaymentOptions("CM")).toContain("mobilemoneyxaf");
+    expect(getCollectionPaymentOptions("CI")).toContain("mobilemoneyxof");
+  });
+
+  it("offers card collection in every country in the published collection matrix", () => {
+    for (const country of ["NG", "US", "GB", "EU", "GH", "CM", "CI", "ZA", "MW", "KE", "UG", "RW", "TZ", "EG", "ZM"]) {
+      expect(supportsCollectionCards(country), country).toBe(true);
+    }
+    expect(supportsCollectionCards("XX")).toBe(false);
+  });
+
+  it("limits Apple Pay to the countries listed in Flutterwave's regional channel table", () => {
+    for (const country of ["NG", "US", "GB", "EU", "ZA"]) expect(supportsApplePay(country), country).toBe(true);
+    for (const country of ["GH", "KE", "CM", "CI", "EG", "XX"]) expect(supportsApplePay(country), country).toBe(false);
+  });
+
+  it("does not pretend Google Pay is a V3 country payment option", () => {
+    expect(googlePayAvailability()).toBe("merchant-checkout-only");
   });
 
   it("does not treat collection support as bank payout support", () => {
