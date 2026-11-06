@@ -103,7 +103,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
         </button>}
         {countryCode !== "NG" && payout && <button type="button" aria-pressed={mode === "international"} onClick={() => setMode("international")} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "international" ? "border-primary bg-primary/5" : "border-border bg-card")}>
           <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">{payout.currency}</span><span className="text-xs text-muted-foreground">{mode === "international" ? "Selected" : "Tap to select"}</span></span>
-          <span className="mt-3 block text-sm font-semibold">{payout.name} payout</span><span className="mt-1 block text-xs text-muted-foreground">Flutterwave-supported bank payout</span>
+          <span className="mt-3 block text-sm font-semibold">{payout.name} payout</span><span className="mt-1 block text-xs text-muted-foreground">Local bank transfer in {payout.currency}</span>
         </button>}
       </div>}
       {mode === "international" && !confirming ? <section className="space-y-3 rounded-xl border border-border bg-card p-4" aria-label="International payout options">
