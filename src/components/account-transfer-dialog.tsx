@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { lookupRecipient, sendTransfer, type ResolvedParticipant } from "@/lib/share-split.functions";
 import { canTransfer } from "@/lib/account-transfer";
 import { getNigerianBanks, verifyBankAccount } from "@/lib/bank-transfer.functions";
+import { createNgnWithdrawal } from "@/lib/ngn-withdrawal.functions";
 import { SendToContact } from "@/components/send-to-contact";
 
 export function AccountTransferDialog({ open, onOpenChange, balances }: { open: boolean; onOpenChange: (open: boolean) => void; balances: { currency: string; balance: { available: number } }[] }) {
@@ -45,6 +46,21 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
   const available = balances.find(a => a.currency === currency)?.balance.available ?? 0;
   const money = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).format(n);
   const valid = canTransfer(Number(amount), available, recipient ? 1 : 0);
+  const bankValue = Number(amount);
+  const bankValid = Number.isFinite(bankValue) && bankValue >= 100 && bankValue <= 5000000 && bankValue > 50 && bankValue <= available && Boolean(accountName);
+
+  async function bankTransfer() {
+    if (!bankCode || !accountName || !bankValid || busy) return;
+    setBusy(true);
+    try {
+      const r = await createNgnWithdrawal({ data: { amount: bankValue, bankCode, bankName: bankName.trim(), accountNumber, idempotencyKey: crypto.randomUUID() } });
+      if (!r.ok) { toast.error(r.error); setConfirming(false); return; }
+      await qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success("Bank transfer started. We'll confirm when the bank receives it.");
+      setAmount(""); setAccountName(null); setAccountNumber(""); setBankName(""); setConfirming(false); onOpenChange(false);
+    } catch { toast.error("Transfer could not be started. No money was moved."); setConfirming(false); }
+    finally { setBusy(false); }
+  }
 
   async function findRecipient(value = identifier) {
     setRecipient(null);
@@ -88,8 +104,11 @@ export function AccountTransferDialog({ open, onOpenChange, balances }: { open: 
         <Label htmlFor="bank-amount">Amount (₦)</Label>
         <Input id="bank-amount" type="number" min="1" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
         <p className="text-xs text-muted-foreground">Fee: ₦50, deducted from the amount sent. The account name is confirmed before you send.</p>
-        <p role="status" className="rounded-md border border-border p-3 text-sm text-muted-foreground">Sending to banks opens after a final real-money test. No money will leave your wallet yet.</p>
-        <Button disabled>Review bank transfer</Button>
+        <Button disabled={busy || !bankValid} onClick={() => setConfirming(true)}>Review bank transfer</Button>
+      </> : confirming && mode === "bank" ? <>
+        <dl className="space-y-3 text-sm"><div><dt className="text-muted-foreground">Bank</dt><dd className="break-words">{bankName}</dd></div><div><dt className="text-muted-foreground">Account</dt><dd className="break-words">{accountName} · {accountNumber}</dd></div><div><dt className="text-muted-foreground">Amount</dt><dd>{money(bankValue)}</dd></div><div><dt className="text-muted-foreground">Fin3a fee</dt><dd>{money(50)}</dd></div><div><dt className="text-muted-foreground">Bank receives</dt><dd className="font-semibold">{money(bankValue - 50)}</dd></div></dl>
+        <Button disabled={busy || !bankValid} onClick={() => void bankTransfer()}>{busy ? "Sending…" : "Confirm bank transfer"}</Button>
+        <Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
       </> : confirming ? <>
         <dl className="space-y-3 text-sm"><div><dt className="text-muted-foreground">Recipient</dt><dd className="break-words">{recipient?.display_name ?? "Fin3a user"} · {recipient?.fin3a_id}</dd></div><div><dt className="text-muted-foreground">Amount</dt><dd>{money(Number(amount))}</dd></div><div><dt className="text-muted-foreground">Fin3a fee</dt><dd>{money(0)}</dd></div></dl>
         <Button disabled={busy || !valid} onClick={() => void transfer()}>{busy ? "Sending…" : "Confirm transfer"}</Button>

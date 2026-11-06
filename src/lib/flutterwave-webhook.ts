@@ -1,19 +1,24 @@
 import { z } from "zod";
 
-export const WEBHOOK_VERSION = "fin3a-flw-v3-2";
+export const WEBHOOK_VERSION = "fin3a-flw-v3-3";
 export const MAX_WEBHOOK_BYTES = 32_768;
 const id = z.union([z.number().int().positive().safe(), z.string().regex(/^[1-9]\d{0,19}$/)]).transform(String);
 const ref = z.string().regex(/^F3T-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+const transferRef = z.string().regex(/^F3W-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 export const chargeNotice = z.object({ event: z.literal("charge.completed"), data: z.object({ id, tx_ref: ref }) });
+// Payout notices only carry the reference; status is always re-verified with Flutterwave.
+export const transferNotice = z.object({ event: z.literal("transfer.completed"), data: z.object({ id, reference: transferRef }) });
 // Official V3 refund custom-url callback is unwrapped, not an invented refund.completed event.
 export const refundNotice = z.object({ id, TransactionId: id, AmountRefunded: z.number().finite().positive(), status: z.string().min(1).max(80) });
-export type Notice = { kind: "charge"; id: string; txRef: string } | { kind: "refund"; id: string; transactionId: string };
+export type Notice = { kind: "charge"; id: string; txRef: string } | { kind: "refund"; id: string; transactionId: string } | { kind: "transfer"; id: string; reference: string };
 export function parseNotice(body: unknown): Notice | null {
   const charge = chargeNotice.safeParse(body);
   if (charge.success) return { kind: "charge", id: charge.data.data.id, txRef: charge.data.data.tx_ref };
+  const transfer = transferNotice.safeParse(body);
+  if (transfer.success) return { kind: "transfer", id: transfer.data.data.id, reference: transfer.data.data.reference };
   const refund = refundNotice.safeParse(body);
   if (refund.success) return { kind: "refund", id: refund.data.id, transactionId: refund.data.TransactionId };
-  if (body && typeof body === "object" && "event" in body && body.event !== "charge.completed") return null;
+  if (body && typeof body === "object" && "event" in body && body.event !== "charge.completed" && body.event !== "transfer.completed") return null;
   throw new Error("INVALID_BODY");
 }
 export function validV3Hash(got: string | null, expected: string | undefined): boolean {
