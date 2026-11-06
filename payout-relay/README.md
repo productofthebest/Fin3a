@@ -1,54 +1,74 @@
-# Fin3a Flutterwave payout relay
+# Fin3a Flutterwave relay: payouts and hosted collections
 
-This is a small, fixed-destination HTTPS relay for the Fin3a server. It is **not** a client-side integration and it must not be exposed without TLS, a strong shared token, and hosting/network controls.
+This is a fixed-destination server-to-server relay for Fin3a. It is **not** a client-side integration and must not be exposed without HTTPS, a strong shared token, secret storage, and hosting/network controls.
 
-## What it does
+## API surface
 
-- Accepts only the three payout operations used by Fin3a:
-  - `POST /v1/flutterwave/transfers`
-  - `GET /v1/flutterwave/transfers/{numeric-transfer-id}`
-  - `GET /v1/flutterwave/transfers?reference=F3W-...`
-- Forwards only to the hard-coded Flutterwave V3 API origin.
-- Routes payout API requests through a relay that holds its own configured Flutterwave credential. The main Fin3a server may still need its existing Flutterwave credential for non-payout operations such as bank lookup and account resolution; do not assume Flutterwave offers separate scoped keys unless the merchant dashboard/provider confirms it.
-- Rejects unrecognized paths, methods, currencies, payloads, oversized bodies, redirects and unauthenticated requests.
-- Does not retry a transfer POST. A timeout is an unknown outcome; Fin3a must reconcile by the unique transfer reference before any retry.
-- Returns a minimal health/readiness response at `GET /health`.
+### Outgoing payouts
+
+- `POST /v1/flutterwave/transfers`
+- `GET /v1/flutterwave/transfers/{numeric-transfer-id}`
+- `GET /v1/flutterwave/transfers?reference=F3W-...`
+
+The relay forwards only to Flutterwave V3 `/transfers` endpoints. It supports the documented bank-payout currency families: NGN, GHS, KES, MWK, TZS, UGX, USD, EUR, GBP, XAF, XOF, and ZAR. The international USD/GBP/EUR flow validates the bank routing/SWIFT and currency-specific beneficiary metadata documented by Flutterwave. Local bank payouts still require the destination bank's Flutterwave bank code.
+
+Mobile-money payouts are accepted only for a documented currency/operator pairing: KES (Safaricom, T-Kash, Airtel, M-Pesa/MPS), GHS (AirtelTigo, MTN, Telecel, Vodafone), XOF (FMM, Moov, Orange Money, Wave, Free Money), RWF (MPS, MTN), UGX (Airtel, MPS, MTN), and EGP (EGP wallets). Provider account permissions and current country availability still apply. The recipient phone number must include its country code.
+
+The relay rejects unsupported currencies/operators, malformed beneficiary data, unknown routes, unauthenticated requests, oversized bodies, redirects, and invalid requests. It does not retry a transfer POST. A timeout is an unknown outcome: reconcile by the unique transfer reference before considering any retry.
+
+### Incoming payments / account funding
+
+- `POST /v1/flutterwave/payments`
+
+This route creates a Flutterwave-hosted checkout session. It accepts only an allowlisted country/currency combination and a customer email/name, then returns the provider response containing the hosted checkout link. It does **not** accept or process raw card numbers, CVV, PIN, or expiry data; card entry and authentication stay on Flutterwave's hosted checkout.
+
+The currently configured payment-method matrix is:
+- Nigeria (NGN): card, bank transfer
+- Ghana (GHS): card, mobile money
+- Kenya (KES): card, M-Pesa
+- UK (GBP), US (USD), and configured SEPA countries (EUR): card and bank-account payment
+- South Africa (ZAR): card and bank account
+- Malawi (MWK), Uganda (UGX), Rwanda (RWF), Tanzania (TZS), Côte d'Ivoire/Senegal (XOF), and Cameroon (XAF): card and the corresponding documented mobile-money option
+
+Flutterwave account-level enablement and regional restrictions determine which methods are actually available at checkout. The `PAYMENT_REDIRECT_URL` environment variable must be an HTTPS Fin3a callback. The callback must verify the payment server-side using Flutterwave's transaction verification API before crediting a Fin3a balance. A browser redirect alone is never proof of payment.
 
 ## Railway deployment
 
-Create a new Railway service from this GitHub repository and select the branch containing this PR. Set the service **Root Directory** to `/payout-relay`; Railway will detect the Dockerfile in that directory. Configure the service healthcheck path as `/health`. The server listens on Railway's injected `PORT` (with 8080 as a local fallback). Add the runtime secrets listed below through Railway's Variables interface, never through Git. Deploy initially with placeholder/non-production credentials only, confirm `/health` responds, and do not add a real Flutterwave key until the service is access-controlled and reviewed. Railway's healthcheck gates deployment activation but is not continuous monitoring.
+Create a separate Railway service from this GitHub repository and select the branch containing this PR. Set the service **Root Directory** to `/payout-relay`; Railway will detect the Dockerfile there. Set healthcheck path to `/health`. The service listens on Railway's injected `PORT` (local fallback 8080). Configure secrets through Railway Variables, never Git. Deploy initially with placeholder credentials only.
 
-## Run locally (mock-only)
+The health response reports `ready` for the payout relay and `payments_ready` only when the HTTPS payment callback is configured. Health readiness does not prove Flutterwave connectivity, merchant permissions, static egress, or settlement.
+
+## Run locally (mock/admission tests only)
 
 Requires Node.js 20 or newer.
 
 ```sh
 cd payout-relay
 cp .env.example .env
-# Set local-only placeholder values; never use production credentials locally.
 npm test
 npm start
 ```
 
-The tests validate local admission only. They do not contact Flutterwave or prove bank payout capability.
+Tests validate local request admission only. They do not call Flutterwave or prove card authorization, bank payout capability, or settlement.
 
 ## Required deployment configuration
 
-Set these values in the relay host's secret manager, not in Git:
+Set values in the hosting platform's secret manager, not in Git:
 
 - `RELAY_SHARED_TOKEN`: cryptographically random, at least 32 characters. Store the same value as Fin3a's `FLW_PAYOUT_RELAY_TOKEN`.
-- `FLW_SECRET_KEY`: Flutterwave **production** secret key used by this relay for payout calls. The main Fin3a application currently also uses its Flutterwave secret for non-payout operations, so this relay does not prove the credential is exclusive to the relay. Keep both copies in server-side secret managers only; rotate both together if the key is shared.
+- `FLW_SECRET_KEY`: Flutterwave secret key for relay API calls. The main Fin3a server may also need a key for existing bank lookup/account-resolution functions; do not assume Flutterwave issues separate scoped keys unless the merchant dashboard/provider confirms it.
+- `PAYMENT_REDIRECT_URL`: HTTPS Fin3a callback that verifies payment server-side before crediting the ledger. Leave unset until that callback exists and is reviewed.
 - `PORT`: supplied by the hosting platform.
-- `RELAY_ALLOWED_SOURCE_IPS`: optional comma-separated exact source IPs if the platform can reliably expose the Fin3a caller's source IP. Do not trust arbitrary forwarded-IP headers.
+- `RELAY_ALLOWED_SOURCE_IPS`: optional exact source IPs if the host can reliably expose the actual Fin3a caller peer IP. Do not trust arbitrary forwarded-IP headers.
 
 The relay host must provide:
-1. HTTPS ingress with valid certificate and no public plain-HTTP route.
+1. HTTPS ingress with a valid certificate and no public plain-HTTP route.
 2. A dedicated, documented **static outbound IPv4** address.
 3. Firewall/ingress rate limits and request-size limits.
-4. Secret storage, log redaction, access controls, health monitoring and incident rotation.
+4. Secret storage, log redaction, access controls, health monitoring, and incident rotation.
 5. A deployment region and uptime policy suitable for financial requests.
 
-Add the relay's static outbound IP to Flutterwave's payout IP allowlist in the merchant dashboard. Configure Fin3a's outbound IP allowlist on the relay only if the relay host can authenticate the actual peer address safely. The Flutterwave allowlist is not the same as the relay's inbound source-IP restriction.
+Add the relay's static outbound IP to Flutterwave's payout IP allowlist in the merchant dashboard. Configure Fin3a's outbound IP allowlist on the relay only if the relay host can authenticate the actual peer address safely. These are separate controls.
 
 ## Fin3a application secrets
 
@@ -56,28 +76,33 @@ Configure through the secure server-side secrets interface only:
 
 - `FLW_PAYOUT_RELAY_URL=https://<your-relay-host>/` (origin only; no path/query)
 - `FLW_PAYOUT_RELAY_TOKEN=<same random relay token>`
+- `PAYMENT_REDIRECT_URL=https://<your-fin3a-callback>/...` (must match the relay variable)
 - `FLW_PAYOUT_ENVIRONMENT=production`
 - `FLW_STATIC_EGRESS_VERIFIED=true` only after the hosting provider confirms the relay's static egress IP
 - `FLW_IP_WHITELIST_VERIFIED=true` only after Flutterwave confirms that exact IP is allowlisted
-- `FLW_PRODUCTION_VERIFIED=true` only after account permissions, production credentials and merchant funding are independently checked
+- `FLW_PRODUCTION_VERIFIED=true` only after account permissions, production credentials, and merchant funding are independently checked
 - `FLW_WEBHOOK_HASH=<V3 webhook secret hash>` stored identically in Fin3a and Flutterwave
 
-Keep `FLW_WITHDRAWALS_ENABLED` unset/false until all gates pass. Never put the Flutterwave secret key in the Fin3a browser bundle or Git repository. The current app uses its own server-side Flutterwave key for bank resolution and other non-payout APIs; this relay adds a separately protected payout egress path, not a credential-scope boundary. Do not set verification flags merely to make the UI enable.
+Keep `FLW_WITHDRAWALS_ENABLED` unset/false until all payout gates pass. Never put the Flutterwave secret key in the Fin3a browser bundle or Git repository. Do not set verification flags merely to make the UI enable.
 
 ## Safe promotion checklist
 
+- [ ] Confirm Flutterwave has enabled the required collection methods and payout destinations for the merchant account.
 - [ ] Choose a relay host that explicitly supports static outbound IP; verify with the provider.
-- [ ] Deploy this service to a dedicated relay environment; verify `GET /health` reports ready over HTTPS.
-- [ ] Confirm invalid token → 401, unknown route → 404, malformed transfer → 400, oversized body → 413.
-- [ ] Confirm the relay has no general-purpose proxy, arbitrary URL, arbitrary HTTP method, or redirect-following behavior.
-- [ ] Add the relay's static outbound IP to Flutterwave's allowlist; obtain confirmation.
+- [ ] Deploy to a dedicated relay environment and verify `GET /health` over HTTPS.
+- [ ] Confirm invalid token → 401, unknown route → 404, malformed payout → 400, oversized body → 413.
+- [ ] Confirm there is no general-purpose proxy, arbitrary URL, arbitrary HTTP method, or redirect-following behavior.
+- [ ] Add the relay's static outbound IP to Flutterwave's allowlist and obtain confirmation.
+- [ ] Implement and test the Fin3a payment callback: verify transaction ID/status/amount/currency/reference with Flutterwave before ledger credit.
 - [ ] Configure production credentials and V3 webhook hash in secure secret managers.
-- [ ] Verify webhook signature and retry delivery using Flutterwave's approved test procedure.
-- [ ] Run only provider-approved low-value test payouts with an explicitly authorized test account and owner approval; reconcile provider transfer ID, reference, amount, currency, wallet reservation and final bank receipt.
-- [ ] Verify duplicate notification, delayed status, timeout/unknown outcome, provider rejection and refund/reversal handling.
-- [ ] Review logs for absence of account numbers, tokens, keys and full payloads.
-- [ ] Obtain a separate explicit owner approval before setting `FLW_WITHDRAWALS_ENABLED=true`.
+- [ ] Verify webhook signatures, duplicate delivery, delayed status, and polling/reconciliation.
+- [ ] Run only provider-approved low-value test payouts with an explicitly authorized test account and owner approval; reconcile provider transfer ID, reference, amount, currency, wallet reservation, and final bank receipt.
+- [ ] Test international bank metadata, mobile operator/currency combinations, provider rejection, timeout/unknown outcome, and reversal handling.
+- [ ] Review logs for absence of account numbers, tokens, keys, card data, and full payloads.
+- [ ] Obtain separate explicit owner approval before setting `FLW_WITHDRAWALS_ENABLED=true`.
 
 ## Operational warning
 
-A relay response of `status: success` from Flutterwave means the API accepted/created a transfer, not that the beneficiary bank has received funds. Fin3a must continue to verify transfer status directly with Flutterwave and settle its ledger only from verified final status. An unknown result must remain pending/reserved for reconciliation; never release or charge funds based solely on a timeout or unverified webhook.
+A successful response from Flutterwave may mean a transfer was accepted/queued, not that the beneficiary bank or mobile wallet received funds. Fin3a must verify transfer status and settle its ledger only from a verified final status. An unknown result must remain pending/reserved for reconciliation; never retry a transfer blindly after a timeout.
+
+A successful payment initiation only creates a checkout session. Fin3a must verify the completed payment directly with Flutterwave before crediting the user's balance. Never credit on the basis of a redirect or unverified webhook alone.
