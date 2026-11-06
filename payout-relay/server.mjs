@@ -183,8 +183,8 @@ const server = http.createServer(async (req, res) => {
       body = await readJson(req);
       if (spec.kind === "payout" && !validTransfer(body)) return json(res, 400, { status: "error", message: "Invalid or unsupported payout request" });
       if (spec.kind === "collection") {
-        if (!paymentReady()) return json(res, 503, { status: "error", message: "Hosted payment checkout is not configured" });
         if (!validPayment(body)) return json(res, 400, { status: "error", message: "Unsupported country/currency or invalid payment request" });
+        if (!paymentReady()) return json(res, 503, { status: "error", message: "Hosted payment checkout is not configured" });
         body = {
           tx_ref: body.tx_ref,
           amount: body.amount,
