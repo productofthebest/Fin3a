@@ -18,6 +18,9 @@ The relay rejects unsupported currencies/operators, malformed beneficiary data, 
 
 ### Incoming payments / account funding
 
+The Fin3a application must authenticate Flutterwave V3 webhook deliveries by exact comparison of the `verif-hash` header with the configured webhook secret hash before parsing or processing the event. The webhook handler must then load the matching pending deposit from server-side storage, call the transaction verification route, compare the provider transaction ID, reference, exact amount, currency and final successful status, and pass verified evidence to a single idempotent database settlement operation. A valid webhook hash alone is not payment evidence. Never credit from browser redirects or webhook body fields alone.
+
+
 - `POST /v1/flutterwave/payments`
 
 This route creates a Flutterwave-hosted checkout session. It accepts only an allowlisted country/currency combination and a customer email/name, then returns the provider response containing the hosted checkout link. It does **not** accept or process raw card numbers, CVV, PIN, or expiry data; card entry and authentication stay on Flutterwave's hosted checkout.
