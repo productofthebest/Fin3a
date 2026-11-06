@@ -28,7 +28,7 @@ export async function settleTopup(txRef: string) {
   return recordCharge(paid, txRef);
 }
 
-export async function processTopupNotice(notice: Notice) {
+export async function processTopupNotice(notice: Exclude<Notice, { kind: "transfer" }>) {
   if (notice.kind === "charge") {
     const paid = await verifyPaymentById(notice.id);
     return recordCharge(paid, notice.txRef, notice.id);

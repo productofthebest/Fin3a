@@ -14,7 +14,15 @@ describe("V3 webhook admission", () => {
   it.each(["{", "[]", JSON.stringify({ event: "charge.completed", data: { id: "bad", tx_ref: ref } })])("rejects malformed supported notification %s", async body => { expect((await handleWebhook(request(body), "test-only-shared-hash", vi.fn())).status).toBe(400); });
   it("bounds actual body bytes without trusting content-length", async () => { expect((await handleWebhook(request('"' + 'x'.repeat(MAX_WEBHOOK_BYTES) + '"'), "test-only-shared-hash", vi.fn())).status).toBe(413); });
   it("returns retry 503 on provider/database failures", async () => { expect((await handleWebhook(request(JSON.stringify(notice)), "test-only-shared-hash", vi.fn().mockRejectedValue(new Error("private provider error")))).status).toBe(503); });
-  it("ignores unknown event types without processing", async () => { const process = vi.fn(); expect((await handleWebhook(request('{"event":"transfer.completed"}'), "test-only-shared-hash", process)).status).toBe(200); expect(process).not.toHaveBeenCalled(); });
+  it("ignores unknown event types without processing", async () => { const process = vi.fn(); expect((await handleWebhook(request('{"event":"unknown.event"}'), "test-only-shared-hash", process)).status).toBe(200); expect(process).not.toHaveBeenCalled(); });
+  it("recognizes transfer notices by reference only, ignoring client-supplied status and amount", () => {
+    expect(parseNotice({ event: "transfer.completed", data: { id: 456, reference: "F3W-10000000-0000-4000-8000-000000000002", status: "SUCCESSFUL", amount: 1 } })).toEqual({ kind: "transfer", id: "456", reference: "F3W-10000000-0000-4000-8000-000000000002" });
+  });
+  it("rejects transfer notices with non-withdrawal references", async () => {
+    const process = vi.fn();
+    expect((await handleWebhook(request(JSON.stringify({ event: "transfer.completed", data: { id: 456, reference: "F3T-10000000-0000-4000-8000-000000000001" } })), "test-only-shared-hash", process)).status).toBe(400);
+    expect(process).not.toHaveBeenCalled();
+  });
   it("strips client payment amount/status and uses only correlation identifiers", () => { expect(parseNotice(notice)).toEqual({ kind: "charge", id: "123", txRef: ref }); });
   it("recognizes official unwrapped refund callback", () => { expect(parseNotice({ id: 90, TransactionId: 123, AmountRefunded: 100, status: "completed" })).toEqual({ kind: "refund", id: "90", transactionId: "123" }); });
 });
