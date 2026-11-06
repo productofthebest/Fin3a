@@ -34,7 +34,7 @@ test("rejects unsupported routes and methods", async () => {
 test("rejects invalid Nigerian bank payout before contacting provider", async () => {
   const r = await fetch(base + "/v1/flutterwave/transfers", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
-    body: JSON.stringify({ account_bank: "044", account_number: "123", amount: 500, currency: "USD", debit_currency: "USD", reference: "bad" }),
+    body: JSON.stringify({ account_bank: "044", account_number: "123", beneficiary_name: "Test Beneficiary", amount: 500, currency: "NGN", debit_currency: "NGN", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
   });
   assert.equal(r.status, 400);
 });
