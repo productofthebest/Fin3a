@@ -50,8 +50,12 @@ function Page() {
   const collection = getCollectionCapability(country);
   const collectionMethods = collection?.methods ?? [];
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
+  const visibleCollectionMethods = country === "NG"
+    ? collectionMethods.filter(method => !hiddenNgnDepositMethods.has(method))
+    : collectionMethods;
   const paymentCards = [
-    ...collectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: method === "card" ? "Pay with your debit or credit card" : method === "banktransfer" ? "Pay directly from your bank" : "Pay using " + (methodLabel[method] ?? method), Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
+    ...visibleCollectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: method === "card" ? "Pay with your debit or credit card" : method === "banktransfer" ? "Pay directly from your bank" : "Pay using " + (methodLabel[method] ?? method), Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
     ...(collection?.applePay ? [{ id: "apple-pay", label: "Apple Pay", description: "Pay securely with Apple Pay", Icon: WalletCards }] : []),
     { id: "google-pay", label: "Google Pay", description: "Availability checked at merchant checkout", Icon: WalletCards },
   ];
