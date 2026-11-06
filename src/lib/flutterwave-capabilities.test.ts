@@ -10,9 +10,17 @@ describe("Flutterwave country capabilities", () => {
   it("returns documented country-specific collection methods", () => {
     expect(getCollectionPaymentOptions("ke")).toEqual(["card", "mpesa"]);
     expect(getCollectionPaymentOptions("NG")).toContain("banktransfer");
-    expect(getCollectionPaymentOptions("GH")).toContain("ghanamobilemoney");
-    expect(getCollectionPaymentOptions("CM")).toContain("mobilemoneyxof");
-    expect(getCollectionPaymentOptions("CI")).toContain("mobilemoneyxaf");
+    expect(getCollectionPaymentOptions("GH")).toEqual(["card", "ghanamobilemoney"]);
+    expect(getCollectionPaymentOptions("CM")).toEqual(["card", "mobilemoneyxaf"]);
+    expect(getCollectionPaymentOptions("CI")).toEqual(["card", "mobilemoneyxof"]);
+    expect(getCollectionPaymentOptions("US")).toContain("card");
+  });
+
+  it("keeps each collection method paired with its country's presentment currency", () => {
+    expect(getCollectionCapability("GH")?.currency).toBe("GHS");
+    expect(getCollectionCapability("CM")?.currency).toBe("XAF");
+    expect(getCollectionCapability("CI")?.currency).toBe("XOF");
+    expect(getCollectionCapability("KE")?.currency).toBe("KES");
   });
 
   it("does not treat collection support as bank payout support", () => {

@@ -15,7 +15,7 @@
 - `executeSwap()` calls a database RPC that accepts only NGN/USD.
 - `drizzle/migrations/0028_currency_swap_fx_rate.sql` stores only one admin-managed NGN/USD rate. It cannot safely price other currency pairs.
 - The wallet swap dialog is explicitly disabled and shows an NGN-only limitation.
-- The current deposit flow is not a generic international fiat deposit adapter. PR #5 adds country capability metadata only; it does not yet charge or settle foreign-currency wallet deposits.
+- The current deposit flow is not a generic international fiat deposit adapter. Country capability metadata does not itself create or settle a foreign-currency charge.
 - Existing tests cover NGN/GHS/USD wallet visibility but not a generic multi-currency swap or deposit settlement.
 
 ## Required implementation
@@ -29,7 +29,7 @@
 ### 2. International deposits
 - Resolve the user's country and local currency server-side; the client must not choose an arbitrary credit currency.
 - Build a provider capability lookup that independently verifies country, collection method, presentment currency, settlement currency, merchant enablement, limits, and KYC eligibility. Collection support alone is not proof that a merchant can settle in that local currency.
-- Create a pending deposit intent with immutable currency, country, provider, provider reference, exact amount, fees, and idempotency key.
+- Create a pending deposit intent with immutable currency, country, provider reference, exact amount, fees, and idempotency key.
 - Send the provider charge request only for a verified supported combination. If unavailable, do not show a working deposit method.
 - Verify the provider event independently (signature/authenticity, amount, currency, merchant/account, reference, final settled status) before one-time ledger credit.
 - Credit the wallet matching the verified deposit currency only. Never trust a browser redirect or client-supplied status. Make webhook processing idempotent and reconcile charge/settlement/refund/reversal states.
@@ -54,7 +54,6 @@
 - Wallet cards: local currency first, USD second; US and any USD-local country: USD only.
 - Deposit: show the currency the provider will actually charge/settle, all fees, and exact wallet to be credited before confirmation.
 - Swap: local ↔ USD selector, source amount, live quote/rate, fee, provider/network charges, destination amount, expiry countdown, and explicit confirmation. Disable confirmation without a valid unexpired server quote.
-- Refresh wallet balances and activity after verified settlement. Do not show uploaded statement documents as wallet activity.
 - Admin country/currency settings must reflect the same server capability source; UI toggles cannot override provider or compliance restrictions.
 
 ## Acceptance tests
@@ -71,12 +70,10 @@
 - Do not deploy to Railway or sync/merge into the Lovable production project as part of this work.
 
 ## Implementation progress (2026-11-06)
-
-- Added `src/lib/flutterwave-webhook.server.ts` with exact `verif-hash` shared-secret validation using constant-time digest comparison, plus unit tests for missing, incorrect, modified, case-changed and oversized values.
-- Added `src/lib/flutterwave-transaction-verification.server.ts` to verify provider transaction ID, immutable pending reference, exact amount, currency and final successful status through the authenticated fixed-origin relay, plus mismatch tests.
-- Extended the server-only relay transport allowlist to permit only the fixed numeric transaction-verification path.
-- This remains verification groundwork, not a live webhook route or wallet settlement. The authenticated HTTP webhook handler, pending international deposit table, atomic idempotent credit RPC, event replay protection and reconciliation are still required. No wallet is credited by these helpers.
-- Added `src/lib/fx-quotes.ts` with currency-pair validation, explicit destination-per-source rate arithmetic, source-currency fee deduction, configurable decimal precision, and zero-output rejection.
-- Added `src/test/fx-quotes.test.ts` for NGN, GHS, GBP, EUR, KES, ZAR and XOF examples, reverse direction, fee handling, precision and invalid inputs.
-- This is calculation-only groundwork. It does not provide a live rate, quote ID/expiry, pair allow-list, liquidity check, atomic ledger execution, or deposit settlement. It must not be used to enable customer swaps until those controls are implemented and verified.
-- The authenticated fixed-origin Flutterwave transaction-verification relay was merged to `main` in PR #6. PR #7 carries the webhook hash and application-side evidence-verification helpers; it remains separate from deposit settlement and does not authorize live collection.
+- Added `src/lib/flutterwave-webhook.server.ts` with exact `verif-hash` shared-secret validation using constant-time digest comparison, plus unit tests.
+- Added `src/lib/flutterwave-transaction-verification.server.ts` to verify provider transaction ID, immutable pending reference, exact amount, currency and final successful status through the authenticated fixed-origin relay.
+- The authenticated webhook handler and current NGN top-up settlement are implemented, but the settlement RPC is hard-coded to NGN and `ngn_topup_requests`; it cannot safely settle GHS, USD or other local currencies.
+- Corrected Flutterwave's Cameroon and Côte d’Ivoire mobile-money method/currency mapping and expanded capability regression tests. Published country capability is still not proof of merchant account activation.
+- The hosted checkout adapter exists, but international pending-deposit storage, country/currency-bound settlement, merchant-specific method enablement, and full international reconciliation remain required before enabling customer deposits.
+- Apple Pay and Google Pay must only be offered when Flutterwave checkout and the Fin3a merchant account explicitly return/confirm those methods for that transaction. A generic card capability is not proof that either wallet method is enabled.
+- Generic FX quotes remain calculation-only groundwork; no customer swaps are enabled.
