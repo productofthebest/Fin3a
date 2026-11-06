@@ -61,7 +61,7 @@ function Page() {
     : selectedMethod === "apple-pay" ? getDepositMethodEligibility("apple-pay", country, currency)
     : selectedMethod === "google-pay" ? getDepositMethodEligibility("google-pay", country, currency)
     : selectedMethod && collectionMethods.includes(selectedMethod as typeof collectionMethods[number])
-      ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is not enabled for this Fin3a account yet. Availability depends on country, currency and payment setup confirmation." }
+      ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is listed for this country, but Fin3a has not confirmed an active merchant route and verified payment flow for this method yet. It is not enabled until that confirmation is available." }
       : null;
   const unsupported = currency !== "NGN" && currency !== "USD";
 
@@ -95,7 +95,7 @@ function Page() {
       </section>
 
       <Dialog open={Boolean(selectedMethod)} onOpenChange={open => { if (!open) setSelectedMethod(null); }}>
-        {selectedMethod && selectedEligibility && <DialogContent className="max-h-[85vh] overflow-y-auto">
+        {selectedMethod && <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedCard?.label ?? selectedMethod}</DialogTitle>
             <DialogDescription>{selectedCard?.description ?? "Review this deposit payment method."}</DialogDescription>
