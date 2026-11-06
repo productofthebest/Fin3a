@@ -95,7 +95,7 @@ function Page() {
       </section>
 
       <Dialog open={Boolean(selectedMethod)} onOpenChange={open => { if (!open) setSelectedMethod(null); }}>
-        {selectedMethod && <DialogContent className="max-h-[85vh] overflow-y-auto">
+        {selectedMethod && <DialogContent className="max-h-[85vh] overflow-y-auto" onOpenAutoFocus={event => event.preventDefault()}>
           <DialogHeader>
             <DialogTitle>{selectedCard?.label ?? selectedMethod}</DialogTitle>
             <DialogDescription>{selectedCard?.description ?? "Review this deposit payment method."}</DialogDescription>
