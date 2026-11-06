@@ -1,31 +1,33 @@
 /**
- * Flutterwave's published country/currency/payment-method matrix.
- *
- * This is a product-side allowlist, not a promise that a merchant account is
- * enabled for every rail. The server must still enforce merchant eligibility,
- * currency settlement configuration, amount limits and provider verification.
+ * Flutterwave V3 published collection options and bank-transfer payout coverage.
+ * This is a capability reference, not a guarantee that a specific merchant account
+ * has been approved or enabled for every rail. Verify merchant settings, settlement
+ * currency, destination bank codes, KYC and limits before enabling any operation.
  */
 export const FLUTTERWAVE_COLLECTIONS = [
   { country: "NG", name: "Nigeria", currency: "NGN", methods: ["card", "ussd", "banktransfer", "account", "internetbanking", "nqr", "enaira", "opay"] },
   { country: "US", name: "United States", currency: "USD", methods: ["card", "account"] },
   { country: "GB", name: "United Kingdom", currency: "GBP", methods: ["card", "account"] },
-  { country: "EU", name: "SEPA / Europe", currency: "EUR", methods: ["card", "account"] },
-  { country: "GH", name: "Ghana", currency: "GHS", methods: ["card", "mobilemoneyghana"] },
-  { country: "CM", name: "Cameroon", currency: "XAF", methods: ["card", "mobilemoneyxaf"] },
-  { country: "CI", name: "Côte d’Ivoire", currency: "XOF", methods: ["card", "mobilemoneyxof"] },
-  { country: "ZA", name: "South Africa", currency: "ZAR", methods: ["card", "account"] },
+  { country: "EU", name: "Europe / SEPA", currency: "EUR", methods: ["card", "account"] },
+  { country: "GH", name: "Ghana", currency: "GHS", methods: ["card", "ghanamobilemoney"] },
+  { country: "CM", name: "Cameroon", currency: "XAF", methods: ["card", "mobilemoneyxof"] },
+  { country: "CI", name: "Côte d’Ivoire", currency: "XOF", methods: ["card", "mobilemoneyxaf"] },
+  { country: "ZA", name: "South Africa", currency: "ZAR", methods: ["card", "account", "1voucher"] },
   { country: "MW", name: "Malawi", currency: "MWK", methods: ["card", "mobilemoneymalawi"] },
   { country: "KE", name: "Kenya", currency: "KES", methods: ["card", "mpesa"] },
   { country: "UG", name: "Uganda", currency: "UGX", methods: ["card", "mobilemoneyuganda"] },
   { country: "RW", name: "Rwanda", currency: "RWF", methods: ["card", "mobilemoneyrwanda"] },
   { country: "TZ", name: "Tanzania", currency: "TZS", methods: ["card", "mobilemoneytanzania"] },
   { country: "EG", name: "Egypt", currency: "EGP", methods: ["card", "fawrypay"] },
+  { country: "ZM", name: "Zambia", currency: "ZMW", methods: ["card", "mobilemoneyzambia"] },
 ] as const;
 
+/** Countries/currencies listed in Flutterwave V3 bank-account transfer documentation. */
 export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "NG", name: "Nigeria", currency: "NGN" },
-  { country: "US", name: "United States", currency: "USD" },
+  { country: "US", name: "United States (domiciliary accounts)", currency: "USD" },
   { country: "GB", name: "United Kingdom", currency: "GBP" },
+  { country: "EU", name: "SEPA countries", currency: "EUR" },
   { country: "GH", name: "Ghana", currency: "GHS" },
   { country: "KE", name: "Kenya", currency: "KES" },
   { country: "MW", name: "Malawi", currency: "MWK" },
@@ -34,8 +36,9 @@ export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "CM", name: "Cameroon", currency: "XAF" },
   { country: "CI", name: "Côte d’Ivoire", currency: "XOF" },
   { country: "SN", name: "Senegal", currency: "XOF" },
-  { country: "RW", name: "Rwanda", currency: "RWF" },
+  { country: "SL", name: "Sierra Leone", currency: "SLL" },
   { country: "ZA", name: "South Africa", currency: "ZAR" },
+  { country: "ZM", name: "Zambia", currency: "ZMW" },
 ] as const;
 
 export type FlutterwaveCollection = (typeof FLUTTERWAVE_COLLECTIONS)[number];
@@ -51,12 +54,11 @@ export function getBankPayoutCapability(country: string) {
   return FLUTTERWAVE_BANK_PAYOUTS.find(item => item.country === code) ?? null;
 }
 
-/** Return only payment options documented for this country's collection currency. */
 export function getCollectionPaymentOptions(country: string): string[] {
   return [...(getCollectionCapability(country)?.methods ?? [])];
 }
 
-/** Provider payout rails must not be inferred from collection support. */
+/** Bank payout coverage is independent of collection coverage. */
 export function getBankPayoutCurrency(country: string): string | null {
   return getBankPayoutCapability(country)?.currency ?? null;
 }
