@@ -1,8 +1,11 @@
 // Pure split-bill arithmetic. All money math runs in integer cents to avoid
 // floating-point drift; never mark payments paid here — only the server does.
 
-export const SPLIT_CURRENCIES = ["NGN", "USD"] as const;
-export type SplitCurrency = (typeof SPLIT_CURRENCIES)[number];
+import { COUNTRY_CURRENCY } from "./country-currency";
+
+/** All ISO currencies represented by supported countries, plus USD. */
+export const SPLIT_CURRENCIES = [...new Set([...Object.values(COUNTRY_CURRENCY), "USD"])];
+export type SplitCurrency = string;
 
 export function toCents(amount: number): number {
   return Math.round(amount * 100);
