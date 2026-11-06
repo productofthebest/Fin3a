@@ -461,11 +461,20 @@ function guessDocType(filename: string): string {
   return recognizedDocumentType(filename);
 }
 
+export const getScannerStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => ({
+    active: process.env["DOCUMENT_SCANNER_ENABLED"] === "true" && Boolean(process.env["OPENAI_API_KEY"]),
+  }));
+
 export const analyzeDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ documentId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    if (process.env["DOCUMENT_SCANNER_ENABLED"] !== "true" || !process.env["OPENAI_API_KEY"]) {
+      throw new Error("Document scanning is temporarily unavailable while the secure scanner setup is verified.");
+    }
     const { data: doc, error: docError } = await supabase
       .from("documents")
       .select(DOC_SELECT)
