@@ -82,7 +82,7 @@ function Page() {
         <div className="grid grid-cols-2 gap-3">
           {paymentCards.map(({ id, label, description, Icon }) => {
             const active = selectedMethod === id;
-            return <button key={id} type="button" aria-expanded={active} aria-controls={active ? "deposit-method-eligibility" : undefined}
+            return <button key={id} type="button" aria-expanded={active}
               onClick={() => setSelectedMethod(id)}
               className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (active ? "border-primary bg-primary/5" : "border-border bg-card")}>
               <span className="flex w-full items-center justify-between"><Icon className="size-5 text-primary" /><ChevronDown className={"size-4 text-muted-foreground transition-transform " + (active ? "rotate-180" : "")} /></span>
