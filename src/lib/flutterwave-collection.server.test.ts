@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const collectionFetch = vi.fn();
+const { collectionFetch } = vi.hoisted(() => ({ collectionFetch: vi.fn() }));
 vi.mock("./payout-transport.server", () => ({ collectionFetch }));
 
 import { createHostedCollection } from "./flutterwave-collection.server";
