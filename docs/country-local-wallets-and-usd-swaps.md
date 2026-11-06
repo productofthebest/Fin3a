@@ -79,3 +79,4 @@
 - Added `src/lib/fx-quotes.ts` with currency-pair validation, explicit destination-per-source rate arithmetic, source-currency fee deduction, configurable decimal precision, and zero-output rejection.
 - Added `src/test/fx-quotes.test.ts` for NGN, GHS, GBP, EUR, KES, ZAR and XOF examples, reverse direction, fee handling, precision and invalid inputs.
 - This is calculation-only groundwork. It does not provide a live rate, quote ID/expiry, pair allow-list, liquidity check, atomic ledger execution, or deposit settlement. It must not be used to enable customer swaps until those controls are implemented and verified.
+- The authenticated fixed-origin Flutterwave transaction-verification relay was merged to `main` in PR #6. PR #7 carries the webhook hash and application-side evidence-verification helpers; it remains separate from deposit settlement and does not authorize live collection.
