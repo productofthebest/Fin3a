@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - feat/flutterwave-international-capabilities
+      - feat/flutterwave-webhook-security
 
 permissions:
   contents: read
