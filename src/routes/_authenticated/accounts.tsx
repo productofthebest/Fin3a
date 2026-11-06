@@ -66,12 +66,12 @@ function Page() {
             <p className="break-all font-display text-xl font-bold">{fmt(account.currency, account.balance.available)}</p>
             <p className="text-[11px] text-muted-foreground">Available balance</p>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-3 text-[11px]">
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1">
+            <div className="mt-3 grid grid-cols-2 gap-3 text-[11px]">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1.5">
                 <p className="text-muted-foreground">Pending Balance</p>
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.pending)}</p>
               </div>
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1.5">
                 <p className="text-muted-foreground">Total Balance</p>
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
               </div>
