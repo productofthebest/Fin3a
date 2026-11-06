@@ -7,10 +7,12 @@ import {
 } from "./flutterwave-capabilities";
 
 describe("Flutterwave country capabilities", () => {
-  it("returns only the published payment methods for a collection country", () => {
+  it("returns documented country-specific collection methods", () => {
     expect(getCollectionPaymentOptions("ke")).toEqual(["card", "mpesa"]);
     expect(getCollectionPaymentOptions("NG")).toContain("banktransfer");
-    expect(getCollectionPaymentOptions("GH")).toContain("mobilemoneyghana");
+    expect(getCollectionPaymentOptions("GH")).toContain("ghanamobilemoney");
+    expect(getCollectionPaymentOptions("CM")).toContain("mobilemoneyxof");
+    expect(getCollectionPaymentOptions("CI")).toContain("mobilemoneyxaf");
   });
 
   it("does not treat collection support as bank payout support", () => {
@@ -23,6 +25,8 @@ describe("Flutterwave country capabilities", () => {
     expect(getBankPayoutCurrency("GB")).toBe("GBP");
     expect(getBankPayoutCurrency("CI")).toBe("XOF");
     expect(getBankPayoutCurrency("SN")).toBe("XOF");
+    expect(getBankPayoutCurrency("SL")).toBe("SLL");
+    expect(getBankPayoutCurrency("ZM")).toBe("ZMW");
   });
 
   it("fails closed for unknown countries", () => {
