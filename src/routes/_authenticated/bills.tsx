@@ -1,15 +1,18 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { BanknoteArrowDown, Globe, Receipt, Smartphone, Trash2, Tv, Wifi, Zap } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { deleteBill, recordBillPayment, toggleBillActive } from "@/lib/bills.functions";
+import { checkBillPayment, getBillBillers, getBillPayments, payBillFn, validateBillCustomerFn, type BillBillerView, type BillCategory } from "@/lib/bills-pay.functions";
 import { billsQuery, categoriesQuery, settingsQuery } from "@/lib/queries";
 import { formatMoney, FREQUENCY_LABELS } from "@/lib/fin3a";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { pageMeta } from "@/lib/page-meta";
+
+const ngn = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(n);
 
 const PAYMENT_CATEGORIES = [
   { id: "airtime", name: "Airtime", icon: Smartphone },
