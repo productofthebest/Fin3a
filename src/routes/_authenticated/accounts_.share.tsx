@@ -135,7 +135,7 @@ function Page() {
 
 const fmt = (currency: string, amount: number) =>
   new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format(amount);
-const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
+const sym = (currency: string) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).formatToParts(0).find((part) => part.type === "currency")?.value ?? currency;
 
 function ShareMoney() {
   const lookup = useServerFn(lookupRecipient);
@@ -143,7 +143,7 @@ function ShareMoney() {
   const [total, setTotal] = useState("");
   const { options: currencyOptions } = useTransferCurrencies();
   const [currency, setCurrency] = useState<SplitCurrency>("USD");
-  useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
+  useEffect(() => { setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions.join("|")]);
   const [note, setNote] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [people, setPeople] = useState<(ResolvedParticipant & { percent: string })[]>([]);
