@@ -408,6 +408,84 @@ export type Database = {
           },
         ]
       }
+      bill_payments: {
+        Row: {
+          account_id: string
+          amount: number
+          biller_code: string
+          biller_name: string
+          category: string
+          created_at: string
+          customer: string
+          customer_name: string | null
+          fin3a_fee: number
+          id: string
+          idempotency_key: string
+          item_code: string
+          ledger_id: string
+          provider_tx_id: string | null
+          reference: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          biller_code: string
+          biller_name: string
+          category: string
+          created_at?: string
+          customer: string
+          customer_name?: string | null
+          fin3a_fee?: number
+          id?: string
+          idempotency_key: string
+          item_code: string
+          ledger_id: string
+          provider_tx_id?: string | null
+          reference: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          biller_code?: string
+          biller_name?: string
+          category?: string
+          created_at?: string
+          customer?: string
+          customer_name?: string | null
+          fin3a_fee?: number
+          id?: string
+          idempotency_key?: string
+          item_code?: string
+          ledger_id?: string
+          provider_tx_id?: string | null
+          reference?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_payments_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "account_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -2197,6 +2275,16 @@ export type Database = {
         }
         Returns: Json
       }
+      finish_bill_payment: {
+        Args: {
+          _amount: number
+          _currency: string
+          _outcome: string
+          _provider_tx_id: string
+          _reference: string
+        }
+        Returns: Json
+      }
       finish_ngn_withdrawal: {
         Args: {
           _amount: number
@@ -2262,6 +2350,20 @@ export type Database = {
           _refund_state: string
           _refund_status: string
           _tx_ref: string
+        }
+        Returns: Json
+      }
+      reserve_bill_payment: {
+        Args: {
+          _amount: number
+          _biller_code: string
+          _biller_name: string
+          _category: string
+          _customer: string
+          _customer_name: string
+          _idempotency_key: string
+          _item_code: string
+          _user_id: string
         }
         Returns: Json
       }
