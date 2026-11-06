@@ -1,0 +1,30 @@
+name: Payout relay tests
+
+on:
+  pull_request:
+    paths:
+      - "payout-relay/**"
+      - ".github/workflows/payout-relay-tests.yml"
+  push:
+    branches:
+      - "security/payout-relay-production-readiness"
+    paths:
+      - "payout-relay/**"
+      - ".github/workflows/payout-relay-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run payout relay admission tests
+        working-directory: payout-relay
+        run: npm test
