@@ -181,7 +181,11 @@ const server = http.createServer(async (req, res) => {
     if (spec.method === "POST") {
       if (!/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"] || "")) return json(res, 415, { status: "error", message: "JSON required" });
       body = await readJson(req);
-      if (spec.kind === "payout" && !validTransfer(body)) return json(res, 400, { status: "error", message: "Invalid or unsupported payout request" });
+      if (spec.kind === "payout") {
+        if (!validTransfer(body)) return json(res, 400, { status: "error", message: "Invalid or unsupported payout request" });
+        const { destination_type, ...providerBody } = body;
+        body = { ...providerBody, debit_currency: body.debit_currency || body.currency };
+      }
       if (spec.kind === "collection") {
         if (!validPayment(body)) return json(res, 400, { status: "error", message: "Unsupported country/currency or invalid payment request" });
         if (!paymentReady()) return json(res, 503, { status: "error", message: "Hosted payment checkout is not configured" });
