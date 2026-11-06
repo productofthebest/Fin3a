@@ -17,6 +17,7 @@ import {
   listDrafts,
   updateDraft,
   getDocumentReference,
+  getScannerStatus,
 } from "@/lib/documents.functions";
 import { settingsQuery } from "@/lib/queries";
 import { formatMoney } from "@/lib/fin3a";
@@ -57,6 +58,7 @@ function DocumentsPage() {
   const qc = useQueryClient();
   const { data: docs } = useSuspenseQuery(docsQuery());
   const { data: settings } = useSuspenseQuery(settingsQuery());
+  const { data: scannerStatus, isLoading: scannerStatusLoading } = useQuery(queryOptions({ queryKey: ["scanner-status"], queryFn: () => getScannerStatus(), staleTime: 30_000 }));
   const currency = settings?.currency ?? "USD";
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -83,6 +85,11 @@ function DocumentsPage() {
   }, []);
 
   async function handleFile(file: File): Promise<{ ok: boolean; message: string }> {
+    if (!scannerStatus?.active) {
+      const message = "Scanning is temporarily unavailable while the secure scanner setup is verified.";
+      toast.error(message);
+      return { ok: false, message };
+    }
     if (file.size > 15 * 1024 * 1024) {
       toast.error("File is larger than 15 MB.");
       return { ok: false, message: "Larger than 15 MB" };
@@ -125,11 +132,12 @@ function DocumentsPage() {
           <p className="text-muted-foreground">Bank statements, bills, receipts and POS slips. You review everything before it's saved.</p>
         </div>
         <input ref={fileRef} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => { const fs = Array.from(e.target.files ?? []); e.target.value = ""; void handleFiles(fs); }} />
-        <Button onClick={() => fileRef.current?.click()} disabled={busy}>
+        <Button onClick={() => fileRef.current?.click()} disabled={busy || scannerStatusLoading || !scannerStatus?.active}>
           {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-          {busy ? "Scanning…" : "Upload & scan"}
+          {busy ? "Scanning…" : scannerStatus?.active ? "Upload & scan" : "Scan unavailable"}
         </Button>
       </div>
+      {!scannerStatus?.active && <p className="mt-2 text-sm text-muted-foreground">Scan will appear here when document scanning is enabled and the OpenAI scanner key is verified.</p>}
 
       {progress && (
         <Card className="mt-6">
@@ -206,7 +214,7 @@ function DraftReview({ documentId, doc, currency, onDeleted }: {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={async()=>{try{const link=await getDocumentReference({data:{documentId}});window.open(link.url,"_blank","noopener,noreferrer");}catch(e){toast.error(e instanceof Error?e.message:"Could not open original.");}}}>Original</Button>
-          <Button variant="outline" size="sm" onClick={() => rescan.mutate()} disabled={rescan.isPending}>
+          <Button variant="outline" size="sm" onClick={() => rescan.mutate()} disabled={rescan.isPending || !scannerStatus?.active}>
             {rescan.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Rescan
           </Button>
           <Button variant="ghost" size="icon" aria-label="Delete document" onClick={() => del.mutate()}><Trash2 className="h-4 w-4" /></Button>
