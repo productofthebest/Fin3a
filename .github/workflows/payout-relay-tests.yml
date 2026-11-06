@@ -1,0 +1,45 @@
+name: Payout relay tests
+
+on:
+  pull_request:
+    paths:
+      - "payout-relay/**"
+      - "src/lib/flutterwave-collection.server.ts"
+      - "src/lib/flutterwave-collection.server.test.ts"
+      - "src/lib/payout-transport.server.ts"
+      - ".github/workflows/payout-relay-tests.yml"
+  push:
+    branches:
+      - "security/payout-relay-production-readiness"
+    paths:
+      - "payout-relay/**"
+      - ".github/workflows/payout-relay-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run payout relay admission tests
+        working-directory: payout-relay
+        run: npm test
+
+  app-collection-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Test hosted collection adapter
+        run: bunx vitest run src/lib/flutterwave-collection.server.test.ts
