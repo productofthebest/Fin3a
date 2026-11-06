@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
-import { getBankPayoutCapability, getCollectionCapability } from "@/lib/flutterwave-capabilities";
-import { getDepositMethodEligibility, type DepositMethodId } from "@/lib/deposit-method-eligibility";
+import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
+import { getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
 import { NgnTopupPanel } from "@/components/ngn-topup-panel";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -42,13 +42,11 @@ const methodLabel: Record<string, string> = {
 
 function Page() {
   const { data } = useSuspenseQuery(overview);
-  const mode = "deposit" as const;
   const options = [accountCurrencies(data.country)[0] ?? "NGN"];
   const [selectedCurrency, setCurrency] = useState<string>(options[0] ?? "NGN");
   const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "NGN");
   const country = (data.country ?? "NG").toUpperCase();
   const collection = getCollectionCapability(country);
-  const payout = getBankPayoutCapability(country);
   const collectionMethods = collection?.methods ?? [];
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const paymentCards = [
