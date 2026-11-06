@@ -79,6 +79,7 @@ BEGIN
      OR _currency IS DISTINCT FROM r.currency
      OR _amount IS DISTINCT FROM r.requested_amount
      OR NOT EXISTS (SELECT 1 FROM public.accounts a WHERE a.id=r.account_id AND a.user_id=r.user_id AND a.currency=r.currency)
+     OR NOT EXISTS (SELECT 1 FROM public.user_settings us WHERE us.user_id=r.user_id AND us.country=r.country)
      OR EXISTS (SELECT 1 FROM public.account_ledger l WHERE l.provider='flutterwave' AND l.provider_ref=_provider_tx_id)
      OR EXISTS (SELECT 1 FROM public.international_deposit_intents i WHERE i.provider_tx_id=_provider_tx_id AND i.id<>r.id) THEN
     UPDATE public.international_deposit_intents SET status='review',provider_tx_id=coalesce(provider_tx_id,_provider_tx_id),updated_at=now() WHERE id=r.id;
