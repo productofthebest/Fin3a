@@ -117,11 +117,6 @@ function Page() {
         <p className="mt-2 text-xs text-muted-foreground">Country: {country} · Currency: {currency}. Merchant eligibility is checked separately from published country support.</p>
       </section>}
 
-      {selectedMethod === "bank-transfer" && selectedEligibility?.usable && <div className="mt-6">
-        <h2 className="mb-3 font-display text-xl font-semibold">NGN bank transfer</h2>
-        <NgnTopupPanel />
-      </div>}
-
       {currency === "NGN" ? <div className="mt-6">
         <h2 className="mb-3 font-display text-xl font-semibold">NGN top-up</h2>
         <NgnTopupPanel />
