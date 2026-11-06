@@ -9,7 +9,7 @@ This is a small, fixed-destination HTTPS relay for the Fin3a server. It is **not
   - `GET /v1/flutterwave/transfers/{numeric-transfer-id}`
   - `GET /v1/flutterwave/transfers?reference=F3W-...`
 - Forwards only to the hard-coded Flutterwave V3 API origin.
-- Holds the Flutterwave secret key on the relay host.
+- Routes payout API requests through a relay that holds its own configured Flutterwave credential. The main Fin3a server may still need its existing Flutterwave credential for non-payout operations such as bank lookup and account resolution; do not assume Flutterwave offers separate scoped keys unless the merchant dashboard/provider confirms it.
 - Rejects unrecognized paths, methods, currencies, payloads, oversized bodies, redirects and unauthenticated requests.
 - Does not retry a transfer POST. A timeout is an unknown outcome; Fin3a must reconcile by the unique transfer reference before any retry.
 - Returns a minimal health/readiness response at `GET /health`.
@@ -33,7 +33,7 @@ The tests validate local admission only. They do not contact Flutterwave or prov
 Set these values in the relay host's secret manager, not in Git:
 
 - `RELAY_SHARED_TOKEN`: cryptographically random, at least 32 characters. Store the same value as Fin3a's `FLW_PAYOUT_RELAY_TOKEN`.
-- `FLW_SECRET_KEY`: Flutterwave **production** secret key, held only by the relay.
+- `FLW_SECRET_KEY`: Flutterwave **production** secret key used by this relay for payout calls. The main Fin3a application currently also uses its Flutterwave secret for non-payout operations, so this relay does not prove the credential is exclusive to the relay. Keep both copies in server-side secret managers only; rotate both together if the key is shared.
 - `PORT`: supplied by the hosting platform.
 - `RELAY_ALLOWED_SOURCE_IPS`: optional comma-separated exact source IPs if the platform can reliably expose the Fin3a caller's source IP. Do not trust arbitrary forwarded-IP headers.
 
@@ -58,7 +58,7 @@ Configure through the secure server-side secrets interface only:
 - `FLW_PRODUCTION_VERIFIED=true` only after account permissions, production credentials and merchant funding are independently checked
 - `FLW_WEBHOOK_HASH=<V3 webhook secret hash>` stored identically in Fin3a and Flutterwave
 
-Keep `FLW_WITHDRAWALS_ENABLED` unset/false until all gates pass. Never put the Flutterwave secret key in the Fin3a browser bundle or Git repository. Do not set verification flags merely to make the UI enable.
+Keep `FLW_WITHDRAWALS_ENABLED` unset/false until all gates pass. Never put the Flutterwave secret key in the Fin3a browser bundle or Git repository. The current app uses its own server-side Flutterwave key for bank resolution and other non-payout APIs; this relay adds a separately protected payout egress path, not a credential-scope boundary. Do not set verification flags merely to make the UI enable.
 
 ## Safe promotion checklist
 
