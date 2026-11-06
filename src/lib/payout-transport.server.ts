@@ -2,7 +2,7 @@ import { relayOrigin } from "./withdrawal-production";
 
 /** Payouts and hosted collections use fixed egress; unrelated Flutterwave APIs remain unchanged. */
 export async function payoutFetch(path: string, init?: RequestInit): Promise<Response> {
-  if (!/^\/transfers(?:\/[1-9]\d{0,19}|\?reference=F3W-[0-9a-f-]{36})?$/.test(path)) throw new Error("INVALID_PAYOUT_PATH");
+  if (!/^\/(?:transfers(?:\/[1-9]\d{0,19}|\?reference=F3W-[0-9a-f-]{36})?|transactions\/[1-9]\d{0,19}\/verify)$/.test(path)) throw new Error("INVALID_PAYOUT_PATH");
   const origin = relayOrigin(process.env["FLW_PAYOUT_RELAY_URL"]);
   const token = process.env["FLW_PAYOUT_RELAY_TOKEN"];
   if (!origin || !token) throw new Error("PAYOUT_TRANSPORT_UNAVAILABLE");

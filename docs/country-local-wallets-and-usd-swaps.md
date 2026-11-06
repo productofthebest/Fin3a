@@ -71,6 +71,12 @@
 - Do not deploy to Railway or sync/merge into the Lovable production project as part of this work.
 
 ## Implementation progress (2026-11-06)
+
+- Added `src/lib/flutterwave-webhook.server.ts` with exact `verif-hash` shared-secret validation using constant-time digest comparison, plus unit tests for missing, incorrect, modified, case-changed and oversized values.
+- Added `src/lib/flutterwave-transaction-verification.server.ts` to verify provider transaction ID, immutable pending reference, exact amount, currency and final successful status through the authenticated fixed-origin relay, plus mismatch tests.
+- Extended the server-only relay transport allowlist to permit only the fixed numeric transaction-verification path.
+- This remains verification groundwork, not a live webhook route or wallet settlement. The authenticated HTTP webhook handler, pending international deposit table, atomic idempotent credit RPC, event replay protection and reconciliation are still required. No wallet is credited by these helpers.
 - Added `src/lib/fx-quotes.ts` with currency-pair validation, explicit destination-per-source rate arithmetic, source-currency fee deduction, configurable decimal precision, and zero-output rejection.
 - Added `src/test/fx-quotes.test.ts` for NGN, GHS, GBP, EUR, KES, ZAR and XOF examples, reverse direction, fee handling, precision and invalid inputs.
 - This is calculation-only groundwork. It does not provide a live rate, quote ID/expiry, pair allow-list, liquidity check, atomic ledger execution, or deposit settlement. It must not be used to enable customer swaps until those controls are implemented and verified.
+- The authenticated fixed-origin Flutterwave transaction-verification relay was merged to `main` in PR #6. PR #7 carries the webhook hash and application-side evidence-verification helpers; it remains separate from deposit settlement and does not authorize live collection.

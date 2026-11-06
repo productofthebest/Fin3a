@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidFlutterwaveWebhookHash } from "./flutterwave-webhook.server";
 
 export const WEBHOOK_VERSION = "fin3a-flw-v3-3";
 export const MAX_WEBHOOK_BYTES = 32_768;
@@ -22,12 +23,7 @@ export function parseNotice(body: unknown): Notice | null {
   throw new Error("INVALID_BODY");
 }
 export function validV3Hash(got: string | null, expected: string | undefined): boolean {
-  if (!got || !expected) return false;
-  const a = new TextEncoder().encode(got), b = new TextEncoder().encode(expected);
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
-  return diff === 0;
+  return isValidFlutterwaveWebhookHash(got, expected);
 }
 export async function readWebhookBody(request: Request): Promise<unknown> {
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) throw new Error("INVALID_BODY");

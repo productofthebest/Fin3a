@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - feat/flutterwave-international-capabilities
+      - feat/flutterwave-webhook-security
 
 permissions:
   contents: read
@@ -35,6 +36,8 @@ jobs:
         run: >-
           bunx eslint
           src/lib/flutterwave-capabilities.ts
+          src/lib/flutterwave-webhook.server.ts
+          src/lib/flutterwave-transaction-verification.server.ts
           src/lib/flutterwave-capabilities.test.ts
           src/lib/fx-quotes.ts
           src/test/fx-quotes.test.ts
