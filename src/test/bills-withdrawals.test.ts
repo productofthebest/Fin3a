@@ -9,7 +9,8 @@ describe("bill payment and withdrawal reference rules", () => {
     expect(parseNotice(topup)?.kind).toBe("charge");
     expect(parseNotice(transfer)?.kind).toBe("transfer");
     // A charge notice can never be interpreted as a payout and vice versa.
-    expect(parseNotice({ event: "charge.completed", data: { id: 3, tx_ref: "F3W-10000000-0000-4000-8000-000000000002" } })).toBeNull();
+    expect(() => parseNotice({ event: "charge.completed", data: { id: 3, tx_ref: "F3W-10000000-0000-4000-8000-000000000002" } })).toThrow("INVALID_BODY");
+    expect(() => parseNotice({ event: "transfer.completed", data: { id: 4, reference: "F3T-10000000-0000-4000-8000-000000000001" } })).toThrow("INVALID_BODY");
   });
   it("maps only documented transfer statuses to final outcomes", () => {
     expect(transferOutcome("SUCCESSFUL")).toBe("successful");
