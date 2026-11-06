@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { currencySymbol } from "@/lib/fin3a";
 import { localCurrency } from "@/lib/country-currency";
 import { Button } from "@/components/ui/button";
+import { SupportContact } from "@/components/support-contact";
 
 const NAV_ITEMS = [
   { to: "/assistant", label: "Dashboard" },
@@ -104,6 +105,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">{children}</main>
+      <footer className="border-t border-border/60 px-4 py-6 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 text-sm text-muted-foreground sm:flex-row">
+          <span>© 2026 Fin3a. All rights reserved.</span>
+          <SupportContact className="underline-offset-4 hover:text-foreground hover:underline" />
+        </div>
+      </footer>
     </div>
   );
 }
