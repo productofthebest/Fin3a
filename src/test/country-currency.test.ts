@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { accountCurrencies, selectCountryAccounts } from "@/lib/country-currency";
+import { accountCurrencies, COUNTRY_CURRENCY, selectCountryAccounts } from "@/lib/country-currency";
 
-describe("local currency plus USD", () => {
+describe("local currency plus USD for every supported country", () => {
   it("Nigeria gets NGN and USD", () => expect(accountCurrencies("NG")).toEqual(["NGN", "USD"]));
+  it("South Africa gets ZAR and USD", () => expect(accountCurrencies("ZA")).toEqual(["ZAR", "USD"]));
   it("Ghana gets GHS and USD", () => expect(accountCurrencies("GH")).toEqual(["GHS", "USD"]));
+  it("United Kingdom gets GBP and USD", () => expect(accountCurrencies("GB")).toEqual(["GBP", "USD"]));
   it("United States gets USD once", () => expect(accountCurrencies("US")).toEqual(["USD"]));
+
+  it("provides exactly the local currency and USD (without duplicates) for every country in the country map", () => {
+    for (const [country, local] of Object.entries(COUNTRY_CURRENCY)) {
+      const expected = local === "USD" ? ["USD"] : [local, "USD"];
+      expect(accountCurrencies(country)).toEqual(expected);
+      expect(new Set(accountCurrencies(country)).size).toBe(expected.length);
+    }
+  });
 });
 
 describe("country wallet visibility without balance changes", () => {
