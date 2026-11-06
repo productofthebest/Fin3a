@@ -9,6 +9,7 @@ import { accountCurrencies } from "@/lib/country-currency";
 import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
 import { getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
 import { NgnTopupPanel } from "@/components/ngn-topup-panel";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
 export const Route = createFileRoute("/_authenticated/accounts_/actions")({
@@ -81,8 +82,8 @@ function Page() {
         <div className="grid grid-cols-2 gap-3">
           {paymentCards.map(({ id, label, description, Icon }) => {
             const active = selectedMethod === id;
-            return <button key={id} type="button" aria-expanded={active} aria-controls={active ? "deposit-method-eligibility" : undefined}
-              onClick={() => setSelectedMethod(active ? null : id)}
+            return <button key={id} type="button" aria-expanded={active}
+              onClick={() => setSelectedMethod(id)}
               className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (active ? "border-primary bg-primary/5" : "border-border bg-card")}>
               <span className="flex w-full items-center justify-between"><Icon className="size-5 text-primary" /><ChevronDown className={"size-4 text-muted-foreground transition-transform " + (active ? "rotate-180" : "")} /></span>
               <span className="mt-3 block text-sm font-semibold">{label}</span>
@@ -93,14 +94,20 @@ function Page() {
         {paymentCards.length === 0 && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">No deposit methods are currently available for this country.</p>}
       </section>
 
-      {selectedMethod && selectedEligibility && <section id="deposit-method-eligibility" aria-live="polite" className="mt-4 rounded-xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{selectedCard?.label ?? selectedMethod}</h3><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility.usable ? "Available" : "Not enabled"}</span></div>
-        <p className="mt-3 text-sm text-muted-foreground">{selectedEligibility.message}</p>
-        <p className="mt-2 text-xs text-muted-foreground">Country: {country} · Currency: {currency}. This payment method is not enabled until Fin3a confirms that it can accept and verify the payment.</p>
-      </section>}
+      <Dialog open={Boolean(selectedMethod)} onOpenChange={open => { if (!open) setSelectedMethod(null); }}>
+        {selectedMethod && selectedEligibility && <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedCard?.label ?? selectedMethod}</DialogTitle>
+            <DialogDescription>{selectedCard?.description ?? "Review this deposit payment method."}</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Availability</span><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility.usable ? "Available" : "Not enabled"}</span></div>
+          <p className="text-sm text-muted-foreground">{selectedEligibility.message}</p>
+          <p className="text-xs text-muted-foreground">Country: {country} · Currency: {currency}. This payment method is not enabled until Fin3a confirms that it can accept and verify the payment.</p>
+          {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility.usable && <section className="space-y-3 border-t border-border pt-4" aria-label="NGN bank transfer top-up"><h2 className="font-display text-lg font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
+        </DialogContent>}
+      </Dialog>
 
       {unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. This payment route is not active for this currency yet.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : currency !== "NGN" ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div> : null}
-      {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility?.usable && <section className="mt-6 space-y-3" aria-label="NGN bank transfer top-up"><h2 className="font-display text-xl font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
       {currency !== "NGN" && <Button className="mt-5 w-full" disabled>Local deposit unavailable</Button>}
       <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Fin3a only credits your wallet after the payment has been securely verified.</p>
     </main>
