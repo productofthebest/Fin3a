@@ -71,8 +71,13 @@ function SecurityPage() {
           <h2 className="font-display text-xl font-semibold">Country</h2>
           <form className="space-y-3" onSubmit={e => { e.preventDefault(); void run(async () => {
             await updateSettings({ data: { country: homeCountry } });
-            await qc.invalidateQueries({ queryKey: ["settings"] });
-            await qc.invalidateQueries({ queryKey: ["accounts"] });
+            await Promise.all([
+              qc.invalidateQueries({ queryKey: ["settings"] }),
+              qc.invalidateQueries({ queryKey: ["accounts"] }),
+              // Refresh all country-dependent spending views after the local currency changes.
+              qc.invalidateQueries({ queryKey: ["financial-analysis"] }),
+              qc.invalidateQueries({ queryKey: ["planning"] }),
+            ]);
             toast.success("Country saved.");
           }); }}>
             <Label htmlFor="settings-country">Country</Label>
