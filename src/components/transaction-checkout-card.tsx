@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import type { ActivityRow } from "@/lib/activity-history";
 import { recordMoney } from "@/lib/record-currencies";
+import { formatUserDateTime } from "@/lib/user-date-time";
 
-type Props = { transaction: ActivityRow | null; open: boolean; onOpenChange: (open: boolean) => void };
+type Props = { transaction: ActivityRow | null; open: boolean; onOpenChange: (open: boolean) => void; country?: string | null };
 
 function statusKind(status: string): "success" | "failed" | "pending" {
   const value = status.toLowerCase();
@@ -13,29 +14,16 @@ function statusKind(status: string): "success" | "failed" | "pending" {
   return "pending";
 }
 
-function transactionDate(value: string) {
-  const parsed = new Date(value);
-  const date = new Intl.DateTimeFormat("en-NG", {
-    dateStyle: "long",
-    timeZone: "Africa/Lagos",
-  }).format(parsed);
-  if (!value.includes("T")) return `${date} · Time not recorded`;
-  const time = new Intl.DateTimeFormat("en-NG", {
-    timeStyle: "short",
-    timeZone: "Africa/Lagos",
-  }).format(parsed);
-  return `${date} · ${time}`;
-}
 
 function xml(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
 }
 
-export function TransactionCheckoutCard({ transaction, open, onOpenChange }: Props) {
+export function TransactionCheckoutCard({ transaction, open, onOpenChange, country }: Props) {
   if (!transaction) return null;
   const kind = statusKind(transaction.status);
   const amount = transaction.amount === null ? "Open amount" : recordMoney(transaction.amount, transaction.currency);
-  const date = transactionDate(transaction.date);
+  const date = formatUserDateTime(transaction.date, country);
   const statusLabel = kind === "success" ? "Successful" : kind === "failed" ? "Unsuccessful" : "Pending";
   const StatusIcon = kind === "success" ? CheckCircle2 : kind === "failed" ? XCircle : Clock3;
 
