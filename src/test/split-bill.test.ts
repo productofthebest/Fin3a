@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
   billProgress,
+  SPLIT_CURRENCIES,
   equalSplit,
   fromCents,
   shareDisplayStatus,
   toCents,
   validateCustomSplit,
 } from "@/lib/split-bill";
+
+describe("dynamic currency support", () => {
+  it("includes local currencies for supported countries and USD", () => {
+    expect(SPLIT_CURRENCIES).toContain("ZAR");
+    expect(SPLIT_CURRENCIES).toContain("NGN");
+    expect(SPLIT_CURRENCIES).toContain("GHS");
+    expect(SPLIT_CURRENCIES).toContain("KES");
+    expect(SPLIT_CURRENCIES).toContain("GBP");
+    expect(SPLIT_CURRENCIES).toContain("USD");
+  });
+});
 
 describe("equalSplit", () => {
   it("splits ₦100,000 equally across 4 participants", () => {

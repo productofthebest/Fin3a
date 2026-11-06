@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/accounts_/split")({
 
 const fmt = (currency: string, amount: number) =>
   new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format(amount);
-const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
+const sym = (currency: string) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).formatToParts(0).find((part) => part.type === "currency")?.value ?? currency;
 
 interface DraftParticipant extends ResolvedParticipant {
   customAmount: string;
@@ -52,9 +52,9 @@ function Page() {
 
   const [title, setTitle] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
-  const { options: currencyOptions, local } = useTransferCurrencies();
-  const [currency, setCurrency] = useState<SplitCurrency>("NGN");
-  useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
+  const { options: currencyOptions } = useTransferCurrencies();
+  const [currency, setCurrency] = useState<SplitCurrency>("USD");
+  useEffect(() => { setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions.join("|")]);
   const [deadline, setDeadline] = useState("");
   const [note, setNote] = useState("");
   const [mode, setMode] = useState<"equal" | "custom">("equal");
@@ -200,8 +200,7 @@ function Page() {
             >
               {currencyOptions.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
             </select>
-            {local && <p className="mt-1 text-xs text-muted-foreground">{local} payments are not supported in your country yet. Use your USD account.</p>}
-          </div>
+            </div>
           <div>
             <Label htmlFor="sb-deadline">Payment deadline (optional)</Label>
             <Input id="sb-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} min={today} />

@@ -24,7 +24,7 @@ export const getShareProfile = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("user_settings")
-      .select("display_name, fin3a_id, currency")
+      .select("display_name, fin3a_id, currency, country")
       .eq("user_id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -43,7 +43,7 @@ export const getShareProfile = createServerFn({ method: "GET" })
         if (!upErr && updated) fin3aId = updated.fin3a_id;
       }
     }
-    return { displayName: data?.display_name ?? null, fin3aId, currency: data?.currency ?? "NGN" };
+    return { displayName: data?.display_name ?? null, fin3aId, currency: data?.currency ?? "NGN", country: data?.country ?? "NG" };
   });
 
 export const lookupRecipient = createServerFn({ method: "POST" })

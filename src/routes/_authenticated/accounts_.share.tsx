@@ -135,15 +135,15 @@ function Page() {
 
 const fmt = (currency: string, amount: number) =>
   new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 2 }).format(amount);
-const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
+const sym = (currency: string) => new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).formatToParts(0).find((part) => part.type === "currency")?.value ?? currency;
 
 function ShareMoney() {
   const lookup = useServerFn(lookupRecipient);
   const send = useServerFn(shareMoneyByPercent);
   const [total, setTotal] = useState("");
-  const { options: currencyOptions, local } = useTransferCurrencies();
-  const [currency, setCurrency] = useState<SplitCurrency>("NGN");
-  useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
+  const { options: currencyOptions } = useTransferCurrencies();
+  const [currency, setCurrency] = useState<SplitCurrency>("USD");
+  useEffect(() => { setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions.join("|")]);
   const [note, setNote] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [people, setPeople] = useState<(ResolvedParticipant & { percent: string })[]>([]);
@@ -213,7 +213,6 @@ function ShareMoney() {
           <select id="sh-currency" value={currency} onChange={(e) => setCurrency(e.target.value as SplitCurrency)} className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
             {currencyOptions.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
           </select>
-          {local && <p className="mt-1 text-xs text-muted-foreground">{local} payments are not supported in your country yet. Use your USD account.</p>}
         </div>
         <div>
           <Label htmlFor="sh-note">Note (optional)</Label>
