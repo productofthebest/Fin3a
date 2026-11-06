@@ -91,7 +91,7 @@ function ActivityPage() {
         <RecordCurrencySelect value={currency} currencies={["all", ...new Set([settings?.currency ?? "USD", "NGN", "USD", ...(result?.currencies ?? [])])]} onChange={resetPage(setCurrency)} />
         <Select value={type} onValueChange={resetPage(setType)}>
           <SelectTrigger className="w-44" aria-label="Activity type"><SelectValue /></SelectTrigger>
-          <SelectContent>{[["all", "All activity"], ["deposit", "Deposits"], ["withdrawal", "Withdrawals"], ["transfer", "Transfers"], ["share_payment", "Share Payment"], ["split_bill", "Split Bill"], ["bill_payment", "Bill payments"], ["crypto", "Crypto"], ["swap", "Swaps"], ["refund", "Refunds"], ["income", "Income records"], ["expense", "Expense records"]].map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          <SelectContent>{([["all", "All activity"], ["deposit", "Deposits"], ["withdrawal", "Withdrawals"], ["transfer", "Transfers"], ["share_payment", "Share Payment"], ["split_bill", "Split Bill"], ["bill_payment", "Bill payments"], ["crypto", "Crypto"], ["swap", "Swaps"], ["refund", "Refunds"], ["income", "Income records"], ["expense", "Expense records"]] as const).map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={status} onValueChange={resetPage(setStatus)}>
           <SelectTrigger className="w-44" aria-label="Activity status"><SelectValue /></SelectTrigger>

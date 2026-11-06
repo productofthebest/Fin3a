@@ -6,8 +6,8 @@ export interface ActivityRow {
   id: string; recordId?: string; kind: string; title: string; date: string;
   status: string; amount: number | null; currency: string | null;
   direction: "in" | "out" | "none"; reference: string | null;
-  categoryId?: string | null; category?: { name: string; icon: string } | null;
-  deletable: boolean; detail?: string;
+  categoryId?: string | null; category?: { name: string; icon: string } | null | undefined;
+  deletable: boolean; detail?: string | undefined;
 }
 export interface ActivitySources {
   records: (Row<"transactions"> & { categories?: { name: string; icon: string } | null })[];
@@ -68,7 +68,7 @@ export function buildActivity(s: ActivitySources, userId: string): ActivityRow[]
   for (const r of s.refunds) add({ id: `refund:${r.provider_refund_id}`, kind: "refund", title: "Bank deposit refund", date: r.provider_created_at ?? r.verified_at, status: r.review_state, amount: Number(r.amount), currency: "NGN", direction: "none", reference: r.provider_refund_id, detail: "Administrator review · wallet unchanged" });
   return rows.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 }
-export interface ActivityFilters { page: number; currency?: string; type?: string; status?: string; categoryId?: string; from?: string; to?: string; search?: string }
+export interface ActivityFilters { page: number; currency?: string | undefined; type?: string | undefined; status?: string | undefined; categoryId?: string | undefined; from?: string | undefined; to?: string | undefined; search?: string | undefined }
 export function activityPage(rows: ActivityRow[], f: ActivityFilters) {
   const currencies = [...new Set(rows.map(r => r.currency).filter((c): c is string => Boolean(c)))].sort();
   const term = f.search?.trim().toLowerCase();
