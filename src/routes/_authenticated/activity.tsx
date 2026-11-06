@@ -25,6 +25,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { pageMeta } from "@/lib/page-meta";
+import { TransactionCheckoutCard } from "@/components/transaction-checkout-card";
 
 export const Route = createFileRoute("/_authenticated/activity")({
   head: () => pageMeta("Activity", "Your Fin3a wallet, transfers, withdrawals, bills, crypto and imported financial history."),
@@ -80,6 +81,7 @@ function ActivityPage() {
   const [page, setPage] = useState(1);
   const [currency, setCurrency] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState<ActivityRow | null>(null);
+  const [checkoutTarget, setCheckoutTarget] = useState<ActivityRow | null>(null);
   const { data: categories } = useSuspenseQuery(categoriesQuery());
 
   const filters = {
@@ -188,6 +190,9 @@ function ActivityPage() {
                   {tx.reference ? <p className="truncate text-xs text-muted-foreground" title={tx.reference}>{tx.reference}</p> : null}
                   {tx.detail ? <p className="text-xs text-muted-foreground">{tx.detail}</p> : null}
                 </div>
+                <Button variant="outline" size="sm" className="shrink-0" onClick={() => setCheckoutTarget(tx)}>
+                  View receipt
+                </Button>
                 {tx.status === "pending" ? (
                   <Badge variant="secondary" className="hidden sm:inline-flex">
                     Pending
@@ -228,6 +233,7 @@ function ActivityPage() {
           </div>
         </div>
       ) : null}
+      <TransactionCheckoutCard transaction={checkoutTarget} open={Boolean(checkoutTarget)} onOpenChange={open => { if (!open) setCheckoutTarget(null); }} />
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={open => { if (!open && !deleteMut.isPending) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
           <AlertDialogHeader>

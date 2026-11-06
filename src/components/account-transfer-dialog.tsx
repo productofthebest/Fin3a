@@ -111,7 +111,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
         <button type="button" className="flex w-full items-center justify-between rounded-xl border border-primary bg-primary/5 p-4 text-left" aria-pressed="true">
           <span><span className="block text-sm font-semibold">Bank account payout</span><span className="mt-1 block text-xs text-muted-foreground">Local bank transfer in {payout?.currency}</span></span><span className="text-xs text-muted-foreground">Selected</span>
         </button>
-        <p className="text-xs text-muted-foreground">Flutterwave lists this destination for payouts. Fin3a’s country-specific payout processing is not activated yet, so no transfer can be submitted from this option.</p>
+        <p className="text-xs text-muted-foreground">This destination is not available for transfers yet, so a transfer cannot be submitted from this option.</p>
       </section> : mode === "bank" && !confirming ? <>
         <p className="text-sm text-muted-foreground">Available: {new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(balances.find(a => a.currency === "NGN")?.balance.available ?? 0)}</p>
         <Label htmlFor="bank-name">Bank</Label>
