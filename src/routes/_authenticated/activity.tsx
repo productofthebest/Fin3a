@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { pageMeta } from "@/lib/page-meta";
 import { TransactionCheckoutCard } from "@/components/transaction-checkout-card";
+import { formatUserDateTime } from "@/lib/user-date-time";
 
 export const Route = createFileRoute("/_authenticated/activity")({
   head: () => pageMeta("Activity", "Your Fin3a wallet, transfers, withdrawals, bills, crypto and imported financial history."),
@@ -183,7 +184,7 @@ function ActivityPage() {
                     {tx.title}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {tx.date.slice(0, 10)}
+                    {formatUserDateTime(tx.date, settings?.country)}
                     {tx.category ? ` · ${tx.category.name}` : ""}
                     {` · ${tx.status.replaceAll("_", " ")}`}
                   </p>
@@ -233,7 +234,7 @@ function ActivityPage() {
           </div>
         </div>
       ) : null}
-      <TransactionCheckoutCard transaction={checkoutTarget} open={Boolean(checkoutTarget)} onOpenChange={open => { if (!open) setCheckoutTarget(null); }} />
+      <TransactionCheckoutCard transaction={checkoutTarget} open={Boolean(checkoutTarget)} country={settings?.country} onOpenChange={open => { if (!open) setCheckoutTarget(null); }} />
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={open => { if (!open && !deleteMut.isPending) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
           <AlertDialogHeader>
