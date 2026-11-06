@@ -1,10 +1,15 @@
 import { CURRENCIES, formatMoney } from "./fin3a";
 import { calculateTotals, type FinancialRecord } from "./financial-calculations";
 
-export function recordCurrencies(preferred: string, records: { currency?: string | null }[] = []) {
+/**
+ * The selected country determines the local account currency. USD remains the
+ * only additional spending view. Other-currency records remain stored and are
+ * not mixed into either view; switching countries never rewrites history.
+ */
+export function recordCurrencies(preferred: string, _records: { currency?: string | null }[] = []) {
   const known = new Set(CURRENCIES.map(c => c.code));
-  return [...new Set([preferred, "NGN", "USD", ...records.map(r => r.currency)])]
-    .filter((c): c is string => typeof c === "string" && known.has(c));
+  return [...new Set([preferred, "USD"])]
+    .filter((currency): currency is string => typeof currency === "string" && known.has(currency));
 }
 
 export function recordMoney(amount: number, currency?: string | null) {
