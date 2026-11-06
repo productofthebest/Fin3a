@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Download, ChevronRight } from "lucide-react";
+import { Download, ChevronRight, Tags, Utensils, CarFront, ShoppingBag, House, HeartPulse, GraduationCap, Plane, Gamepad2, BriefcaseBusiness, Wallet, ReceiptText, Shirt, PawPrint, Gift, Smartphone, Dumbbell, Coffee } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { AppShell } from "@/components/app-shell";
 import { ForecastSimulator } from "@/components/forecast-simulator";
@@ -27,6 +27,31 @@ export const Route = createFileRoute("/_authenticated/analysis")({
   component: AnalysisPage,
 });
 function AnalysisError({ error }: { error: unknown }) { const router = useRouter(); return <div className="p-8"><p role="alert">{error instanceof Error ? error.message : "Your financial analysis could not be loaded."}</p><Button className="mt-4" onClick={() => router.invalidate()}>Try again</Button><Link to="/spending" className="ml-4 text-primary">Spending</Link></div>; }
+
+function CategoryIcon({ name }: { name: string }) {
+  const normalized = name.trim().toLowerCase();
+  const Icon = normalized === "uncategorized" ? Tags
+    : /food|grocer|restaurant|dining|meal/.test(normalized) ? Utensils
+    : /transport|travel|fuel|car|taxi|commut/.test(normalized) ? CarFront
+    : /shop|retail|purchase/.test(normalized) ? ShoppingBag
+    : /home|house|rent|utilities/.test(normalized) ? House
+    : /health|medical|pharmacy|wellness/.test(normalized) ? HeartPulse
+    : /education|school|tuition|course/.test(normalized) ? GraduationCap
+    : /flight|airfare|hotel|trip|holiday/.test(normalized) ? Plane
+    : /entertainment|game|movie|music/.test(normalized) ? Gamepad2
+    : /business|work|office|salary/.test(normalized) ? BriefcaseBusiness
+    : /bill|payment|subscription/.test(normalized) ? ReceiptText
+    : /clothing|fashion|apparel/.test(normalized) ? Shirt
+    : /pet|vet/.test(normalized) ? PawPrint
+    : /gift|donation|charity/.test(normalized) ? Gift
+    : /phone|internet|mobile|telecom/.test(normalized) ? Smartphone
+    : /fitness|gym|sport/.test(normalized) ? Dumbbell
+    : /coffee|cafe/.test(normalized) ? Coffee
+    : /cash|wallet|bank|saving/.test(normalized) ? Wallet
+    : Tags;
+  return <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/60 text-foreground"><Icon className="size-[18px]" strokeWidth={1.8}/></span>;
+}
+
 function AnalysisPage() {
   const filters = Route.useSearch();
   const navigate = useNavigate();
@@ -54,7 +79,7 @@ function AnalysisPage() {
     <div className="mt-7 grid gap-5 border-y border-border py-6 sm:grid-cols-3">{[{ name: "Income", value: data.current.income, old: data.previous.income, delta: data.changes.income }, { name: "Spending", value: data.current.spending, old: data.previous.spending, delta: data.changes.spending }, { name: "Recorded net cash flow", value: data.current.recordedNet, old: data.previous.recordedNet, delta: null }].map(metric => <div key={metric.name}><p className="text-sm text-muted-foreground">{metric.name}</p><p className="mt-2 break-words font-display text-2xl font-semibold">{money(metric.value)}</p><p className="mt-2 text-xs text-muted-foreground">Comparison {money(metric.old)}</p>{metric.name !== "Recorded net cash flow" && <p className="mt-1 text-xs text-muted-foreground">{change(metric.delta)}</p>}</div>)}</div>
     <p className="mt-3 text-xs text-muted-foreground">Completed regular records only · Not a bank balance · Pending expenses {money(data.current.pendingExpenses)}{excluded ? ` · ${excluded} records excluded due to currency, classification, date or review status` : ""} · {data.comparisonCount} eligible comparison records. Missing records are not proof of zero real-world spending.</p>
     <section className="mt-8"><h2 className="font-display text-xl font-semibold">Income & spending</h2>{data.transactions.length === 0 ? <div className="mt-5 border-l-2 border-primary pl-4"><p className="text-sm text-muted-foreground">No eligible completed records in this period.</p><Button asChild variant="link" className="px-0"><Link to="/activity">View Activity<ChevronRight className="size-4"/></Link></Button></div> : <div className="mt-4 h-64"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data.trend}><CartesianGrid stroke="var(--border)" vertical={false}/><XAxis dataKey="date" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} minTickGap={60} tickFormatter={v => v.slice(5)}/><Tooltip formatter={(v: number) => money(v)} contentStyle={{ background: "var(--popover)", borderColor: "var(--border)", color: "var(--foreground)" }}/><Area dataKey="income" name="Income" stroke="var(--positive)" fill="var(--positive)" fillOpacity={0.08}/><Area dataKey="spending" name="Spending" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.15}/></AreaChart></ResponsiveContainer></div>}</section>
-    <section className="mt-8"><h2 className="font-display text-xl font-semibold">Category comparison</h2><div className="mt-4 divide-y divide-border">{data.categories.length ? data.categories.map(c => <div key={c.id ?? "none"} className="flex items-center justify-between gap-4 py-3"><Button variant="ghost" className="min-w-0 justify-start px-0" onClick={() => setCategory(c.id)}><span>{c.icon}</span><span className="truncate">{c.name}</span><ChevronRight className="size-4"/></Button><div className="text-right"><p className="text-sm font-medium">{money(c.spending)}</p><p className="text-xs text-muted-foreground">{money(c.previous)} before · {change(c.change)}</p></div></div>) : <p className="text-sm text-muted-foreground">No eligible category spending recorded.</p>}</div></section>
+    <section className="mt-8"><h2 className="font-display text-xl font-semibold">Category comparison</h2><div className="mt-4 divide-y divide-border">{data.categories.length ? data.categories.map(c => <div key={c.id ?? "none"} className="flex items-center justify-between gap-4 py-3"><Button variant="ghost" className="min-w-0 justify-start px-0" onClick={() => setCategory(c.id)}><CategoryIcon name={c.name}/><span className="truncate">{c.name}</span><ChevronRight className="size-4"/></Button><div className="text-right"><p className="text-sm font-medium">{money(c.spending)}</p><p className="text-xs text-muted-foreground">{money(c.previous)} before · {change(c.change)}</p></div></div>) : <p className="text-sm text-muted-foreground">No eligible category spending recorded.</p>}</div></section>
     <section className="mt-8"><div className="flex items-center justify-between"><h2 className="font-display text-xl font-semibold">Underlying transactions ({transactions.length})</h2>{category !== undefined && <Button variant="ghost" onClick={() => setCategory(undefined)}>All transactions</Button>}</div><div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b border-border text-xs text-muted-foreground"><tr><th className="py-3 pr-4">Date</th><th className="pr-4">Description</th><th className="pr-4">Source</th><th className="text-right">Amount</th></tr></thead><tbody className="divide-y divide-border">{transactions.map(r => <tr key={r.id}><td className="whitespace-nowrap py-3 pr-4">{r.occurred_at}</td><td className="min-w-40 pr-4">{r.description ?? r.categories?.name ?? "Transaction"}</td><td className="pr-4 text-xs text-muted-foreground">{r.source === "document" ? "Imported" : "Manual"}</td><td className={`whitespace-nowrap text-right ${r.type === "income" ? "text-positive" : ""}`}>{r.type === "income" ? "+" : "−"}{money(Number(r.amount))}</td></tr>)}</tbody></table>{!transactions.length && <p className="py-4 text-sm text-muted-foreground">No transactions to display.</p>}</div></section>
     <ForecastSimulator key={data.currency} history={data.history} currency={data.currency}/>
   </AppShell>;
