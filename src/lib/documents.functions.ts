@@ -482,8 +482,8 @@ export const analyzeDocument = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ documentId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    if (process.env["DOCUMENT_SCANNER_ENABLED"] !== "true" || !process.env["OPENAI_API_KEY"]) {
-      throw new Error("Document scanning is temporarily unavailable while the secure scanner setup is verified.");
+    if (!isDocumentScannerConfigured()) {
+      throw new Error("Document scanning is not configured. Please ask the administrator to verify the server-side OpenAI API key.");
     }
     const { data: doc, error: docError } = await supabase
       .from("documents")
