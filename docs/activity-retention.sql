@@ -1,4 +1,5 @@
--- PREPARED ONLY. Apply through the managed migration tool after owner approval.
+-- Applied after owner approval as 0047_activity_history_retention (6 Nov 2026).
+-- Reference/test SQL only: do not reapply this file to an existing database.
 -- No existing financial rows are updated or deleted by these statements.
 CREATE OR REPLACE FUNCTION public.guard_activity_retention()
 RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
