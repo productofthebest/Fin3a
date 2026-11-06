@@ -40,13 +40,6 @@ const methodLabel: Record<string, string> = {
   mobilemoneyzambia: "Zambia mobile money",
 };
 
-const featuredMethods: { id: DepositMethodId; label: string; description: string; Icon: typeof CreditCard }[] = [
-  { id: "bank-transfer", label: "Bank Transfer", description: "Pay from your bank account", Icon: Landmark },
-  { id: "debit-card", label: "Debit / Credit Card", description: "Pay with your card", Icon: CreditCard },
-  { id: "apple-pay", label: "Apple Pay", description: "Pay securely with Apple Pay", Icon: WalletCards },
-  { id: "google-pay", label: "Google Pay", description: "Pay securely with Google Pay", Icon: Smartphone },
-];
-
 function Page() {
   const { data } = useSuspenseQuery(overview);
   const mode = "deposit" as const;
@@ -57,9 +50,20 @@ function Page() {
   const collection = getCollectionCapability(country);
   const payout = getBankPayoutCapability(country);
   const collectionMethods = collection?.methods ?? [];
-  const otherCollectionMethods = collectionMethods.filter(method => !["banktransfer", "card"].includes(method));
-  const [selectedMethod, setSelectedMethod] = useState<DepositMethodId | null>(null);
-  const selectedEligibility = selectedMethod ? getDepositMethodEligibility(selectedMethod, country, currency) : null;
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const paymentCards = [
+    ...collectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: "Flutterwave " + (methodLabel[method] ?? method) + " payment", Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
+    ...(collection?.applePay ? [{ id: "apple-pay", label: "Apple Pay", description: "Pay securely with Apple Pay", Icon: WalletCards }] : []),
+    { id: "google-pay", label: "Google Pay", description: "Availability checked at merchant checkout", Icon: WalletCards },
+  ];
+  const selectedCard = paymentCards.find(method => method.id === selectedMethod);
+  const selectedEligibility = selectedMethod === "banktransfer" ? getDepositMethodEligibility("bank-transfer", country, currency)
+    : selectedMethod === "card" ? getDepositMethodEligibility("debit-card", country, currency)
+    : selectedMethod === "apple-pay" ? getDepositMethodEligibility("apple-pay", country, currency)
+    : selectedMethod === "google-pay" ? getDepositMethodEligibility("google-pay", country, currency)
+    : selectedMethod && collectionMethods.includes(selectedMethod as typeof collectionMethods[number])
+      ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is listed in Flutterwave published collection options for " + (collection?.name ?? country) + ". Merchant activation, currency settlement and verified checkout are not confirmed, so it is not enabled for payments." }
+      : null;
   const unsupported = currency !== "NGN" && currency !== "USD";
 
   return <div className="flex min-h-screen flex-col bg-background">
@@ -75,46 +79,31 @@ function Page() {
       <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Balance currency">{options.map(v => <Button key={v} variant={currency === v ? "default" : "outline"} aria-pressed={currency === v} onClick={() => setCurrency(v)}>{v} {v === "NGN" ? "₦" : v === "USD" ? "$" : ""}</Button>)}</div>
 
       <section className="mb-6 rounded-xl border border-border bg-card p-4" aria-label="Country payment methods">
-        <div className="mb-2 flex items-center gap-2 font-medium"><CreditCard className="size-4" />Payment methods for {country}</div>
-        {mode === "deposit" ? collection ? <>
-          <p className="mb-2 text-xs text-muted-foreground">Other payment methods listed for {collection.name} ({collection.currency}):</p>
-          {otherCollectionMethods.length > 0
-            ? <div className="flex flex-wrap gap-2">{otherCollectionMethods.map(method => <span key={method} className="rounded-full border border-border px-2.5 py-1 text-xs">{methodLabel[method] ?? method}</span>)}</div>
-            : <p className="text-xs text-muted-foreground">No additional country-specific methods are listed.</p>}
-        </> : <p className="text-xs text-muted-foreground">No country-specific collection methods are currently listed for this country.</p> : payout ? <p className="text-xs text-muted-foreground">Bank payouts are listed in {payout.name} using {payout.currency}. Bank codes, account verification, merchant approval and live payout readiness must still be checked.</p> : <p className="text-xs text-muted-foreground">No bank-account payout is currently listed for this country.</p>}
+        <div className="mb-2 flex items-center gap-2 font-medium"><CreditCard className="size-4" />Flutterwave payment options for {country}</div>
+        {collection ? <p className="text-xs text-muted-foreground">{collection.name} · {collection.currency}. All country-listed options appear below.</p> : <p className="text-xs text-muted-foreground">No country-specific Flutterwave collection options are currently listed.</p>}
       </section>
 
       <section aria-label="Choose deposit method" className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Payment method</h2>
         <div className="grid grid-cols-2 gap-3">
-          {featuredMethods.map(({ id, label, description, Icon }) => {
+          {paymentCards.map(({ id, label, description, Icon }) => {
             const active = selectedMethod === id;
-            return <button
-              key={id}
-              type="button"
-              aria-expanded={active}
-              aria-controls={active ? "deposit-method-eligibility" : undefined}
+            return <button key={id} type="button" aria-expanded={active} aria-controls={active ? "deposit-method-eligibility" : undefined}
               onClick={() => setSelectedMethod(active ? null : id)}
-              className={`flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "border-primary bg-primary/5" : "border-border bg-card"}`}
-            >
-              <span className="flex w-full items-center justify-between">
-                <Icon className="size-5 text-primary" />
-                <ChevronDown className={`size-4 text-muted-foreground transition-transform ${active ? "rotate-180" : ""}`} />
-              </span>
+              className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (active ? "border-primary bg-primary/5" : "border-border bg-card")}>
+              <span className="flex w-full items-center justify-between"><Icon className="size-5 text-primary" /><ChevronDown className={"size-4 text-muted-foreground transition-transform " + (active ? "rotate-180" : "")} /></span>
               <span className="mt-3 block text-sm font-semibold">{label}</span>
               <span className="mt-1 block text-xs text-muted-foreground">{description}</span>
             </button>;
           })}
         </div>
+        {paymentCards.length === 0 && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">No Flutterwave deposit methods are listed for this country yet.</p>}
       </section>
 
       {selectedMethod && selectedEligibility && <section id="deposit-method-eligibility" aria-live="polite" className="mt-4 rounded-xl border border-border bg-card p-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold">{featuredMethods.find(method => method.id === selectedMethod)?.label}</h3>
-          <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility.usable ? "Available" : "Not enabled"}</span>
-        </div>
+        <div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{selectedCard?.label ?? selectedMethod}</h3><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility.usable ? "Available" : "Not enabled"}</span></div>
         <p className="mt-3 text-sm text-muted-foreground">{selectedEligibility.message}</p>
-        <p className="mt-2 text-xs text-muted-foreground">Country: {country} · Currency: {currency}. Merchant eligibility is checked separately from published country support.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Country: {country} · Currency: {currency}. Provider-listed support does not confirm merchant activation.</p>
       </section>}
 
       {currency === "NGN" ? <div className="mt-6">
