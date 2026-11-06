@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { UserSettings } from "./fin3a";
-import { COUNTRY_CURRENCY } from "./country-currency";
+import { COUNTRY_CURRENCY, localCurrency } from "./country-currency";
 
 export const DEFAULT_EXPENSE_CATEGORIES: { name: string; icon: string }[] = [
   { name: "Shopping", icon: "🛍️" },
@@ -93,8 +93,14 @@ export const updateSettings = createServerFn({ method: "POST" })
     const patch: { currency?: string; display_name?: string | null; country?: string; updated_at: string } = {
       updated_at: new Date().toISOString(),
     };
-    if (data.currency) patch.currency = data.currency;
-    if (data.country) patch.country = data.country;
+    // A country switch changes the local spending currency automatically.
+    // Existing transactions keep their stored currency and are never rewritten.
+    if (data.country) {
+      patch.country = data.country;
+      patch.currency = localCurrency(data.country);
+    } else if (data.currency) {
+      patch.currency = data.currency.toUpperCase();
+    }
     if (data.display_name !== undefined) patch.display_name = data.display_name;
     const { data: settings, error } = await context.supabase
       .from("user_settings")
