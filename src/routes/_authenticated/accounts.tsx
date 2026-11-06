@@ -76,21 +76,6 @@ function Page() {
                 <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
               </div>
             </div>
-            <div className="mt-1 text-[11px] leading-4">
-              <p className="font-medium text-muted-foreground">Recent activity{account.recent.length === 0 ? ": No wallet transactions yet." : ""}</p>
-              {account.recent.length === 0 ? (
-                null
-              ) : (
-                <ul className="space-y-0.5">
-                  {account.recent.map((tx) => (
-                    <li key={tx.id} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                      <span className="break-words capitalize text-muted-foreground">{tx.kind.replace("_", " ")} · {tx.status}</span>
-                      <span className="min-w-0 break-all font-medium">{fmt(tx.currency, tx.amount)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </section>
           </div>
         ))}
