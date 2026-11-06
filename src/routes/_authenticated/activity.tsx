@@ -169,7 +169,7 @@ function ActivityPage() {
                     tx.direction === "in" && "text-positive",
                   )}
                 >
-                  {tx.documentId ? null : tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
+                  {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
                 </span>
                 {tx.deletable && tx.recordId ? <Button
                   variant="ghost"
