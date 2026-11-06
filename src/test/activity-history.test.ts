@@ -3,13 +3,13 @@ import { activityPage, buildActivity, canDeleteRecord, type ActivitySources } fr
 
 const empty = (): ActivitySources => ({ records: [], ledger: [], transfers: [], topups: [], withdrawals: [], payments: [], splits: [], shares: [], requests: [], swaps: [], quotes: [], refunds: [] });
 describe("Activity retention and source union", () => {
-  it("exposes imported document deletion in Activity without adding a money movement", () => {
+  it("never adds an uploaded document as an Activity row; only its imported transactions belong there", () => {
     const s = empty();
-    s.documents = [{ id: "doc", filename: "Statement.pdf", status: "imported", created_at: "2026-11-06T00:00:00Z" }, { id: "pending", filename: "Pending.pdf", status: "uploaded", created_at: "2026-11-06T00:00:00Z" }];
+    s.records = [{ id: "tx-1", type: "expense", source: "document", import_identity: "fingerprint-1", amount: 1250, currency: "NGN", occurred_at: "2026-11-06", status: "completed", description: "Groceries", merchant: "Market", reference: null, category_id: "cat-1", categories: { name: "Groceries", icon: "shopping-basket" } }] as unknown as ActivitySources["records"];
     const rows = buildActivity(s,"u");
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ documentId: "doc", kind: "document", deletable: true, amount: null, direction: "none" });
-    expect(activityPage(rows,{ page: 1, type: "document" }).total).toBe(1);
+    expect(rows[0]).toMatchObject({ recordId: "tx-1", kind: "expense", title: "Groceries", category: { name: "Groceries" }, amount: 1250 });
+    expect(rows.some(row => row.kind === "document" || row.title.endsWith(".pdf"))).toBe(false);
   });
   it("manual history cannot be deleted", () => expect(canDeleteRecord({ source: "manual", import_identity: null })).toBe(false));
   it("only proven document imports can be deleted", () => {
