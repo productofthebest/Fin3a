@@ -31,6 +31,40 @@ test("rejects unsupported routes and methods", async () => {
   const r = await fetch(base + "/v1/flutterwave/transactions/123", { headers: auth });
   assert.equal(r.status, 404);
 });
+
+test("rejects malformed transaction verification identifiers", async () => {
+  const r = await fetch(base + "/v1/flutterwave/transactions/0/verify", { headers: auth });
+  assert.equal(r.status, 404);
+});
+
+test("verifies a Flutterwave transaction through the fixed provider origin", async () => {
+  const originalFetch = globalThis.fetch;
+  let providerUrl = "";
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (url.startsWith("https://api.flutterwave.com/v3/")) {
+      providerUrl = url;
+      assert.equal(init?.method, "GET");
+      assert.equal(new Headers(init?.headers).get("authorization"), `Bearer ${env.FLW_SECRET_KEY}`);
+      return new Response(JSON.stringify({
+        status: "success",
+        message: "Transaction fetched successfully",
+        data: { id: 12345, status: "successful", tx_ref: "F3I-test", amount: 100, currency: "NGN" },
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    }
+    return originalFetch(input, init);
+  };
+  try {
+    const r = await fetch(base + "/v1/flutterwave/transactions/12345/verify", { headers: auth });
+    assert.equal(r.status, 200);
+    assert.equal(providerUrl, "https://api.flutterwave.com/v3/transactions/12345/verify");
+    const payload = await r.json();
+    assert.equal(payload.data.status, "successful");
+    assert.equal(payload.data.tx_ref, "F3I-test");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 test("rejects invalid Nigerian bank payout before contacting provider", async () => {
   const r = await fetch(base + "/v1/flutterwave/transfers", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
