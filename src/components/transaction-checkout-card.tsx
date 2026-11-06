@@ -14,12 +14,17 @@ function statusKind(status: string): "success" | "failed" | "pending" {
 }
 
 function transactionDate(value: string) {
-  const parsed = new Date(value.includes("T") ? value : `${value.slice(0, 10)}T12:00:00`);
-  return new Intl.DateTimeFormat("en-NG", {
+  const parsed = new Date(value);
+  const date = new Intl.DateTimeFormat("en-NG", {
     dateStyle: "long",
+    timeZone: "Africa/Lagos",
+  }).format(parsed);
+  if (!value.includes("T")) return `${date} · Time not recorded`;
+  const time = new Intl.DateTimeFormat("en-NG", {
     timeStyle: "short",
     timeZone: "Africa/Lagos",
   }).format(parsed);
+  return `${date} · ${time}`;
 }
 
 function xml(value: string) {
