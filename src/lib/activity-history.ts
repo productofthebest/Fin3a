@@ -31,7 +31,7 @@ export function buildActivity(s: ActivitySources, userId: string): ActivityRow[]
   for (const r of s.transfers) {
     const splitId = splitTransfers.get(r.id);
     const split = s.splits.find(b => b.id === splitId);
-    const kind = splitId ? "split_bill" : qrTransfers.has(r.id) ? "share_payment" : "transfer";
+    const kind = splitId ? "split_bill" : qrTransfers.has(r.id) || r.reference === "Share Payment" ? "share_payment" : "transfer";
     add({ id: `transfer:${r.id}`, kind, title: split ? `Split Bill · ${split.title}` : kind === "share_payment" ? "Share Payment" : "Fin3a transfer", date: r.created_at, status: r.status, amount: Number(r.amount), currency: r.currency, direction: r.from_user_id === userId ? "out" : "in", reference: r.reference });
   }
   for (const r of s.topups) {
