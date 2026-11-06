@@ -4,12 +4,14 @@ import type { PlanningDatabase } from "./planning-types";
 import { ownedFinancialRecords } from "./financial-records.server";
 import { collectPages } from "./pagination";
 import { recordCurrencies } from "./record-currencies";
+import { localCurrency } from "./country-currency";
 import { currentBalance, evidenceInsights, goalCalculation, planningProjection } from "./planning-calculations";
 export async function planningContext(supabase:SupabaseClient<Database>,userId:string, selectedCurrency?:string) {
  const client=supabase as unknown as SupabaseClient<PlanningDatabase>;
  const today=new Date().toISOString().slice(0,10);
- const settings=await supabase.from("user_settings").select("currency").eq("user_id",userId).single();
+ const settings=await supabase.from("user_settings").select("currency,country").eq("user_id",userId).single();
  if(settings.error || !settings.data)throw new Error("Choose your currency first.");
+ const preferredCurrency=settings.data.country ? localCurrency(settings.data.country) : settings.data.currency;
  const [records,balances,commitments,goals,progress,scenarios]=await Promise.all([
   ownedFinancialRecords(supabase,userId),
   collectPages((a,b)=>client.from("confirmed_balances").select("*").eq("user_id",userId).order("as_of").order("id").range(a,b)),
@@ -18,8 +20,8 @@ export async function planningContext(supabase:SupabaseClient<Database>,userId:s
   collectPages((a,b)=>client.from("goal_progress").select("*").eq("user_id",userId).order("id").range(a,b)),
   collectPages((a,b)=>client.from("saved_scenarios").select("*").eq("user_id",userId).order("id").range(a,b)),
  ]);
- const currencies=recordCurrencies(settings.data.currency,[...records,...balances,...commitments,...goals,...scenarios]);
- const currency=selectedCurrency && currencies.includes(selectedCurrency) ? selectedCurrency : settings.data.currency;
+ const currencies=recordCurrencies(preferredCurrency,[...records,...balances,...commitments,...goals,...scenarios]);
+ const currency=selectedCurrency && currencies.includes(selectedCurrency) ? selectedCurrency : preferredCurrency;
  return {client,today,currencies,currency,records,balances,commitments,goals,progress,scenarios,balance:currentBalance(balances,currency,today)};
 }
 export async function planningOverview(supabase:SupabaseClient<Database>,userId:string, currency?:string) {
