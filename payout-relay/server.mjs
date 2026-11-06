@@ -126,14 +126,18 @@ function validInternationalMeta(currency, meta) {
 }
 function validTransfer(body) {
   if (!body || typeof body !== "object" || Array.isArray(body) || !validAmount(body.amount)) return false;
+  const allowedKeys = new Set(["destination_type", "account_bank", "account_number", "amount", "currency", "debit_currency", "reference", "narration", "beneficiary_name", "meta"]);
+  if (Object.keys(body).some(key => !allowedKeys.has(key))) return false;
+  if (body.destination_type && !["bank", "mobile_money"].includes(body.destination_type)) return false;
   if (!PAYOUT_CURRENCIES.has(body.currency) || !DEBIT_CURRENCIES.has(body.debit_currency || body.currency)) return false;
   if (!safeText(body.account_number, 34) || !/^[A-Za-z0-9-]{5,34}$/.test(body.account_number)) return false;
-  if (!safeText(body.beneficiary_name, 120) || !safeText(body.reference, 80) || !safeText(body.narration || "Fin3a payout", 80)) return false;
-  if (body.currency === "NGN" && (!/^\d{10}$/.test(body.account_number) || !safeText(body.account_bank, 12))) return false;
+  if (!safeText(body.beneficiary_name, 120) || !/^F3W-[0-9a-f-]{36}$/.test(body.reference) || !safeText(body.narration || "Fin3a payout", 80)) return false;
+  if (body.currency === "NGN" && (!/^\\d{10}$/.test(body.account_number) || !safeText(body.account_bank, 12))) return false;
   if (["USD", "GBP", "EUR"].includes(body.currency)) return validInternationalMeta(body.currency, body.meta);
-  if (body.account_bank && typeof body.account_bank === "string" && MOBILE_NETWORKS[body.currency]) {
-    return MOBILE_NETWORKS[body.currency].has(body.account_bank.toUpperCase());
-  }
+  const operator = typeof body.account_bank === "string" ? body.account_bank.toUpperCase() : "";
+  if (body.destination_type === "mobile_money") return Boolean(MOBILE_NETWORKS[body.currency]?.has(operator));
+  if (body.destination_type === "bank") return safeText(body.account_bank, 12);
+  if (MOBILE_NETWORKS[body.currency]?.has(operator)) return true;
   return safeText(body.account_bank, 12);
 }
 function validPayment(body) {
