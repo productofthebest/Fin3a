@@ -5,12 +5,11 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
-import { categoriesQuery, settingsQuery, transactionPageQuery } from "@/lib/queries";
+import { activityQuery, categoriesQuery, settingsQuery } from "@/lib/queries";
 import { HISTORY_PAGE_SIZE, pageCount } from "@/lib/transaction-history";
 import { deleteTransaction } from "@/lib/dashboard.functions";
-import { recordMoney, recordCurrencies } from "@/lib/record-currencies";
+import { recordMoney } from "@/lib/record-currencies";
 import { RecordCurrencySelect } from "@/components/record-currency-select";
-import { TX_STATUS_LABELS, type TxType } from "@/lib/fin3a";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +25,12 @@ import { cn } from "@/lib/utils";
 import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/_authenticated/activity")({
-  head: () => pageMeta("Activity", "Review and manage your personal Fin3a income and expenses."),
+  head: () => pageMeta("Activity", "Your Fin3a wallet, transfers, withdrawals, bills, crypto and imported financial history."),
   ssr: false,
   loader: async ({ context }) => {
     const settings = await context.queryClient.ensureQueryData(settingsQuery());
     if (!settings?.onboarding_completed) throw redirect({ to: "/onboarding" });
-    await context.queryClient.ensureQueryData(transactionPageQuery({ page: 1 }));
+    await context.queryClient.ensureQueryData(activityQuery({ page: 1 }));
     await context.queryClient.ensureQueryData(categoriesQuery());
   },
   component: ActivityPage,
@@ -40,7 +39,8 @@ export const Route = createFileRoute("/_authenticated/activity")({
 function ActivityPage() {
   const queryClient = useQueryClient();
   const { data: settings } = useSuspenseQuery(settingsQuery());
-  const [type, setType] = useState<"all" | TxType>("all");
+  const [type, setType] = useState("all");
+  const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("all");
   const [from, setFrom] = useState("");
@@ -53,22 +53,24 @@ function ActivityPage() {
     page,
     ...(currency !== "all" ? { currency } : {}),
     ...(type !== "all" ? { type } : {}),
+    ...(status !== "all" ? { status } : {}),
     ...(categoryId !== "all" ? { categoryId } : {}),
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
     ...(search.trim() ? { search: search.trim() } : {}),
   };
-  const { data: result, isFetching } = useQuery(transactionPageQuery(filters));
+  const { data: result, isFetching, error } = useQuery(activityQuery(filters));
   const transactions = result?.rows;
   const total = result?.total ?? 0;
   const pages = pageCount(total, HISTORY_PAGE_SIZE);
   const resetPage = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(1); };
-  const hasFilters = currency !== "all" || type !== "all" || categoryId !== "all" || from || to || search;
+  const hasFilters = currency !== "all" || type !== "all" || status !== "all" || categoryId !== "all" || from || to || search;
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteTransaction({ data: { id } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["activity"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["bills"] });
       toast.success("Transaction deleted");
@@ -81,31 +83,24 @@ function ActivityPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Activity</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Everything you've recorded, newest first.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Wallet and financial history, newest first.</p>
         </div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <RecordCurrencySelect value={currency} currencies={["all", ...recordCurrencies(settings?.currency ?? "USD", transactions ?? [])]} onChange={resetPage(setCurrency)} />
-        <div className="flex gap-1 rounded-lg bg-muted p-1">
-          {(["all", "income", "expense"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => resetPage(setType)(t)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm capitalize transition-colors",
-                type === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
-              )}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        <RecordCurrencySelect value={currency} currencies={["all", ...new Set([settings?.currency ?? "USD", "NGN", "USD", ...(result?.currencies ?? [])])]} onChange={resetPage(setCurrency)} />
+        <Select value={type} onValueChange={resetPage(setType)}>
+          <SelectTrigger className="w-44" aria-label="Activity type"><SelectValue /></SelectTrigger>
+          <SelectContent>{([["all", "All activity"], ["deposit", "Deposits"], ["withdrawal", "Withdrawals"], ["transfer", "Transfers"], ["share_payment", "Share Payment"], ["split_bill", "Split Bill"], ["bill_payment", "Bill payments"], ["crypto", "Crypto"], ["swap", "Swaps"], ["refund", "Refunds"], ["income", "Income records"], ["expense", "Expense records"]] as const).map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={status} onValueChange={resetPage(setStatus)}>
+          <SelectTrigger className="w-44" aria-label="Activity status"><SelectValue /></SelectTrigger>
+          <SelectContent>{["all", "pending", "completed", "credited", "failed", "reversed", "cancelled", "paid", "open", "expired", "disputed", "quoted", ...new Set(transactions?.map(r => r.status) ?? [])].filter((v,i,a) => a.indexOf(v) === i).map(v => <SelectItem key={v} value={v}>{v === "all" ? "All statuses" : v.replaceAll("_", " ")}</SelectItem>)}</SelectContent>
+        </Select>
         <Input
           value={search}
           onChange={(e) => resetPage(setSearch)(e.target.value)}
-          placeholder="Search description or merchant…"
+          placeholder="Search history or reference…"
           className="w-64"
           maxLength={120}
           aria-label="Search transactions"
@@ -123,12 +118,12 @@ function ActivityPage() {
         <Input type="date" value={from} max={to || undefined} onChange={(e) => resetPage(setFrom)(e.target.value)} className="w-40" aria-label="From date" />
         <Input type="date" value={to} min={from || undefined} onChange={(e) => resetPage(setTo)(e.target.value)} className="w-40" aria-label="To date" />
         {hasFilters ? (
-          <Button variant="ghost" size="sm" onClick={() => { setCurrency("all"); setType("all"); setSearch(""); setCategoryId("all"); setFrom(""); setTo(""); setPage(1); }}>Clear</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setCurrency("all"); setType("all"); setStatus("all"); setSearch(""); setCategoryId("all"); setFrom(""); setTo(""); setPage(1); }}>Clear</Button>
         ) : null}
       </div>
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-card">
-        {isFetching && !transactions ? (
+        {error ? <div className="p-6"><p className="text-sm text-destructive">History could not be loaded.</p><Button variant="outline" size="sm" className="mt-3" onClick={() => queryClient.invalidateQueries({ queryKey: ["activity"] })}>Try again</Button></div> : isFetching && !transactions ? (
           <div className="space-y-2 p-4">
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-12 w-full" />
@@ -145,13 +140,15 @@ function ActivityPage() {
                 <span className="text-lg leading-none">{tx.category?.icon ?? "💠"}</span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
-                    {tx.description || tx.merchant || (tx.type === "income" ? "Income" : "Expense")}
+                    {tx.title}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {tx.occurred_at}
+                    {tx.date.slice(0, 10)}
                     {tx.category ? ` · ${tx.category.name}` : ""}
-                    {tx.status !== "completed" ? ` · ${TX_STATUS_LABELS[tx.status]}` : ""}
+                    {` · ${tx.status.replaceAll("_", " ")}`}
                   </p>
+                  {tx.reference ? <p className="truncate text-xs text-muted-foreground" title={tx.reference}>{tx.reference}</p> : null}
+                  {tx.detail ? <p className="text-xs text-muted-foreground">{tx.detail}</p> : null}
                 </div>
                 {tx.status === "pending" ? (
                   <Badge variant="secondary" className="hidden sm:inline-flex">
@@ -161,20 +158,20 @@ function ActivityPage() {
                 <span
                   className={cn(
                     "text-sm font-medium tabular-nums",
-                    tx.type === "income" && "text-positive",
+                    tx.direction === "in" && "text-positive",
                   )}
                 >
-                  {tx.type === "income" ? "+" : "−"}
-                  {recordMoney(Number(tx.amount), tx.currency)}
+                  {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
                 </span>
-                <Button
+                {tx.deletable && tx.recordId ? <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Delete transaction"
-                  onClick={() => deleteMut.mutate(tx.id)}
+                  aria-label="Delete imported record"
+                  disabled={deleteMut.isPending}
+                  onClick={() => { if (tx.recordId && window.confirm("Remove this imported-document record? Your wallet payment history will not change.")) deleteMut.mutate(tx.recordId); }}
                 >
                   <Trash2 className="size-4 text-muted-foreground" />
-                </Button>
+                </Button> : null}
               </li>
             ))}
           </ul>

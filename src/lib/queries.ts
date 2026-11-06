@@ -4,6 +4,13 @@ import { getDashboard, listTransactions, listTransactionPage } from "./dashboard
 import { listCategories } from "./categories.functions";
 import { listBills } from "./bills.functions";
 import { getSettings } from "./settings.functions";
+import { getActivity } from "./activity.functions";
+import type { ActivityFilters } from "./activity-history";
+
+export const activityQuery = (filters: ActivityFilters) => queryOptions({
+  queryKey: ["activity", filters], queryFn: () => getActivity({ data: filters }),
+  refetchInterval: 30000,
+});
 
 export const settingsQuery = () =>
   queryOptions({

@@ -12,6 +12,7 @@ import {
 import { calculateTotals, completedRecords, roundMoney, validFinancialDate } from "./financial-calculations";
 import { recordCurrencies } from "./record-currencies";
 import { ownedFinancialRecords } from "./financial-records.server";
+import { canDeleteRecord } from "./activity-history";
 
 const CATEGORY_SELECT = "id, name, icon";
 
@@ -279,11 +280,17 @@ export const deleteTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { data: record, error: readError } = await context.supabase.from("transactions")
+      .select("source,import_identity").eq("id", data.id).eq("user_id", context.userId).maybeSingle();
+    if (readError || !record) throw new Error("Record not found.");
+    if (!canDeleteRecord(record)) throw new Error("History cannot be deleted. Only imported-document records can be removed.");
     const { error } = await context.supabase
       .from("transactions")
       .delete()
       .eq("id", data.id)
-      .eq("user_id", context.userId);
+      .eq("user_id", context.userId)
+      .eq("source", "document")
+      .not("import_identity", "is", null);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
