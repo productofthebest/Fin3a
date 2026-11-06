@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ReceiptText, Coins, RefreshCw, RotateCcw, WalletCards, CircleDollarSign } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { activityQuery, categoriesQuery, settingsQuery } from "@/lib/queries";
@@ -37,6 +37,36 @@ export const Route = createFileRoute("/_authenticated/activity")({
   },
   component: ActivityPage,
 });
+
+function TransactionIcon({ kind, direction }: { kind: string; direction: "in" | "out" | "none" }) {
+  const iconClass = "size-5";
+  const Icon =
+    kind === "deposit" || kind === "income" || kind === "transfer_in" || kind === "swap_in"
+      ? ArrowDownLeft
+      : kind === "withdrawal" || kind === "expense"
+        ? ArrowUpRight
+        : kind === "transfer" || kind === "share_payment" || kind === "split_bill"
+          ? ArrowLeftRight
+          : kind === "bill_payment"
+            ? ReceiptText
+            : kind === "crypto"
+              ? Coins
+              : kind === "swap"
+                ? RefreshCw
+                : kind === "refund"
+                  ? RotateCcw
+                  : direction === "in"
+                    ? ArrowDownLeft
+                    : direction === "out"
+                      ? ArrowUpRight
+                      : WalletCards;
+
+  return (
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-secondary/70 text-foreground">
+      <Icon className={iconClass} strokeWidth={1.8} />
+    </span>
+  );
+}
 
 function ActivityPage() {
   const queryClient = useQueryClient();
@@ -145,7 +175,7 @@ function ActivityPage() {
           <ul className="divide-y divide-border">
             {transactions.map((tx) => (
               <li key={tx.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="text-lg leading-none">{tx.category?.icon ?? "💠"}</span>
+                <TransactionIcon kind={tx.kind} direction={tx.direction} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
                     {tx.title}
