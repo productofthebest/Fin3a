@@ -52,8 +52,8 @@ function Page() {
 
   const [title, setTitle] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
-  const { options: currencyOptions, local } = useTransferCurrencies();
-  const [currency, setCurrency] = useState<SplitCurrency>("NGN");
+  const { options: currencyOptions } = useTransferCurrencies();
+  const [currency, setCurrency] = useState<SplitCurrency>("USD");
   useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
   const [deadline, setDeadline] = useState("");
   const [note, setNote] = useState("");
@@ -200,8 +200,7 @@ function Page() {
             >
               {currencyOptions.map((c) => <option key={c} value={c}>{sym(c)}</option>)}
             </select>
-            {local && <p className="mt-1 text-xs text-muted-foreground">{local} payments are not supported in your country yet. Use your USD account.</p>}
-          </div>
+            </div>
           <div>
             <Label htmlFor="sb-deadline">Payment deadline (optional)</Label>
             <Input id="sb-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} min={today} />
