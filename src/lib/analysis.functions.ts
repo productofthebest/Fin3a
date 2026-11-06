@@ -17,7 +17,7 @@ export const getAnalysis = createServerFn({ method: "GET" })
     // Page through every owned row: PostgREST's default row limit must not truncate totals.
     const records=await ownedFinancialRecords(context.supabase,context.userId);
     const currencies = recordCurrencies(settings.currency, records);
-    const currency = data.currency ?? settings.currency;
-    if (!currencies.includes(currency)) throw new Error("Choose an available record currency.");
+    const requestedCurrency = data.currency;
+    const currency = requestedCurrency && currencies.includes(requestedCurrency) ? requestedCurrency : settings.currency;
     return { ...buildAnalysis(records, currency, today, data), currency, currencies, today, history: forecastHistory(records, currency, today), hasRecords: records.length > 0, range };
   });

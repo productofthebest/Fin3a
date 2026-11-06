@@ -61,8 +61,9 @@ export const getDashboard = createServerFn({ method: "GET" })
     if (billsError) throw new Error(billsError.message);
 
     const currencies = recordCurrencies(settings?.currency ?? "USD", allTransactions);
-    const currency = data.currency ?? settings?.currency ?? "USD";
-    if (!currencies.includes(currency)) throw new Error("Choose an available record currency.");
+    const requestedCurrency = data.currency;
+    const preferredCurrency = settings?.currency ?? "USD";
+    const currency = requestedCurrency && currencies.includes(requestedCurrency) ? requestedCurrency : preferredCurrency;
     const transactions = completedRecords(allTransactions.filter(t=>t.occurred_at>=from && t.occurred_at<end), currency, today);
 
     // Monthly cash-flow buckets for the nine-month window.
