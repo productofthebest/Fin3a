@@ -106,12 +106,20 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
           <span className="mt-3 block text-sm font-semibold">{payout.name} payout</span><span className="mt-1 block text-xs text-muted-foreground">Local bank transfer in {payout.currency}</span>
         </button>}
       </div>}
-      {mode === "international" && !confirming ? <section className="space-y-3 rounded-xl border border-border bg-card p-4" aria-label="International payout options">
-        <h3 className="font-semibold">{payout?.name} · {payout?.currency}</h3>
-        <button type="button" className="flex w-full items-center justify-between rounded-xl border border-primary bg-primary/5 p-4 text-left" aria-pressed="true">
-          <span><span className="block text-sm font-semibold">Bank account payout</span><span className="mt-1 block text-xs text-muted-foreground">Local bank transfer in {payout?.currency}</span></span><span className="text-xs text-muted-foreground">Selected</span>
-        </button>
-        <p className="text-xs text-muted-foreground">This destination is not available for transfers yet, so a transfer cannot be submitted from this option.</p>
+      {mode === "international" && !confirming ? <section className="space-y-3" aria-label="International bank payout">
+        <div>
+          <h3 className="text-base font-semibold">{payout?.name} bank payout</h3>
+          <p className="text-sm text-muted-foreground">Local bank transfer in {payout?.currency}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="international-bank">Bank</Label>
+          <Input id="international-bank" disabled placeholder="International bank selection coming soon" />
+          <Label htmlFor="international-account">Account number</Label>
+          <Input id="international-account" disabled placeholder="Account details unavailable" />
+          <Label htmlFor="international-amount">Amount ({payout?.currency})</Label>
+          <Input id="international-amount" disabled placeholder="Payout setup pending" />
+        </div>
+        <p role="status" className="text-xs text-muted-foreground">International bank payouts are not enabled for transfers yet. These details are shown for the selected payout route; submitting a payout is currently unavailable.</p>
       </section> : mode === "bank" && !confirming ? <>
         <p className="text-sm text-muted-foreground">Available: {new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(balances.find(a => a.currency === "NGN")?.balance.available ?? 0)}</p>
         <Label htmlFor="bank-name">Bank</Label>
