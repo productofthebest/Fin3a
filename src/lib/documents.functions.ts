@@ -32,6 +32,7 @@ const DRAFT_FIELDS = [
   "reference",
   "payment_method",
   "classification",
+  "category_hint",
   "review_confirmed",
 ] as const;
 
@@ -48,6 +49,7 @@ const draftUpdateInput = z.object({
   reference: z.string().trim().max(120).nullable().optional(),
   payment_method: z.string().trim().max(80).nullable().optional(),
   classification: z.enum(CLASSIFICATIONS).optional(),
+  category_hint: z.string().trim().max(80).nullable().optional(),
   review_confirmed: z.boolean().optional(),
   not_duplicate: z.literal(true).optional(),
 });
@@ -420,6 +422,9 @@ export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => documentUploadInput.parse(input))
   .handler(async ({ data, context }) => {
+    if (process.env["DOCUMENT_SCANNER_ENABLED"] !== "true" || !process.env["OPENAI_API_KEY"]) {
+      throw new Error("Document scanning is temporarily unavailable while the secure scanner setup is verified.");
+    }
     assertOwnedDocumentPath(data.storage_path, context.userId);
     validateDocumentMetadata(data);
     const {data:file,error:downloadError}=await context.supabase.storage.from("documents").download(data.storage_path);
@@ -461,11 +466,20 @@ function guessDocType(filename: string): string {
   return recognizedDocumentType(filename);
 }
 
+export const getScannerStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => ({
+    active: process.env["DOCUMENT_SCANNER_ENABLED"] === "true" && Boolean(process.env["OPENAI_API_KEY"]),
+  }));
+
 export const analyzeDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ documentId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    if (process.env["DOCUMENT_SCANNER_ENABLED"] !== "true" || !process.env["OPENAI_API_KEY"]) {
+      throw new Error("Document scanning is temporarily unavailable while the secure scanner setup is verified.");
+    }
     const { data: doc, error: docError } = await supabase
       .from("documents")
       .select(DOC_SELECT)

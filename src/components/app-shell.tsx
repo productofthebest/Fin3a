@@ -12,6 +12,7 @@ import { currencySymbol } from "@/lib/fin3a";
 import { localCurrency } from "@/lib/country-currency";
 import { Button } from "@/components/ui/button";
 import { SupportContact } from "@/components/support-contact";
+import { getScannerStatus } from "@/lib/documents.functions";
 
 const NAV_ITEMS = [
   { to: "/assistant", label: "Dashboard" },
@@ -30,6 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: settings } = useSuspenseQuery(settingsQuery());
+  const { data: scannerStatus } = useQuery({ queryKey: ["scanner-status"], queryFn: () => getScannerStatus(), staleTime: 30_000 });
   const { data: isAdmin } = useQuery({ queryKey: ["admin", "is-admin"], queryFn: () => getIsAdmin(), staleTime: 300_000 });
 
   async function handleSignOut() {
@@ -63,6 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
+          {scannerStatus?.active ? <Link to="/documents" className={cn("hidden rounded-md px-2.5 py-1.5 text-sm lg:inline-flex", pathname === "/documents" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}>Scan</Link> : null}
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
             {settings ? (
               <span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground" title="Your local currency">
@@ -102,6 +105,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {item.label}
             </Link>
           ))}
+          {scannerStatus?.active ? <Link to="/documents" className={cn("shrink-0 rounded-md px-3 py-1.5 text-sm", pathname === "/documents" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}>Scan</Link> : null}
         </nav>
       </header>
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">{children}</main>

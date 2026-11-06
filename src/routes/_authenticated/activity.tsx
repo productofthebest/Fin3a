@@ -8,7 +8,6 @@ import { AppShell } from "@/components/app-shell";
 import { activityQuery, categoriesQuery, settingsQuery } from "@/lib/queries";
 import { HISTORY_PAGE_SIZE, pageCount } from "@/lib/transaction-history";
 import { deleteTransaction } from "@/lib/dashboard.functions";
-import { deleteDocument } from "@/lib/documents.functions";
 import type { ActivityRow } from "@/lib/activity-history";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { recordMoney } from "@/lib/record-currencies";
@@ -72,9 +71,8 @@ function ActivityPage() {
 
   const deleteMut = useMutation({
     mutationFn: async (row: ActivityRow) => {
-      if (row.documentId) return deleteDocument({ data: { documentId: row.documentId } });
       if (row.recordId) return deleteTransaction({ data: { id: row.recordId } });
-      throw new Error("Only imported documents and records can be deleted.");
+      throw new Error("Only imported transaction records can be deleted.");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -83,7 +81,7 @@ function ActivityPage() {
       queryClient.invalidateQueries({ queryKey: ["bills"] });
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setDeleteTarget(null);
-      toast.success("Imported item deleted");
+      toast.success("Imported transaction deleted");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Failed to delete"),
   });
@@ -101,7 +99,7 @@ function ActivityPage() {
         <RecordCurrencySelect value={currency} currencies={["all", ...new Set([settings?.currency ?? "USD", "NGN", "USD", ...(result?.currencies ?? [])])]} onChange={resetPage(setCurrency)} />
         <Select value={type} onValueChange={resetPage(setType)}>
           <SelectTrigger className="w-44" aria-label="Activity type"><SelectValue /></SelectTrigger>
-          <SelectContent>{([["all", "All activity"], ["document", "Imported documents"], ["deposit", "Deposits"], ["withdrawal", "Withdrawals"], ["transfer", "Transfers"], ["share_payment", "Share Payment"], ["split_bill", "Split Bill"], ["bill_payment", "Bill payments"], ["crypto", "Crypto"], ["swap", "Swaps"], ["refund", "Refunds"], ["income", "Income records"], ["expense", "Expense records"]] as const).map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
+          <SelectContent>{([["all", "All activity"], ["deposit", "Deposits"], ["withdrawal", "Withdrawals"], ["transfer", "Transfers"], ["share_payment", "Share Payment"], ["split_bill", "Split Bill"], ["bill_payment", "Bill payments"], ["crypto", "Crypto"], ["swap", "Swaps"], ["refund", "Refunds"], ["income", "Income records"], ["expense", "Expense records"]] as const).map(([v,l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={status} onValueChange={resetPage(setStatus)}>
           <SelectTrigger className="w-44" aria-label="Activity status"><SelectValue /></SelectTrigger>
@@ -171,13 +169,13 @@ function ActivityPage() {
                     tx.direction === "in" && "text-positive",
                   )}
                 >
-                  {tx.documentId ? null : tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
+                  {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
                 </span>
-                {tx.deletable && (tx.recordId || tx.documentId) ? <Button
+                {tx.deletable && tx.recordId ? <Button
                   variant="ghost"
                   size="icon"
-                  aria-label={tx.documentId ? "Delete imported document" : "Delete imported record"}
-                  title={tx.documentId ? "Delete imported document" : "Delete imported record"}
+                  aria-label="Delete imported record"
+                  title="Delete imported record"
                   disabled={deleteMut.isPending}
                   onClick={() => setDeleteTarget(tx)}
                 >
@@ -203,8 +201,8 @@ function ActivityPage() {
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={open => { if (!open && !deleteMut.isPending) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>{deleteTarget?.documentId ? "Delete imported document?" : "Delete imported record?"}</AlertDialogTitle>
-            <AlertDialogDescription>{deleteTarget?.documentId ? "The uploaded file will be permanently deleted. Previously imported records and wallet payment history will remain." : "This imported record will be removed from your recorded income or spending. Wallet payment history will remain."}</AlertDialogDescription>
+            <AlertDialogTitle>Delete imported record?</AlertDialogTitle>
+            <AlertDialogDescription>This imported transaction will be removed from your recorded income or spending. Wallet payment history will remain.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteMut.isPending}>Cancel</AlertDialogCancel>
