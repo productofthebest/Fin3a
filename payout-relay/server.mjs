@@ -11,6 +11,16 @@ const FLW_ORIGIN = "https://api.flutterwave.com/v3";
 
 const PAYOUT_CURRENCIES = new Set(["NGN", "GHS", "KES", "MWK", "TZS", "UGX", "USD", "EUR", "GBP", "XAF", "XOF", "ZAR", "RWF", "EGP"]);
 const DEBIT_CURRENCIES = new Set(["NGN", "GHS", "KES", "MWK", "TZS", "UGX", "USD", "EUR", "GBP", "XAF", "XOF", "ZAR", "RWF", "EGP"]);
+const PAYOUT_COUNTRY_CURRENCIES = {
+  NG: "NGN", GH: "GHS", KE: "KES", MW: "MWK", TZ: "TZS", UG: "UGX",
+  US: "USD", GB: "GBP", ZA: "ZAR", RW: "RWF", EG: "EGP",
+  CM: "XAF", CI: "XOF", SN: "XOF",
+};
+const EUR_PAYOUT_COUNTRIES = new Set(["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"]);
+function payoutCountryMatches(country, currency) {
+  const code = typeof country === "string" ? country.toUpperCase() : "";
+  return currency === "EUR" ? EUR_PAYOUT_COUNTRIES.has(code) : PAYOUT_COUNTRY_CURRENCIES[code] === currency;
+}
 const MOBILE_NETWORKS = {
   KES: new Set(["SAFARICOM", "T-KASH", "AIRTEL", "MPS"]),
   GHS: new Set(["AIRTELTIGO", "MTN", "TELECEL", "VODAFONE"]),
@@ -21,19 +31,20 @@ const MOBILE_NETWORKS = {
 };
 
 const PAYMENT_OPTIONS = {
-  NG: { NGN: ["card", "banktransfer"] },
+  // Nigeria's existing bank-account top-up remains a separate flow; hosted collection is card-only.
+  NG: { NGN: ["card"] },
   GH: { GHS: ["card", "mobilemoneyghana"] },
   KE: { KES: ["card", "mpesa"] },
   GB: { GBP: ["card", "account"] },
   US: { USD: ["card", "account"] },
-  ZA: { ZAR: ["card", "account"] },
+  ZA: { ZAR: ["card", "account", "1voucher"] },
   MW: { MWK: ["card", "mobilemoneymalawi"] },
   UG: { UGX: ["card", "mobilemoneyuganda"] },
   RW: { RWF: ["card", "mobilemoneyrwanda"] },
   TZ: { TZS: ["card", "mobilemoneytanzania"] },
-  CI: { XOF: ["card", "mobilemoneyxaf"] },
-  SN: { XOF: ["card", "mobilemoneyxaf"] },
-  CM: { XAF: ["card", "mobilemoneyxof"] },
+  CI: { XOF: ["card", "mobilemoneyxof"] },
+  SN: { XOF: ["card", "mobilemoneyxof"] },
+  CM: { XAF: ["card", "mobilemoneyxaf"] },
   FR: { EUR: ["card", "account"] },
   DE: { EUR: ["card", "account"] },
   IE: { EUR: ["card", "account"] },
@@ -53,6 +64,8 @@ const PAYMENT_OPTIONS = {
   SI: { EUR: ["card", "account"] },
   CY: { EUR: ["card", "account"] },
   MT: { EUR: ["card", "account"] },
+  HR: { EUR: ["card", "account"] },
+  ZM: { ZMW: ["card", "mobilemoneyzambia"] },
 };
 
 function ready() { return TOKEN.length >= 32 && FLW_SECRET_KEY.length >= 20; }
@@ -119,7 +132,10 @@ function validInternationalMeta(currency, meta) {
   if (Object.keys(m).some(k => !INTERNATIONAL_META_KEYS.has(k))) return false;
   if (!safeText(m.routing_number, 40) || !safeText(m.bank_name, 120)) return false;
   if ((currency === "USD" || currency === "EUR") && !safeText(m.swift_code, 20)) return false;
-  if (currency === "USD" && (!safeText(m.beneficiary_address, 180) || !safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100))) return false;
+  if (currency === "USD") {
+    if (!["checking", "depository"].includes(m.account_type)) return false;
+    if (!safeText(m.beneficiary_address, 180) || !safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100)) return false;
+  }
   if (currency === "EUR" && (!safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100) || !safeText(m.city, 100))) return false;
   if (currency === "GBP") {
     if (!["personal", "corporate"].includes(m.account_type)) return false;
@@ -130,10 +146,14 @@ function validInternationalMeta(currency, meta) {
 }
 function validTransfer(body) {
   if (!body || typeof body !== "object" || Array.isArray(body) || !validAmount(body.amount)) return false;
-  const allowedKeys = new Set(["destination_type", "account_bank", "account_number", "amount", "currency", "debit_currency", "reference", "narration", "beneficiary_name", "meta"]);
+  const allowedKeys = new Set(["destination_type", "destination_country", "account_bank", "account_number", "amount", "currency", "debit_currency", "reference", "narration", "beneficiary_name", "meta"]);
   if (Object.keys(body).some(key => !allowedKeys.has(key))) return false;
   if (body.destination_type && !["bank", "mobile_money"].includes(body.destination_type)) return false;
   if (!PAYOUT_CURRENCIES.has(body.currency) || !DEBIT_CURRENCIES.has(body.debit_currency || body.currency)) return false;
+  // Preserve the legacy NGN-only withdrawal request shape; every other destination
+  // must explicitly match a country/currency pair before it reaches Flutterwave.
+  if (body.destination_country !== undefined && !payoutCountryMatches(body.destination_country, body.currency)) return false;
+  if (body.currency !== "NGN" && !payoutCountryMatches(body.destination_country, body.currency)) return false;
   if (!safeText(body.account_number, 34) || !/^[A-Za-z0-9-]{5,34}$/.test(body.account_number)) return false;
   if (!safeText(body.beneficiary_name, 120) || !/^F3W-[0-9a-f-]{36}$/.test(body.reference) || !safeText(body.narration || "Fin3a payout", 80)) return false;
   if (body.currency === "NGN" && (!/^[0-9]{10}$/.test(body.account_number) || !safeText(body.account_bank, 12))) return false;
@@ -191,7 +211,7 @@ const server = http.createServer(async (req, res) => {
       body = await readJson(req);
       if (spec.kind === "payout") {
         if (!validTransfer(body)) return json(res, 400, { status: "error", message: "Invalid or unsupported payout request" });
-        const { destination_type, ...providerBody } = body;
+        const { destination_type, destination_country, ...providerBody } = body;
         body = { ...providerBody, debit_currency: body.debit_currency || body.currency };
       }
       if (spec.kind === "collection") {

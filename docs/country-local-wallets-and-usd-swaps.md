@@ -18,6 +18,17 @@
 - The current deposit flow is not a generic international fiat deposit adapter. PR #5 adds country capability metadata only; it does not yet charge or settle foreign-currency wallet deposits.
 - Existing tests cover NGN/GHS/USD wallet visibility but not a generic multi-currency swap or deposit settlement.
 
+## Flutterwave FX capability boundary (verified 2026-11-07)
+
+Flutterwave's current V3 FX-trading documentation lists only these executable pairs: NGN→USD, GHS→USD, and USD→NGN. It states that FX trading is not enabled on merchant accounts by default, is available on weekdays, and has a minimum trade size of USD 1,000 equivalent. A fresh RFQ, READY quote, single-use quote ID, trade execution, and trade-status confirmation are required. The separate transfer-rates endpoint is for cross-border payout pricing and must not be reused as a wallet-swap trading rate.
+
+Consequently, Fin3a must not enable arbitrary local-currency/USD swaps for every country. The current capability helper now records only those three documented FX directions. All other pairs remain unavailable until Flutterwave confirms additional pairs and enables the FX product for Top Floor's merchant account. The existing UI and execution path remain disabled; this metadata change does not execute swaps or move customer funds.
+
+Official provider references:
+- https://developer.flutterwave.com/docs/fx-trade
+- https://developer.flutterwave.com/docs/transfer-rates
+- https://developer.flutterwave.com/docs/payment-methods
+
 ## Required implementation
 
 ### 1. Currency and account model

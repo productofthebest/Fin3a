@@ -2,6 +2,17 @@
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (input, init) => {
   const url = String(input);
+  if (url === "https://api.flutterwave.com/v3/transfers" && init?.method === "POST") {
+    const payload = JSON.parse(String(init.body || "{}"));
+    if (Object.prototype.hasOwnProperty.call(payload, "destination_country")) {
+      return new Response(JSON.stringify({ status: "error", message: "Internal destination country must not reach provider" }), { status: 400 });
+    }
+    return new Response(JSON.stringify({
+      status: "success",
+      message: "Transfer Queued Successfully",
+      data: { id: 98765, reference: payload.reference, currency: payload.currency, debit_currency: payload.debit_currency, amount: payload.amount, status: "NEW" },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  }
   if (url === "https://api.flutterwave.com/v3/transactions/12345/verify") {
     if (init?.method !== "GET") throw new Error("Unexpected provider method");
     const authorization = new Headers(init?.headers).get("authorization");

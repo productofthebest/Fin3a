@@ -61,10 +61,69 @@ test("rejects unsupported international payout currency", async () => {
 test("rejects mobile-money payout when operator does not match currency", async () => {
   const r = await fetch(base + "/v1/flutterwave/transfers", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
-    body: JSON.stringify({ destination_type: "mobile_money", account_bank: "MPS", account_number: "254712345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
+    body: JSON.stringify({ destination_type: "mobile_money", destination_country: "GH", account_bank: "MPS", account_number: "254712345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
   });
   assert.equal(r.status, 400);
 });
+test("rejects international payout when destination country and currency do not match", async () => {
+  const r = await fetch(base + "/v1/flutterwave/transfers", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ destination_type: "bank", destination_country: "KE", account_bank: "BANK", account_number: "12345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
+  });
+  assert.equal(r.status, 400);
+});
+
+test("rejects international payout without an explicit destination country", async () => {
+  const r = await fetch(base + "/v1/flutterwave/transfers", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ destination_type: "bank", account_bank: "BANK", account_number: "12345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
+  });
+  assert.equal(r.status, 400);
+});
+
+test("rejects USD payout metadata without a documented account type", async () => {
+  const r = await fetch(base + "/v1/flutterwave/transfers", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({
+      destination_country: "US", account_number: "123456789", beneficiary_name: "Jane Doe",
+      amount: 500, currency: "USD", debit_currency: "NGN",
+      reference: "F3W-12345678-1234-1234-1234-123456789012",
+      meta: [{ routing_number: "111000025", swift_code: "IRVTUS3N", bank_name: "Test Bank", beneficiary_address: "1 Main Street", postal_code: "10001", street_number: "1", street_name: "Main Street" }],
+    }),
+  });
+  assert.equal(r.status, 400);
+});
+
+test("forwards valid USD, GBP and EUR transfers only after country and metadata validation", async () => {
+  const cases = [
+    {
+      country: "US", currency: "USD", accountNumber: "123456789",
+      meta: [{ routing_number: "111000025", swift_code: "IRVTUS3N", bank_name: "Test Bank", account_type: "checking", beneficiary_address: "1 Main Street", postal_code: "10001", street_number: "1", street_name: "Main Street" }],
+    },
+    {
+      country: "GB", currency: "GBP", accountNumber: "12345678",
+      meta: [{ routing_number: "308463", bank_name: "Test Bank", account_type: "personal", first_name: "Jane", last_name: "Doe" }],
+    },
+    {
+      country: "FR", currency: "EUR", accountNumber: "FR761234567890",
+      meta: [{ routing_number: "ABCDEF123", swift_code: "ABCDEFGH", bank_name: "Test Bank", postal_code: "75001", street_number: "1", street_name: "Rue Example", city: "Paris" }],
+    },
+  ];
+  for (const item of cases) {
+    const r = await fetch(base + "/v1/flutterwave/transfers", {
+      method: "POST", headers: { ...auth, "content-type": "application/json" },
+      body: JSON.stringify({
+        destination_type: "bank", destination_country: item.country, account_number: item.accountNumber,
+        beneficiary_name: "Jane Doe", amount: 500, currency: item.currency, debit_currency: "NGN",
+        reference: "F3W-12345678-1234-1234-1234-123456789012", meta: item.meta,
+      }),
+    });
+    assert.equal(r.status, 200, item.currency + " should pass the provider-specific validation");
+    const payload = await r.json();
+    assert.equal(payload.data.currency, item.currency);
+  }
+});
+
 test("rejects hosted payment collection when redirect is not configured", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
@@ -72,6 +131,16 @@ test("rejects hosted payment collection when redirect is not configured", async 
   });
   assert.equal(r.status, 503);
 });
+test("uses provider-supported payment options for GH, CM, CI and ZM country/currency pairs", async () => {
+  for (const [country, currency] of [["GH", "GHS"], ["CM", "XAF"], ["CI", "XOF"], ["ZM", "ZMW"], ["FR", "EUR"]]) {
+    const r = await fetch(base + "/v1/flutterwave/payments", {
+      method: "POST", headers: { ...auth, "content-type": "application/json" },
+      body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency, country, customer: { email: "test@example.com", name: "Test User" } }),
+    });
+    assert.equal(r.status, 503, country + " should pass country/currency validation before the unconfigured checkout gate");
+  }
+});
+
 test("rejects unsupported country and currency payment combination", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
