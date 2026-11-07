@@ -120,6 +120,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [accountHelp, setAccountHelp] = useState<AccountHelpIntent | null>(null);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [cryptoReview, setCryptoReview] = useState<CryptoQr | null>(null);
 
   const { messages, sendMessage, status, stop, error } = useChat({
@@ -328,32 +329,17 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
           <h2 className="order-1 mt-8 text-[15px] font-medium">Try Asking Fin3a.</h2>
           <div className="order-3">
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div
-              className="flex items-center gap-3 rounded-xl border border-border bg-card/80 px-4 py-4 text-left shadow-sm"
+            <button
+              type="button"
+              onClick={() => setSupportOpen(true)}
+              className="flex items-center gap-3 rounded-xl border border-border bg-card/80 px-4 py-4 text-left shadow-sm transition-colors hover:border-accent"
             >
               <Headset className="size-6 shrink-0 text-primary" strokeWidth={1.5} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] leading-snug font-medium text-foreground">Contact Support</p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                  <a
-                    href={`mailto:${SUPPORT_EMAIL}`}
-                    aria-label={`Email Fin3a support at ${SUPPORT_EMAIL}`}
-                    className="text-primary underline-offset-2 hover:underline"
-                  >
-                    {SUPPORT_EMAIL}
-                  </a>
-                  <a
-                    href="https://wa.me/234701009805"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Chat with Fin3a support on WhatsApp"
-                    className="text-primary underline-offset-2 hover:underline"
-                  >
-                    WhatsApp: +234701009805
-                  </a>
-                </div>
-              </div>
-            </div>
+              <span className="min-w-0 flex-1 text-[13px] leading-snug font-medium text-foreground">Contact Support</span>
+              <span className="grid size-7 shrink-0 place-items-center rounded-md bg-secondary text-foreground">
+                <ArrowRight className="size-4" />
+              </span>
+            </button>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.text}
@@ -431,6 +417,19 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       ) : null}
       {qrScanOpen ? <Suspense fallback={<Loader2 className="mt-4 size-5 animate-spin" aria-label="Opening scanner" />}><QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /></Suspense> : null}
       <CryptoQrReview value={cryptoReview} onClose={() => setCryptoReview(null)} />
+      {supportOpen && (
+        <div role="status" className="order-2 my-4 flex gap-2">
+          <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
+          <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm bg-muted/50 px-4 py-3 text-sm leading-relaxed text-foreground">
+            <p className="font-medium">You can contact Fin3a Support directly:</p>
+            <div className="mt-2 flex flex-col gap-2">
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="w-fit text-primary underline-offset-2 hover:underline">{SUPPORT_EMAIL}</a>
+              <a href="https://wa.me/234701009805" target="_blank" rel="noopener noreferrer" className="w-fit text-primary underline-offset-2 hover:underline">WhatsApp: +234701009805</a>
+            </div>
+            <button type="button" onClick={() => setSupportOpen(false)} className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:underline">Dismiss</button>
+          </div>
+        </div>
+      ) : null}
       {accountHelp && <div role="status" className="order-2 my-4 space-y-3 border-y border-border py-4 text-sm">
         <p>{ACCOUNT_HELP_TEXT[accountHelp]}</p>
         <Button asChild><Link to="/accounts/actions">Open wallet details &amp; payments</Link></Button>
