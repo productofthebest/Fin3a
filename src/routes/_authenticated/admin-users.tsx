@@ -1,4 +1,4 @@
-import { accountCurrencies, localCurrency } from "@/lib/country-currency";
+import { localCurrency } from "@/lib/country-currency";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/admin-users")({
 });
 
 const LIVE_MS = 15_000;
-const money = (c: string, n: number) => `${c === "NGN" ? "₦" : "$"}${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (c: string, n: number) => new Intl.NumberFormat("en", { style: "currency", currency: c, currencyDisplay: "narrowSymbol", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n));
 const sym = (currency: string) => (currency === "NGN" ? "₦" : currency === "USD" ? "$" : currency);
 const when = (s: string | null) => (s ? new Date(s).toLocaleString() : "—");
 
@@ -98,16 +98,16 @@ function Management() {
         <Button type="submit"><Search />Search</Button>
       </form>
       <div className="mt-4 overflow-x-auto border-y border-border">
-        <table className="w-full text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr>{["Name", "Email", "Phone", "Fin3a ID", "₦", "$", "Status", "Verification", "Registered"].map((h) => <th key={h} className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}</tr></thead>
+        <table className="w-full text-left text-sm"><thead className="bg-muted text-muted-foreground"><tr>{["Name", "Email", "Phone", "Fin3a ID", "Fiat balances", "Status", "Verification", "Registered"].map((h) => <th key={h} className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}</tr></thead>
           <tbody className="divide-y divide-border">
             {users.data?.rows.map((u) => <tr key={u.user_id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(u.user_id)}>
               <td className="px-4 py-3"><button className="font-medium text-primary underline-offset-2 hover:underline">{u.display_name || "Unnamed"}</button></td>
               <td className="px-4 py-3">{u.email ?? "—"}</td><td className="px-4 py-3">{u.phone ?? "—"}</td><td className="px-4 py-3">{u.fin3a_id ?? "—"}</td>
-              <td className="px-4 py-3 tabular-nums">{money("NGN", u.ngn)}</td><td className="px-4 py-3 tabular-nums">{money("USD", u.usd)}</td>
+              <td className="px-4 py-3"><div className="flex min-w-[180px] flex-wrap gap-1.5">{u.fiat_balances.length ? u.fiat_balances.map((b) => <span key={b.currency} title={`Available: ${money(b.currency, b.available)} · Including pending: ${money(b.currency, b.with_pending)}`} className="rounded-md bg-secondary px-2 py-1 text-xs font-medium tabular-nums">{b.currency} {money(b.currency, b.available)}</span>) : <span className="text-muted-foreground">No funded fiat balances</span>}</div></td>
               <td className="px-4 py-3"><StatusBadge value={u.status} /></td><td className="px-4 py-3 capitalize">{u.verification}</td>
               <td className="whitespace-nowrap px-4 py-3">{new Date(u.created_at).toLocaleDateString()}</td>
             </tr>)}
-            {users.data?.rows.length === 0 && <tr><td colSpan={9} className="px-4 py-6 text-muted-foreground">No users match this search.</td></tr>}
+            {users.data?.rows.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-muted-foreground">No users match this search.</td></tr>}
           </tbody></table>
         {users.isPending && <Loader2 className="m-4 size-5 animate-spin" aria-label="Loading users" />}
         {users.isError && <p role="alert" className="p-4 text-destructive">Could not load users.</p>}
@@ -148,7 +148,7 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
   const [name, setName] = useState("");
   const [adj, setAdj] = useState({ currency: "NGN" as "NGN" | "USD", direction: "credit" as "credit" | "debit", amount: "" });
   const refresh = () => { void qc.invalidateQueries({ queryKey: ["admin"] }); };
-  const d: (UserDetail & { country: string; localBalance: { available: number; with_pending: number } | null }) | undefined = detail.data;
+  const d: (UserDetail & { country: string }) | undefined = detail.data;
   const p = d?.profile;
   const amount = validAdjustmentAmount(adj.amount);
   return (
@@ -160,8 +160,11 @@ function UserSheet({ userId, onClose }: { userId: string | null; onClose: () => 
             {[["Email", p.email], ["Phone", p.phone], ["Fin3a ID", p.fin3a_id], ["User ID", p.user_id], ["Registered", when(p.created_at)], ["Last activity", when(p.last_active)], ["Preferred currency", `${localCurrency(d.country)} (local) · USD`], ["Preferred country", `${new Intl.DisplayNames(["en"], { type: "region" }).of(d.country) ?? d.country} (${d.country})`], ["Verification", `${p.verification}${p.verification_note ? ` — ${p.verification_note}` : ""}`]].map(([k, v]) => <div key={k}><dt className="text-muted-foreground">{k}</dt><dd className="break-all font-medium">{v || "—"}</dd></div>)}
             <div><dt className="text-muted-foreground">Account status</dt><dd><StatusBadge value={p.status} /></dd></div>
           </dl>
-          <div className="grid gap-3 sm:grid-cols-2">{accountCurrencies(d.country).map((c) => { const b = c === "NGN" || c === "USD" ? d.balances[c] : d.localBalance; const f = (n: number) => new Intl.NumberFormat("en", { style: "currency", currency: c, currencyDisplay: "narrowSymbol" }).format(n); return <div key={c} className="rounded-xl border border-border bg-card p-4"><p className="text-muted-foreground">{c} balance</p><p className="mt-1 text-xl font-bold tabular-nums">{f(b?.available ?? 0)}</p><p className="text-xs text-muted-foreground">Including pending: {f(b?.with_pending ?? 0)}</p></div>; })}</div>
-          <p className="text-xs text-muted-foreground">Country: {d.country} · Accounts: {accountCurrencies(d.country).join(" and ")}{localCurrency(d.country) !== "NGN" && localCurrency(d.country) !== "USD" ? ` · ${localCurrency(d.country)} account can't be moved yet` : ""}</p>
+          <section>
+            <h3 className="mb-3 font-semibold">Fiat currency holdings</h3>
+            {d.fiat_balances.length ? <div className="grid gap-3 sm:grid-cols-2">{d.fiat_balances.map((b) => <div key={b.currency} className="rounded-xl border border-border bg-card p-4"><p className="text-muted-foreground">{b.currency} balance</p><p className="mt-1 text-xl font-bold tabular-nums">{money(b.currency, b.available)}</p><p className="text-xs text-muted-foreground">Including pending: {money(b.currency, b.with_pending)}</p></div>)}</div> : <p className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">No funded fiat currency balances recorded.</p>}
+          </section>
+          <p className="text-xs text-muted-foreground">Country: {d.country} · Preferred wallet currencies: {localCurrency(d.country)} and USD · Actual holdings above are based on ledger balances, not country preference.</p>
                     <p className="text-xs text-muted-foreground">Transfers, Share Payment and Split Bill move only NGN and USD. NGN bank transfers and withdrawals use the ₦50 NGN withdrawal fee, deducted from the payout. Local-currency accounts outside Nigeria (for example GHS or KES) can't be moved yet.</p>
           <div><h3 className="font-semibold">Crypto wallets</h3>{d.crypto.length ? <ul className="mt-2 space-y-1">{d.crypto.map((w) => <li key={w.address} className="break-all">{w.symbol} · {w.network} · {w.address} ({w.status})</li>)}</ul> : <p className="mt-1 text-muted-foreground">No crypto wallet addresses issued.</p>}</div>
 

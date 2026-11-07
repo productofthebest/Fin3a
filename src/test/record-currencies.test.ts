@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { recordCurrencies, recordMoney, totalsByCurrency } from "@/lib/record-currencies";
 import type { FinancialRecord } from "@/lib/financial-calculations";
 
-describe("NGN and USD records", () => {
-  it("always offers both account currencies without removing a user's preference", () => {
-    expect(recordCurrencies("EUR", [{ currency: "USD" }, { currency: "NGN" }, { currency: null }])).toEqual(["EUR", "NGN", "USD"]);
+describe("country-scoped record currencies", () => {
+  it("shows the selected local currency and USD without mixing other-country records", () => {
+    expect(recordCurrencies("EUR", [{ currency: "USD" }, { currency: "NGN" }, { currency: null }])).toEqual(["EUR", "USD"]);
+    expect(recordCurrencies("NGN", [{ currency: "USD" }, { currency: "EUR" }])).toEqual(["NGN", "USD"]);
   });
   it("keeps NGN and USD totals separate and excludes unconfirmed currency", () => {
     const row = (currency: string | null, amount: number): FinancialRecord => ({ currency, amount, type: "expense", classification: "regular", status: "completed", occurred_at: "2026-11-01" });
