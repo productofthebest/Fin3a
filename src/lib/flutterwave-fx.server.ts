@@ -1,11 +1,9 @@
 /**
  * Server-only Flutterwave FX adapter.
- *
- * This module deliberately does not expose a client-facing trade action. A
- * production wallet flow must first reserve/debit funds idempotently, persist
- * the quote/trade references, and settle/reverse the ledger from verified
- * provider status/webhooks. Keep FLW_FX_ENABLED unset until that lifecycle is
- * implemented and reviewed.
+ * No client-facing trade action is exposed. Production execution must first
+ * reserve funds idempotently, persist quote/trade references, then settle or
+ * reverse the ledger from verified provider events. Keep FLW_FX_ENABLED unset
+ * until that lifecycle is implemented and reviewed.
  */
 import { z } from "zod";
 import { supportsFlutterwaveFxPair } from "./flutterwave-capabilities";
@@ -13,7 +11,7 @@ import { supportsFlutterwaveFxPair } from "./flutterwave-capabilities";
 const BASE = "https://api.flutterwave.com/v3";
 const providerId = z.union([
   z.number().int().positive().safe(),
-  z.string().regex(/^[1-9]\\d{0,19}$/),
+  z.string().regex(/^[1-9]\d{0,19}$/),
 ]).transform(String);
 
 const quoteSchema = z.object({
@@ -40,7 +38,6 @@ const tradeSchema = z.object({
 
 export type FlutterwaveFxQuote = z.infer<typeof quoteSchema>;
 export type FlutterwaveFxTrade = z.infer<typeof tradeSchema>;
-
 export type FxConfig = {
   FLW_SECRET_KEY?: string;
   FLW_FX_ENABLED?: string;
@@ -63,12 +60,11 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   const key = process.env["FLW_SECRET_KEY"];
   if (!flutterwaveFxEnabled(process.env)) throw new Error("FX_NOT_ENABLED");
   if (!key) throw new Error("FX_NOT_CONFIGURED");
-
-  const response = await fetch(`${BASE}${path}`, {
+  const response = await fetch(BASE + path, {
     ...init,
     signal: AbortSignal.timeout(12_000),
     headers: {
-      Authorization: `Bearer ${key}`,
+      Authorization: "Bearer " + key,
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
@@ -83,7 +79,7 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   return parsed.data;
 }
 
-/** Create a provider quote. Provider remains authoritative for minimums and liquidity. */
+/** Provider remains authoritative for minimum trade size and liquidity. */
 export async function requestFlutterwaveFxQuote(input: {
   baseCurrency: string;
   targetCurrency: string;
@@ -95,7 +91,6 @@ export async function requestFlutterwaveFxQuote(input: {
   assertSupportedFxPair(baseCurrency, targetCurrency);
   if (!Number.isFinite(input.quantity) || input.quantity <= 0) throw new Error("INVALID_FX_QUANTITY");
   if (!/^[A-Za-z0-9_-]{8,120}$/.test(input.reference)) throw new Error("INVALID_FX_REFERENCE");
-
   return request("/rfq", quoteSchema, {
     method: "POST",
     body: JSON.stringify({
@@ -108,20 +103,16 @@ export async function requestFlutterwaveFxQuote(input: {
 }
 
 export async function getFlutterwaveFxQuote(quoteId: string): Promise<FlutterwaveFxQuote> {
-  if (!/^[1-9]\\d{0,19}$/.test(quoteId)) throw new Error("INVALID_FX_QUOTE_ID");
-  return request(`/rfq/${encodeURIComponent(quoteId)}`, quoteSchema);
+  if (!/^[1-9]\d{0,19}$/.test(quoteId)) throw new Error("INVALID_FX_QUOTE_ID");
+  return request("/rfq/" + encodeURIComponent(quoteId), quoteSchema);
 }
 
-/**
- * Internal provider execution primitive only. Do not call from a route or
- * client action until an idempotent wallet reservation and reconciliation
- * record exist for this quote.
- */
+/** Internal primitive only; requires an idempotent wallet reservation and reconciliation record. */
 export async function executeFlutterwaveFxTrade(input: {
   quoteId: string;
   narration: string;
 }): Promise<FlutterwaveFxTrade> {
-  if (!/^[1-9]\\d{0,19}$/.test(input.quoteId)) throw new Error("INVALID_FX_QUOTE_ID");
+  if (!/^[1-9]\d{0,19}$/.test(input.quoteId)) throw new Error("INVALID_FX_QUOTE_ID");
   const narration = input.narration.trim();
   if (!narration || narration.length > 120) throw new Error("INVALID_FX_NARRATION");
   return request("/trade", tradeSchema, {
@@ -131,6 +122,6 @@ export async function executeFlutterwaveFxTrade(input: {
 }
 
 export async function getFlutterwaveFxTrade(tradeId: string): Promise<FlutterwaveFxTrade> {
-  if (!/^[1-9]\\d{0,19}$/.test(tradeId)) throw new Error("INVALID_FX_TRADE_ID");
-  return request(`/trade/${encodeURIComponent(tradeId)}`, tradeSchema);
+  if (!/^[1-9]\d{0,19}$/.test(tradeId)) throw new Error("INVALID_FX_TRADE_ID");
+  return request("/trade/" + encodeURIComponent(tradeId), tradeSchema);
 }
