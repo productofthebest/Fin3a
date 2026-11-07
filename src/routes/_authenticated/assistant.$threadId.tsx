@@ -435,7 +435,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       <div className={cn("order-2 mt-2 min-w-0", !empty && "overflow-hidden rounded-[22px] border border-accent/40 bg-card shadow-[var(--shadow-lavender)]")} aria-label="Fin3a assistant chat">
       {!empty ? (
         <div ref={chatScrollRef} role="log" aria-label="Fin3a conversation" className="max-h-[420px] min-h-[220px] space-y-4 overflow-y-auto overscroll-contain px-4 py-6 sm:px-5">
-          {supportOpen ? ({supportOpen ? (
+          {supportOpen ? (
                   <div role="status" aria-label="Fin3a support contacts" className="my-4 flex gap-2">
                     <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
                     <div className="min-w-0 max-w-[85%] flex-1 rounded-2xl rounded-tl-sm border border-primary/15 bg-muted/50 px-4 py-4 text-sm leading-relaxed text-foreground">
@@ -472,7 +472,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
                       <button type="button" onClick={() => setSupportOpen(false)} className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:underline">Dismiss</button>
                     </div>
                   </div>
-                ) : null}) : null}
+                ) : null}
           {messages.map((m) => {
             const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
             const sources = safeWebSources([...m.parts
