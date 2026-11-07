@@ -10,9 +10,13 @@ on:
       - ".github/workflows/payout-relay-tests.yml"
   push:
     branches:
+      - main
       - "security/payout-relay-production-readiness"
     paths:
       - "payout-relay/**"
+      - "src/lib/flutterwave-collection.server.ts"
+      - "src/lib/flutterwave-collection.server.test.ts"
+      - "src/lib/payout-transport.server.ts"
       - ".github/workflows/payout-relay-tests.yml"
 
 permissions:
