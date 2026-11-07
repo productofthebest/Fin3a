@@ -23,7 +23,7 @@ describe("Flutterwave country capabilities", () => {
   });
 
   it("offers card collection in every country in the published collection matrix", () => {
-    for (const country of ["NG", "US", "GB", "EU", "FR", "DE", "GH", "CM", "CI", "ZA", "MW", "KE", "UG", "RW", "TZ", "EG", "ZM"]) {
+    for (const country of ["NG", "US", "GB", "EU", "FR", "DE", "GH", "CM", "CI", "SN", "ZA", "MW", "KE", "UG", "RW", "TZ", "EG", "ZM"]) {
       expect(supportsCollectionCards(country), country).toBe(true);
     }
     expect(supportsCollectionCards("XX")).toBe(false);
@@ -39,9 +39,9 @@ describe("Flutterwave country capabilities", () => {
   });
 
   it("does not treat collection support as bank payout support", () => {
-    expect(getCollectionCapability("EG")).not.toBeNull();
-    expect(getBankPayoutCapability("EG")).toBeNull();
-    expect(getBankPayoutCurrency("EG")).toBeNull();
+    expect(getCollectionCapability("ZM")).not.toBeNull();
+    expect(getBankPayoutCapability("ZM")).toBeNull();
+    expect(getBankPayoutCurrency("ZM")).toBeNull();
   });
 
   it("returns documented bank payout currencies", () => {
