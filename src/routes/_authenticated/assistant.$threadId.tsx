@@ -433,7 +433,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       </div>}
 
       <div className={cn("order-2 mt-2 min-w-0", !empty && "overflow-hidden rounded-[22px] border border-accent/40 bg-card shadow-[var(--shadow-lavender)]")} aria-label="Fin3a assistant chat">
-      {!empty ? (
+      {!empty || supportOpen ? (
         <div ref={chatScrollRef} role="log" aria-label="Fin3a conversation" className="max-h-[420px] min-h-[220px] space-y-4 overflow-y-auto overscroll-contain px-4 py-6 sm:px-5">
           {supportOpen ? (
                   <div role="status" aria-label="Fin3a support contacts" className="my-4 flex gap-2">
