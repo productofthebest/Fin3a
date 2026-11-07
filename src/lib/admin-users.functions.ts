@@ -26,18 +26,28 @@ export const getUserStats = createServerFn({ method: "GET" }).middleware([requir
   return clean<UserStats>(data);
 });
 
-export type UserRow = { user_id: string; email: string | null; phone: string | null; display_name: string | null; fin3a_id: string | null; created_at: string; last_active: string | null; status: string; verification: string; ngn: number; usd: number };
+export type FiatBalance = { currency: string; available: number; with_pending: number };
+export type UserRow = { user_id: string; email: string | null; phone: string | null; display_name: string | null; fin3a_id: string | null; created_at: string; last_active: string | null; status: string; verification: string; ngn: number; usd: number; fiat_balances: FiatBalance[] };
 export const listUsers = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator(z.object({ search: z.string().max(120), page: z.number().int().min(0).max(10000) }))
   .handler(async ({ data, context }) => {
     const { data: r, error } = await context.supabase.rpc("admin_list_users", { _search: data.search, _limit: 25, _offset: data.page * 25 });
     if (error) fail(error.message);
-    return clean<{ total: number; rows: UserRow[] }>(r);
+    const result = clean<{ total: number; rows: Omit<UserRow, "fiat_balances">[] }>(r);
+    const userIds = result.rows.map((row) => row.user_id);
+    let balancesByUser: Record<string, FiatBalance[]> = {};
+    if (userIds.length) {
+      const { data: balances, error: balanceError } = await context.supabase.rpc("admin_list_user_fiat_balances", { _user_ids: userIds });
+      if (balanceError) fail(balanceError.message);
+      balancesByUser = clean<Record<string, FiatBalance[]>>(balances ?? {});
+    }
+    return { ...result, rows: result.rows.map((row) => ({ ...row, fiat_balances: balancesByUser[row.user_id] ?? [] })) };
   });
 
 export type UserDetail = {
   profile: { user_id: string; email: string | null; phone: string | null; created_at: string; last_active: string | null; display_name: string | null; fin3a_id: string | null; currency: string | null; onboarding_completed: boolean | null; status: string; verification: string; verification_note: string | null; is_admin: boolean };
   balances: Record<"NGN" | "USD", { available: number; with_pending: number }>;
+  fiat_balances: FiatBalance[];
   crypto: { symbol: string; network: string; address: string; status: string; created_at: string }[];
   ledger: { id: string; kind: string; status: string; amount: number; currency: string; reference: string | null; provider: string | null; created_at: string }[];
   ledger_status: { pending?: number; completed?: number; failed?: number; reversed?: number };
@@ -54,17 +64,10 @@ export const getUserDetail = createServerFn({ method: "POST" }).middleware([requ
     if (error) fail(error.message);
     const { data: country } = await context.supabase.rpc("admin_user_country", { _user_id: data.userId });
     const c = (country as string | null) ?? "NG";
-    const { localCurrency } = await import("./country-currency");
-    const { computeAccountBalance } = await import("./accounts");
-    const local = localCurrency(c);
-    let localBalance: { currency: string; available: number; with_pending: number } | null = null;
-    if (local !== "NGN" && local !== "USD") {
-      const { data: rows, error: lErr } = await context.supabase.rpc("admin_user_currency_ledger", { _user_id: data.userId, _currency: local });
-      if (lErr) fail(lErr.message);
-      const b = computeAccountBalance((rows ?? []).map((x) => ({ kind: x.kind as never, status: x.status as never, amount: Number(x.amount) })));
-      localBalance = { currency: local, available: b.available, with_pending: b.total };
-    }
-    return { ...clean<UserDetail>(r), country: c, localBalance };
+    const { data: balances, error: balanceError } = await context.supabase.rpc("admin_list_user_fiat_balances", { _user_ids: [data.userId] });
+    if (balanceError) fail(balanceError.message);
+    const balancesByUser = clean<Record<string, FiatBalance[]>>(balances ?? {});
+    return { ...clean<UserDetail>(r), country: c, fiat_balances: balancesByUser[data.userId] ?? [] };
   });
 
 export const setAccountStatus = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
