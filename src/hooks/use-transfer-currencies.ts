@@ -8,5 +8,5 @@ export function useTransferCurrencies() {
   const { data } = useQuery({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
   const options = data ? accountCurrencies(data.country) : ["USD"];
   const local = options.find(c => c !== "NGN" && c !== "USD") ?? null;
-  return { options: (options as string[]).filter(c => c === "NGN" || c === "USD") as SplitCurrency[], local };
+  return { options: options as SplitCurrency[], local };
 }
