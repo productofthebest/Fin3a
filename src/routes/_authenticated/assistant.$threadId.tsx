@@ -157,12 +157,20 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
   function send(text: string) {
     const t = text.trim();
     if (!t || busy) return;
-    const help = accountHelpIntent(t);
-    if (help) {
-      setAccountHelp(help);
+    if (/\b(?:contact|reach|talk to|speak to|get in touch with)\b.{0,35}\b(?:support|customer service|team|help)\b|\b(?:support|customer service)\b.{0,35}\b(?:contact|email|whatsapp|phone|number|help)\b/i.test(t)) {
+      setSupportOpen(true);
+      setAccountHelp(null);
       setInput("");
       return;
     }
+    const help = accountHelpIntent(t);
+    if (help) {
+      setAccountHelp(help);
+      setSupportOpen(false);
+      setInput("");
+      return;
+    }
+    setSupportOpen(false);
     setAccountHelp(null);
     sendMessage({ text: t });
     setInput("");
@@ -417,44 +425,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       ) : null}
       {qrScanOpen ? <Suspense fallback={<Loader2 className="mt-4 size-5 animate-spin" aria-label="Opening scanner" />}><QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /></Suspense> : null}
       <CryptoQrReview value={cryptoReview} onClose={() => setCryptoReview(null)} />
-      {supportOpen ? (
-        <div role="status" aria-label="Fin3a support contacts" className="order-2 my-4 flex gap-2">
-          <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
-          <div className="min-w-0 max-w-[85%] flex-1 rounded-2xl rounded-tl-sm border border-primary/15 bg-muted/50 px-4 py-4 text-sm leading-relaxed text-foreground">
-            <p className="font-semibold">We're here to help.</p>
-            <p className="mt-1 text-muted-foreground">Reach the Fin3a support team through either channel below.</p>
-            <div className="mt-3 grid gap-2">
-              <a
-                href={`mailto:${SUPPORT_EMAIL}`}
-                aria-label={`Email Fin3a support at ${SUPPORT_EMAIL}`}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 transition-colors hover:border-primary/40 hover:bg-secondary/60"
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Mail className="size-5" /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-xs text-muted-foreground">Email Support</span>
-                  <span className="block break-all font-medium text-foreground">{SUPPORT_EMAIL}</span>
-                </span>
-                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-              </a>
-              <a
-                href="https://wa.me/234701009805"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Chat with Fin3a support on WhatsApp"
-                className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 transition-colors hover:border-primary/40 hover:bg-secondary/60"
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><MessageCircle className="size-5" /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-xs text-muted-foreground">WhatsApp Support</span>
-                  <span className="block font-medium text-foreground">+234 701 009 805</span>
-                </span>
-                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-              </a>
-            </div>
-            <button type="button" onClick={() => setSupportOpen(false)} className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:underline">Dismiss</button>
-          </div>
-        </div>
-      ) : null}
+
       {accountHelp && <div role="status" className="order-2 my-4 space-y-3 border-y border-border py-4 text-sm">
         <p>{ACCOUNT_HELP_TEXT[accountHelp]}</p>
         <Button asChild><Link to="/accounts/actions">Open wallet details &amp; payments</Link></Button>
@@ -464,6 +435,44 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       <div className={cn("order-2 mt-2 min-w-0", !empty && "overflow-hidden rounded-[22px] border border-accent/40 bg-card shadow-[var(--shadow-lavender)]")} aria-label="Fin3a assistant chat">
       {!empty ? (
         <div ref={chatScrollRef} role="log" aria-label="Fin3a conversation" className="max-h-[420px] min-h-[220px] space-y-4 overflow-y-auto overscroll-contain px-4 py-6 sm:px-5">
+          {supportOpen ? ({supportOpen ? (
+                  <div role="status" aria-label="Fin3a support contacts" className="my-4 flex gap-2">
+                    <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
+                    <div className="min-w-0 max-w-[85%] flex-1 rounded-2xl rounded-tl-sm border border-primary/15 bg-muted/50 px-4 py-4 text-sm leading-relaxed text-foreground">
+                      <p className="font-semibold">We're here to help.</p>
+                      <p className="mt-1 text-muted-foreground">Reach the Fin3a support team through either channel below.</p>
+                      <div className="mt-3 grid gap-2">
+                        <a
+                          href={`mailto:${SUPPORT_EMAIL}`}
+                          aria-label={`Email Fin3a support at ${SUPPORT_EMAIL}`}
+                          className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 transition-colors hover:border-primary/40 hover:bg-secondary/60"
+                        >
+                          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Mail className="size-5" /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-xs text-muted-foreground">Email Support</span>
+                            <span className="block break-all font-medium text-foreground">{SUPPORT_EMAIL}</span>
+                          </span>
+                          <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                        </a>
+                        <a
+                          href="https://wa.me/234701009805"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Chat with Fin3a support on WhatsApp"
+                          className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 transition-colors hover:border-primary/40 hover:bg-secondary/60"
+                        >
+                          <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><MessageCircle className="size-5" /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-xs text-muted-foreground">WhatsApp Support</span>
+                            <span className="block font-medium text-foreground">+234 701 009 805</span>
+                          </span>
+                          <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                        </a>
+                      </div>
+                      <button type="button" onClick={() => setSupportOpen(false)} className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:underline">Dismiss</button>
+                    </div>
+                  </div>
+                ) : null}) : null}
           {messages.map((m) => {
             const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
             const sources = safeWebSources([...m.parts
