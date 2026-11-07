@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getBankPayoutCapability,
   supportsFlutterwaveFxPair,
+  FLUTTERWAVE_FX_MINIMUM_USD_EQUIVALENT,
   getBankPayoutCurrency,
   getCollectionCapability,
   getCollectionPaymentOptions,
@@ -17,6 +18,7 @@ describe("Flutterwave country capabilities", () => {
     expect(getCollectionPaymentOptions("GH")).toEqual(["card", "mobilemoneyghana"]);
     expect(getCollectionPaymentOptions("CM")).toContain("mobilemoneyxaf");
     expect(getCollectionPaymentOptions("CI")).toContain("mobilemoneyxof");
+    expect(getCollectionPaymentOptions("SN")).toContain("mobilemoneyxof");
     expect(getCollectionPaymentOptions("FR")).toEqual(["card", "account"]);
   });
 
@@ -45,6 +47,8 @@ describe("Flutterwave country capabilities", () => {
   it("returns documented bank payout currencies", () => {
     expect(getBankPayoutCurrency("GB")).toBe("GBP");
     expect(getBankPayoutCurrency("FR")).toBe("EUR");
+    expect(getBankPayoutCurrency("RW")).toBe("RWF");
+    expect(getBankPayoutCurrency("EG")).toBe("EGP");
     expect(getBankPayoutCurrency("CI")).toBe("XOF");
     expect(getBankPayoutCurrency("SN")).toBe("XOF");
     expect(getBankPayoutCurrency("SL")).toBeNull();
@@ -58,6 +62,7 @@ describe("Flutterwave country capabilities", () => {
     expect(supportsFlutterwaveFxPair("USD", "GHS")).toBe(false);
     expect(supportsFlutterwaveFxPair("GBP", "USD")).toBe(false);
     expect(supportsFlutterwaveFxPair("EUR", "USD")).toBe(false);
+    expect(FLUTTERWAVE_FX_MINIMUM_USD_EQUIVALENT).toBe(1_000);
   });
 
   it("fails closed for unknown countries", () => {
