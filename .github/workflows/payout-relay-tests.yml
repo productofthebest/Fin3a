@@ -7,6 +7,9 @@ on:
       - "src/lib/flutterwave-collection.server.ts"
       - "src/lib/flutterwave-collection.server.test.ts"
       - "src/lib/payout-transport.server.ts"
+      - "src/lib/flutterwave-fx.server.ts"
+      - "src/lib/flutterwave-fx.server.test.ts"
+      - "src/lib/flutterwave-capabilities.ts"
       - ".github/workflows/payout-relay-tests.yml"
   push:
     branches:
@@ -17,6 +20,9 @@ on:
       - "src/lib/flutterwave-collection.server.ts"
       - "src/lib/flutterwave-collection.server.test.ts"
       - "src/lib/payout-transport.server.ts"
+      - "src/lib/flutterwave-fx.server.ts"
+      - "src/lib/flutterwave-fx.server.test.ts"
+      - "src/lib/flutterwave-capabilities.ts"
       - ".github/workflows/payout-relay-tests.yml"
 
 permissions:
@@ -45,5 +51,5 @@ jobs:
         uses: oven-sh/setup-bun@v2
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
-      - name: Test hosted collection adapter
-        run: bunx vitest run src/lib/flutterwave-collection.server.test.ts
+      - name: Test Flutterwave collection and FX adapters
+        run: bunx vitest run src/lib/flutterwave-collection.server.test.ts src/lib/flutterwave-fx.server.test.ts
