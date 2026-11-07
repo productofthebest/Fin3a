@@ -15,7 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createSessionCacheHandler } from "@/lib/session-cache";
 import { Button } from "@/components/ui/button";
-import { isModuleLoadError, isPreviewReloadError, recoverBrowserModuleLoad } from "@/lib/module-load-recovery";
+import { installModuleLoadRecovery, isModuleLoadError, isPreviewReloadError, recoverBrowserModuleLoad } from "@/lib/module-load-recovery";
 import { isTransientNetworkError } from "@/lib/network-retry";
 
 function NotFoundComponent() {
@@ -152,6 +152,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  useEffect(() => installModuleLoadRecovery(window), []);
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -168,15 +170,6 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-
-  useEffect(() => {
-    const handlePreloadError = (event: Event) => {
-      const error = (event as Event & { payload?: unknown }).payload;
-      if (recoverBrowserModuleLoad(error)) event.preventDefault();
-    };
-    window.addEventListener("vite:preloadError", handlePreloadError);
-    return () => window.removeEventListener("vite:preloadError", handlePreloadError);
-  }, []);
 
   // Re-validate identity transitions so route gates and caches stay fresh.
   useEffect(() => {

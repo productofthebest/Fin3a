@@ -9,6 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 - Preview access-refresh HTML is handled by guarded page recovery, never evaluated or used to replay financial requests.
+- Page-asset recovery listeners live in the document shell so uncaught dynamic-import failures and route-boundary failures share the same persisted reload guard; ordinary network/payment failures never trigger them.
 - AI assistant streams from `src/routes/api/chat.ts` (server route, bearer-verified) using the user's own OPENAI_API_KEY; the model only receives aggregate totals from `assistant-context.server.ts`, never descriptions/notes — keeps personal data minimal.
 - Phone sign-in is a custom server OTP (`phone-otp.server.ts`, rules in `phone-otp.ts`) delivered by Termii because Cloud Auth's SMS can't use Termii; codes are HMAC-hashed in `phone_otps` (service-role only), phone→account mapping lives in `phone_identities`, and verified codes mint a Cloud Auth session via an admin magic-link token so email/Google/Lovable accounts stay untouched. Never link a phone without a verified code. Shared auth validation lives in `auth-options.ts` and field controls in `auth-fields.tsx`.
 - Use `page-meta.ts`; size accounts from composer/Split Bill, no inner scroll. Bills retains recurring tracking; no provider payments before funded sandbox verification.
