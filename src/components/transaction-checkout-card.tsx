@@ -28,7 +28,7 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
   const StatusIcon = kind === "success" ? CheckCircle2 : kind === "failed" ? XCircle : Clock3;
 
   const downloadReceipt = () => {
-    const rows = [
+    const rows: Array<[string, string]> = [
       ["Transaction", transaction.title],
       ["Amount", amount],
       ["Status", statusLabel],

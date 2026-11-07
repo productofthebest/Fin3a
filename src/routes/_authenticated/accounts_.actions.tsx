@@ -48,7 +48,7 @@ function Page() {
   const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "NGN");
   const country = (data.country ?? "NG").toUpperCase();
   const collection = getCollectionCapability(country);
-  const collectionMethods = collection?.methods ?? [];
+  const collectionMethods: readonly string[] = collection?.methods ?? [];
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
   const visibleCollectionMethods = country === "NG"
@@ -64,7 +64,7 @@ function Page() {
     : selectedMethod === "card" ? getDepositMethodEligibility("debit-card", country, currency)
     : selectedMethod === "apple-pay" ? getDepositMethodEligibility("apple-pay", country, currency)
     : selectedMethod === "google-pay" ? getDepositMethodEligibility("google-pay", country, currency)
-    : selectedMethod && collectionMethods.includes(selectedMethod as typeof collectionMethods[number])
+    : selectedMethod && collectionMethods.includes(selectedMethod)
       ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is listed for this country, but Fin3a has not confirmed an active merchant route and verified payment flow for this method yet. It is not enabled until that confirmation is available." }
       : null;
   const unsupported = currency !== "NGN" && currency !== "USD";
@@ -103,10 +103,10 @@ function Page() {
             <DialogTitle>{selectedCard?.label ?? selectedMethod}</DialogTitle>
             <DialogDescription>{selectedCard?.description ?? "Review this deposit payment method."}</DialogDescription>
           </DialogHeader>
-          <div className="flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Availability</span><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility.usable ? "Available" : "Not enabled"}</span></div>
-          <p className="text-sm text-muted-foreground">{selectedEligibility.message}</p>
+          <div className="flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Availability</span><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility?.usable ? "Available" : "Not enabled"}</span></div>
+          <p className="text-sm text-muted-foreground">{selectedEligibility?.message}</p>
           <p className="text-xs text-muted-foreground">Country: {country} · Currency: {currency}. This payment method is not enabled until Fin3a confirms that it can accept and verify the payment.</p>
-          {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility.usable && <section className="space-y-3 border-t border-border pt-4" aria-label="NGN bank transfer top-up"><h2 className="font-display text-lg font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
+          {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility?.usable && <section className="space-y-3 border-t border-border pt-4" aria-label="NGN bank transfer top-up"><h2 className="font-display text-lg font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
         </DialogContent>}
       </Dialog>
 

@@ -234,7 +234,7 @@ function ActivityPage() {
           </div>
         </div>
       ) : null}
-      <TransactionCheckoutCard transaction={checkoutTarget} open={Boolean(checkoutTarget)} country={settings?.country} onOpenChange={open => { if (!open) setCheckoutTarget(null); }} />
+      <TransactionCheckoutCard transaction={checkoutTarget} open={Boolean(checkoutTarget)} country={settings?.country ?? null} onOpenChange={open => { if (!open) setCheckoutTarget(null); }} />
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={open => { if (!open && !deleteMut.isPending) setDeleteTarget(null); }}>
         <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
           <AlertDialogHeader>

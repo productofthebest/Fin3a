@@ -61,7 +61,7 @@ function Page() {
   // Fixed request form
   const [amount, setAmount] = useState("");
   const { options: currencyOptions, local } = useTransferCurrencies();
-  const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+  const [currency, setCurrency] = useState<string>("NGN");
   useEffect(() => { if (!currencyOptions.includes(currency)) setCurrency(currencyOptions[0] ?? "USD"); }, [currencyOptions, currency]);
   const [description, setDescription] = useState("");
   const [expiry, setExpiry] = useState<number | null>(1440);
