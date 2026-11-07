@@ -7,5 +7,6 @@ import type { SplitCurrency } from "@/lib/split-bill";
 export function useTransferCurrencies() {
   const { data } = useQuery({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
   const options = data ? accountCurrencies(data.country) : ["USD"];
-  return { options: options as SplitCurrency[] };
+  const local = options.find(c => c !== "NGN" && c !== "USD") ?? null;
+  return { options: options as SplitCurrency[], local };
 }

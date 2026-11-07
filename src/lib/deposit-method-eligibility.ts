@@ -19,7 +19,7 @@ export function getDepositMethodEligibility(
 
   switch (method) {
     case "bank-transfer": {
-      const countrySupported = collection?.methods.includes("banktransfer") ?? false;
+      const countrySupported = (collection?.methods as readonly string[] | undefined)?.includes("banktransfer") ?? false;
       const liveNgnFlow = code === "NG" && currency.toUpperCase() === "NGN";
       return {
         countrySupported: countrySupported || liveNgnFlow,

@@ -28,15 +28,15 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
   const StatusIcon = kind === "success" ? CheckCircle2 : kind === "failed" ? XCircle : Clock3;
 
   const downloadReceipt = () => {
-    const rows = [
+    const rows: Array<[string, string]> = [
       ["Transaction", transaction.title],
       ["Amount", amount],
       ["Status", statusLabel],
       ["Date & time", date],
       ["Transaction type", transaction.kind.replaceAll("_", " ")],
-      ...(transaction.reference ? [["Reference", transaction.reference]] : []),
-      ...(transaction.detail ? [["Details", transaction.detail]] : []),
-      ...(transaction.category ? [["Category", transaction.category.name]] : []),
+      ...(transaction.reference ? [["Reference", transaction.reference] as [string, string]] : []),
+      ...(transaction.detail ? [["Details", transaction.detail] as [string, string]] : []),
+      ...(transaction.category ? [["Category", transaction.category.name] as [string, string]] : []),
     ];
     const rowSvg = rows.map(([label, value], index) => {
       const y = 390 + index * 58;

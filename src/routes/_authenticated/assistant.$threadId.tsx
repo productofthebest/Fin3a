@@ -417,7 +417,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       ) : null}
       {qrScanOpen ? <Suspense fallback={<Loader2 className="mt-4 size-5 animate-spin" aria-label="Opening scanner" />}><QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /></Suspense> : null}
       <CryptoQrReview value={cryptoReview} onClose={() => setCryptoReview(null)} />
-      {supportOpen && (
+      {supportOpen ? (
         <div role="status" className="order-2 my-4 flex gap-2">
           <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
           <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm bg-muted/50 px-4 py-3 text-sm leading-relaxed text-foreground">

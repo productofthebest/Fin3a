@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/flutterwave-webhook")({
             const { processTransferNotice } = await import("@/lib/ngn-withdrawal.server");
             return processTransferNotice(notice.id, notice.reference);
           }
-          if (notice.txRef.startsWith("F3I-")) {
+          if (notice.kind === "charge" && notice.txRef.startsWith("F3I-")) {
             const { processInternationalDepositNotice } = await import("@/lib/international-deposit.server");
             return processInternationalDepositNotice(notice);
           }
