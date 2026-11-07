@@ -15,7 +15,6 @@ const PAYOUT_COUNTRY_CURRENCIES = {
   NG: "NGN", GH: "GHS", KE: "KES", MW: "MWK", TZ: "TZS", UG: "UGX",
   US: "USD", GB: "GBP", ZA: "ZAR", RW: "RWF", EG: "EGP",
   CM: "XAF", CI: "XOF", SN: "XOF",
-  ZM: "ZMW",
 };
 const EUR_PAYOUT_COUNTRIES = new Set(["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"]);
 function payoutCountryMatches(country, currency) {
