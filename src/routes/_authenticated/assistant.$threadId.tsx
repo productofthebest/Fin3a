@@ -328,17 +328,32 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
           <h2 className="order-1 mt-8 text-[15px] font-medium">Try Asking Fin3a.</h2>
           <div className="order-3">
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <a
-              href={`mailto:${SUPPORT_EMAIL}`}
-              aria-label="Contact Fin3a support by email"
-              className="group flex items-center gap-3 rounded-xl border border-border bg-card/80 px-4 py-4 text-left shadow-sm transition-colors hover:border-accent"
+            <div
+              className="flex items-center gap-3 rounded-xl border border-border bg-card/80 px-4 py-4 text-left shadow-sm"
             >
               <Headset className="size-6 shrink-0 text-primary" strokeWidth={1.5} />
-              <span className="min-w-0 flex-1 text-[13px] leading-snug text-foreground">Contact Support</span>
-              <span className="grid size-7 shrink-0 place-items-center rounded-md bg-secondary text-foreground group-hover:text-primary">
-                <ArrowRight className="size-4" />
-              </span>
-            </a>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] leading-snug font-medium text-foreground">Contact Support</p>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <a
+                    href={`mailto:${SUPPORT_EMAIL}`}
+                    aria-label={`Email Fin3a support at ${SUPPORT_EMAIL}`}
+                    className="text-primary underline-offset-2 hover:underline"
+                  >
+                    {SUPPORT_EMAIL}
+                  </a>
+                  <a
+                    href="https://wa.me/234701009805"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Chat with Fin3a support on WhatsApp"
+                    className="text-primary underline-offset-2 hover:underline"
+                  >
+                    WhatsApp: +234701009805
+                  </a>
+                </div>
+              </div>
+            </div>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.text}
