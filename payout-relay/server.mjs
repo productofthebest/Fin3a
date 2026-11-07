@@ -132,7 +132,10 @@ function validInternationalMeta(currency, meta) {
   if (Object.keys(m).some(k => !INTERNATIONAL_META_KEYS.has(k))) return false;
   if (!safeText(m.routing_number, 40) || !safeText(m.bank_name, 120)) return false;
   if ((currency === "USD" || currency === "EUR") && !safeText(m.swift_code, 20)) return false;
-  if (currency === "USD" && (!safeText(m.beneficiary_address, 180) || !safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100))) return false;
+  if (currency === "USD") {
+    if (!["checking", "depository"].includes(m.account_type)) return false;
+    if (!safeText(m.beneficiary_address, 180) || !safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100)) return false;
+  }
   if (currency === "EUR" && (!safeText(m.postal_code, 20) || !safeText(m.street_number, 30) || !safeText(m.street_name, 100) || !safeText(m.city, 100))) return false;
   if (currency === "GBP") {
     if (!["personal", "corporate"].includes(m.account_type)) return false;
