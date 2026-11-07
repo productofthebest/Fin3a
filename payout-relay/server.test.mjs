@@ -61,10 +61,26 @@ test("rejects unsupported international payout currency", async () => {
 test("rejects mobile-money payout when operator does not match currency", async () => {
   const r = await fetch(base + "/v1/flutterwave/transfers", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
-    body: JSON.stringify({ destination_type: "mobile_money", account_bank: "MPS", account_number: "254712345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
+    body: JSON.stringify({ destination_type: "mobile_money", destination_country: "GH", account_bank: "MPS", account_number: "254712345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
   });
   assert.equal(r.status, 400);
 });
+test("rejects international payout when destination country and currency do not match", async () => {
+  const r = await fetch(base + "/v1/flutterwave/transfers", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ destination_type: "bank", destination_country: "KE", account_bank: "BANK", account_number: "12345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
+  });
+  assert.equal(r.status, 400);
+});
+
+test("rejects international payout without an explicit destination country", async () => {
+  const r = await fetch(base + "/v1/flutterwave/transfers", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ destination_type: "bank", account_bank: "BANK", account_number: "12345678", beneficiary_name: "Test Beneficiary", amount: 100, currency: "GHS", debit_currency: "GHS", reference: "F3W-12345678-1234-1234-1234-123456789012" }),
+  });
+  assert.equal(r.status, 400);
+});
+
 test("rejects hosted payment collection when redirect is not configured", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
@@ -72,6 +88,16 @@ test("rejects hosted payment collection when redirect is not configured", async 
   });
   assert.equal(r.status, 503);
 });
+test("uses provider-supported payment options for GH, CM, CI and ZM country/currency pairs", async () => {
+  for (const [country, currency] of [["GH", "GHS"], ["CM", "XAF"], ["CI", "XOF"], ["ZM", "ZMW"], ["FR", "EUR"]]) {
+    const r = await fetch(base + "/v1/flutterwave/payments", {
+      method: "POST", headers: { ...auth, "content-type": "application/json" },
+      body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency, country, customer: { email: "test@example.com", name: "Test User" } }),
+    });
+    assert.equal(r.status, 503, country + " should pass country/currency validation before the unconfigured checkout gate");
+  }
+});
+
 test("rejects unsupported country and currency payment combination", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
