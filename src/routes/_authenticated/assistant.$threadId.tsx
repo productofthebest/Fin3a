@@ -6,7 +6,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  ArrowRight, Bell, Camera, FileText, Headset, Loader2, LogOut, Mic,
+  ArrowRight, Bell, Camera, FileText, Headset, Loader2, LogOut, Mail, MessageCircle, Mic,
   PiggyBank, QrCode, Search, Send, Settings, Square, Target, TrendingUp, Wallet, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -418,13 +418,38 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
       {qrScanOpen ? <Suspense fallback={<Loader2 className="mt-4 size-5 animate-spin" aria-label="Opening scanner" />}><QrScanner title="Scan a payment QR" onScan={(t) => void handleQrScan(t)} onClose={() => setQrScanOpen(false)} /></Suspense> : null}
       <CryptoQrReview value={cryptoReview} onClose={() => setCryptoReview(null)} />
       {supportOpen ? (
-        <div role="status" className="order-2 my-4 flex gap-2">
+        <div role="status" aria-label="Fin3a support contacts" className="order-2 my-4 flex gap-2">
           <img src={robot} alt="" width={1024} height={1024} className="size-8 shrink-0 object-contain" />
-          <div className="min-w-0 flex-1 rounded-2xl rounded-tl-sm bg-muted/50 px-4 py-3 text-sm leading-relaxed text-foreground">
-            <p className="font-medium">You can contact Fin3a Support directly:</p>
-            <div className="mt-2 flex flex-col gap-2">
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="w-fit text-primary underline-offset-2 hover:underline">{SUPPORT_EMAIL}</a>
-              <a href="https://wa.me/234701009805" target="_blank" rel="noopener noreferrer" className="w-fit text-primary underline-offset-2 hover:underline">WhatsApp: +234701009805</a>
+          <div className="min-w-0 max-w-[85%] flex-1 rounded-2xl rounded-tl-sm border border-primary/15 bg-muted/50 px-4 py-4 text-sm leading-relaxed text-foreground">
+            <p className="font-semibold">We're here to help.</p>
+            <p className="mt-1 text-muted-foreground">Reach the Fin3a support team through either channel below.</p>
+            <div className="mt-3 grid gap-2">
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                aria-label={`Email Fin3a support at ${SUPPORT_EMAIL}`}
+                className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 transition-colors hover:border-primary/40 hover:bg-secondary/60"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Mail className="size-5" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs text-muted-foreground">Email Support</span>
+                  <span className="block break-all font-medium text-foreground">{SUPPORT_EMAIL}</span>
+                </span>
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              </a>
+              <a
+                href="https://wa.me/234701009805"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Chat with Fin3a support on WhatsApp"
+                className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3 transition-colors hover:border-primary/40 hover:bg-secondary/60"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><MessageCircle className="size-5" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs text-muted-foreground">WhatsApp Support</span>
+                  <span className="block font-medium text-foreground">+234 701 009 805</span>
+                </span>
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              </a>
             </div>
             <button type="button" onClick={() => setSupportOpen(false)} className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:underline">Dismiss</button>
           </div>
