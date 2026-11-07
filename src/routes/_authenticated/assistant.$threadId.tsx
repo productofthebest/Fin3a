@@ -6,7 +6,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  ArrowRight, Bell, Camera, FileText, Loader2, LogOut, Mic,
+  ArrowRight, Bell, Camera, FileText, Headset, Loader2, LogOut, Mic,
   PiggyBank, QrCode, Search, Send, Settings, Square, Target, TrendingUp, Wallet, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ import robot from "@/assets/fin3a-robot.png";
 import { CryptoQrReview } from "@/components/crypto-qr-review";
 import type { CryptoQr } from "@/lib/crypto-qr";
 import { accountHelpIntent, ACCOUNT_HELP_TEXT, type AccountHelpIntent } from "@/lib/account-help";
+import { SUPPORT_EMAIL } from "@/components/support-contact";
 
 const QrScanner = lazy(() => import("@/components/qr-scanner").then(module => ({ default: module.QrScanner })));
 
@@ -327,6 +328,17 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
           <h2 className="order-1 mt-8 text-[15px] font-medium">Try Asking Fin3a.</h2>
           <div className="order-3">
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              aria-label="Contact Fin3a support by email"
+              className="group flex items-center gap-3 rounded-xl border border-border bg-card/80 px-4 py-4 text-left shadow-sm transition-colors hover:border-accent"
+            >
+              <Headset className="size-6 shrink-0 text-primary" strokeWidth={1.5} />
+              <span className="min-w-0 flex-1 text-[13px] leading-snug text-foreground">Contact Support</span>
+              <span className="grid size-7 shrink-0 place-items-center rounded-md bg-secondary text-foreground group-hover:text-primary">
+                <ArrowRight className="size-4" />
+              </span>
+            </a>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.text}
