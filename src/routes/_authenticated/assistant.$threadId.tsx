@@ -459,7 +459,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
                           <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                         </a>
                         <a
-                          href="https://wa.me/234701009805"
+                          href="https://wa.me/2347010449805"
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label="Chat with Fin3a support on WhatsApp"
@@ -468,7 +468,7 @@ function ChatWindow({ threadId, name }: { threadId: string; name?: string | unde
                           <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><MessageCircle className="size-5" /></span>
                           <span className="min-w-0 flex-1">
                             <span className="block text-xs text-muted-foreground">WhatsApp Support</span>
-                            <span className="block font-medium text-foreground">+234 701 009 805</span>
+                            <span className="block font-medium text-foreground">+2347010449805</span>
                           </span>
                           <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                         </a>
