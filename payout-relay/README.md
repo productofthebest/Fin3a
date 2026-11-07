@@ -28,15 +28,17 @@ The verification route performs a server-to-server Flutterwave V3 transaction lo
 
 This route creates a Flutterwave-hosted checkout session. It accepts only an allowlisted country/currency combination and a customer email/name, then returns the provider response containing the hosted checkout link. It does **not** accept or process raw card numbers, CVV, PIN, or expiry data; card entry and authentication stay on Flutterwave's hosted checkout.
 
-The currently configured payment-method matrix is:
-- Nigeria (NGN): card, bank transfer
-- Ghana (GHS): card, mobile money
-- Kenya (KES): card, M-Pesa
-- UK (GBP), US (USD), and configured SEPA countries (EUR): card and bank-account payment
-- South Africa (ZAR): card and bank account
-- Malawi (MWK), Uganda (UGX), Rwanda (RWF), Tanzania (TZS), Côte d'Ivoire/Senegal (XOF), and Cameroon (XAF): card and the corresponding documented mobile-money option
+The country/currency payment-method matrix is deliberately explicit:
+- Nigeria (NGN): card only in hosted checkout; the existing NGN virtual-account top-up remains a separate flow.
+- Ghana (GHS): card and `mobilemoneyghana`.
+- Kenya (KES): card and `mpesa`.
+- UK (GBP), US (USD), and the configured SEPA countries (EUR): card and `account`.
+- South Africa (ZAR): card, `account`, and `1voucher`.
+- Malawi (MWK), Uganda (UGX), Rwanda (RWF), Tanzania (TZS), Côte d'Ivoire/Senegal (XOF), Cameroon (XAF), and Zambia (ZMW): card and the corresponding documented regional mobile-money option.
 
-Flutterwave account-level enablement and regional restrictions determine which methods are actually available at checkout. The `PAYMENT_REDIRECT_URL` environment variable must be an HTTPS Fin3a callback. The callback must verify the payment server-side using Flutterwave's transaction verification API before crediting a Fin3a balance. A browser redirect alone is never proof of payment.
+For outgoing transfers, every non-NGN request must include a destination country that matches its transfer currency. EUR payouts are restricted to the explicitly listed SEPA destinations; USD and GBP use their separately validated international beneficiary metadata. The legacy NGN withdrawal path remains unchanged. These are API-level country/currency guards, not proof that the merchant account is enabled for any route.
+
+Flutterwave account-level enablement and regional restrictions determine which methods are actually available at checkout. Nigeria hosted collection is card-only here; the existing NGN virtual-account flow is not changed. The `PAYMENT_REDIRECT_URL` environment variable must be an HTTPS Fin3a callback. The callback must verify the payment server-side using Flutterwave's transaction verification API before crediting a Fin3a balance. A browser redirect alone is never proof of payment.
 
 ## Railway deployment
 
