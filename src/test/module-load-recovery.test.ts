@@ -1,7 +1,29 @@
 import { describe, expect, it, vi } from "vitest";
-import { isModuleLoadError, recoverModuleLoad } from "@/lib/module-load-recovery";
+import { isModuleLoadError, isPreviewReloadError, recoverModuleLoad } from "@/lib/module-load-recovery";
 
 describe("failed page asset recovery", () => {
+  const previewHtml = '<html><head><script>window.parent.postMessage({ type: "FORCE_RELOAD" }, "*");</script></head></html>';
+
+  it("recovers the explicit preview refresh response once without replaying requests", () => {
+    const values = new Map<string, string>();
+    const reload = vi.fn();
+    const browser = {
+      storage: { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } },
+      reload,
+      now: () => 100_000,
+    };
+    expect(isPreviewReloadError(new Error(previewHtml))).toBe(true);
+    expect(recoverModuleLoad(new Error(previewHtml), browser)).toBe(true);
+    expect(recoverModuleLoad(new Error(previewHtml), browser)).toBe(false);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["Unauthorized", "401", "FORCE_RELOAD", "<html>Unauthorized</html>", "Insufficient balance"])("does not refresh ordinary access or payment failures: %s", (message) => {
+    expect(isPreviewReloadError(new Error(message))).toBe(false);
+    const reload = vi.fn();
+    expect(recoverModuleLoad(new Error(message), { storage: { getItem: () => null, setItem: vi.fn() }, reload, now: Date.now })).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
   it.each([
     "Importing a module script failed.",
     "Failed to fetch dynamically imported module: /assets/page.js",
