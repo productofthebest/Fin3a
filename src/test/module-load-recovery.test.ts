@@ -1,7 +1,37 @@
 import { describe, expect, it, vi } from "vitest";
-import { isModuleLoadError, isPreviewReloadError, recoverModuleLoad } from "@/lib/module-load-recovery";
+import { installModuleLoadRecovery, isModuleLoadError, isPreviewReloadError, recoverModuleLoad } from "@/lib/module-load-recovery";
 
 describe("failed page asset recovery", () => {
+  it.each(["vite:preloadError", "unhandledrejection", "error"])("recovers Safari module failures delivered through %s once", (type) => {
+    const target = new EventTarget();
+    const values = new Map<string, string>();
+    const reload = vi.fn();
+    const cleanup = installModuleLoadRecovery(target, (error) => recoverModuleLoad(error, {
+      storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } },
+      reload, now: () => 100_000,
+    }));
+    const failureEvent = (message: string) => {
+      const event = new Event(type, { cancelable: true });
+      Object.defineProperty(event, type === "vite:preloadError" ? "payload" : type === "unhandledrejection" ? "reason" : "error", { value: new TypeError(message) });
+      return event;
+    };
+    const ordinary = failureEvent("Insufficient balance");
+    target.dispatchEvent(ordinary);
+    expect(ordinary.defaultPrevented).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+    const first = failureEvent("Importing a module script failed.");
+    target.dispatchEvent(first);
+    expect(first.defaultPrevented).toBe(true);
+    const second = failureEvent("Importing a module script failed.");
+    target.dispatchEvent(second);
+    expect(second.defaultPrevented).toBe(false);
+    expect(reload).toHaveBeenCalledTimes(1);
+    cleanup();
+    values.clear();
+    target.dispatchEvent(failureEvent("Importing a module script failed."));
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
   const previewHtml = '<html><head><script>window.parent.postMessage({ type: "FORCE_RELOAD" }, "*");</script></head></html>';
 
   it("recovers the explicit preview refresh response once without replaying requests", () => {

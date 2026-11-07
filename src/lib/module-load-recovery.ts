@@ -46,3 +46,29 @@ export function recoverBrowserModuleLoad(error: unknown): boolean {
     return false;
   }
 }
+
+// Vite/HMR and dynamic imports can reject outside the router's error boundary.
+// Keep these listeners in the document shell, which survives route failures.
+export function installModuleLoadRecovery(
+  target: Pick<Window, "addEventListener" | "removeEventListener">,
+  recover: (error: unknown) => boolean = recoverBrowserModuleLoad,
+): () => void {
+  const onPreload = (event: Event) => {
+    if (recover((event as Event & { payload?: unknown }).payload)) event.preventDefault();
+  };
+  const onRejection = (event: Event) => {
+    if (recover((event as PromiseRejectionEvent).reason)) event.preventDefault();
+  };
+  const onError = (event: Event) => {
+    const failure = event as ErrorEvent;
+    if (recover(failure.error ?? failure.message)) event.preventDefault();
+  };
+  target.addEventListener("vite:preloadError", onPreload);
+  target.addEventListener("unhandledrejection", onRejection);
+  target.addEventListener("error", onError);
+  return () => {
+    target.removeEventListener("vite:preloadError", onPreload);
+    target.removeEventListener("unhandledrejection", onRejection);
+    target.removeEventListener("error", onError);
+  };
+}
