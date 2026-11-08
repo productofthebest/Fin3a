@@ -124,7 +124,7 @@ export function buildInternationalTransferPayload(
       else meta.swift_code = swift;
     }
   } else {
-    accountNumber = cleanCode(b.iban ?? b.accountNumber ?? "");
+    accountNumber = (b.iban ?? b.accountNumber ?? "").replace(/[\\s-]/g, "").toUpperCase();
     if (!isValidIban(accountNumber, country)) invalid.push("iban");
     if (!routing || routing.length > 40) invalid.push("routingNumber");
     else meta.routing_number = routing;
