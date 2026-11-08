@@ -49,8 +49,11 @@ describe("authenticated international payout preflight rules", () => {
   it("rejects unsupported country/currency/method combinations", () => {
     expect(buildInternationalPayoutPreflight({ ...validGhanaMobile, destinationCountry: "CA", currency: "CAD" }, "GH").reason)
       .toBe("unknown_route");
-    expect(buildInternationalPayoutPreflight({ ...validGhanaMobile, method: "bank" }, "GH").reason)
-      .toBe("not_merchant_verified");
+    expect(buildInternationalPayoutPreflight({
+      ...validGhanaMobile,
+      method: "bank",
+      beneficiary: { accountName: "Ama Mensah", bankCode: "TEST", accountNumber: "12345678" },
+    }, "GH").reason).toBe("not_merchant_verified");
   });
 
   it("keeps Nigeria on the existing NGN withdrawal path", () => {
