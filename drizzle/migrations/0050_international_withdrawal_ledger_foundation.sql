@@ -180,6 +180,7 @@ CREATE FUNCTION public.finish_international_withdrawal(
 DECLARE
   w public.international_withdrawals;
   final_outcome text;
+  ledger_rows integer;
 BEGIN
   IF _reference IS NULL OR _reference !~ '^F3W-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
      OR _provider_transfer_id IS NULL OR _provider_transfer_id !~ '^[1-9][0-9]{0,19}$'
@@ -224,14 +225,28 @@ BEGIN
     final_outcome := 'pending';
   ELSIF _outcome = 'successful' THEN
     UPDATE public.account_ledger SET status='completed',updated_at=now() WHERE id=w.ledger_id AND status='pending';
-    UPDATE public.international_withdrawals SET status='successful',provider_transfer_id=_provider_transfer_id,
-      provider_status=_provider_status,updated_at=now() WHERE id=w.id;
-    final_outcome := 'successful';
+    GET DIAGNOSTICS ledger_rows = ROW_COUNT;
+    IF ledger_rows = 1 THEN
+      UPDATE public.international_withdrawals SET status='successful',provider_transfer_id=_provider_transfer_id,
+        provider_status=_provider_status,updated_at=now() WHERE id=w.id;
+      final_outcome := 'successful';
+    ELSE
+      UPDATE public.international_withdrawals SET status='review',provider_transfer_id=coalesce(provider_transfer_id,_provider_transfer_id),
+        provider_status=_provider_status,updated_at=now() WHERE id=w.id;
+      final_outcome := 'review';
+    END IF;
   ELSIF _outcome = 'failed' THEN
     UPDATE public.account_ledger SET status='failed',updated_at=now() WHERE id=w.ledger_id AND status='pending';
-    UPDATE public.international_withdrawals SET status='failed',provider_transfer_id=_provider_transfer_id,
-      provider_status=_provider_status,updated_at=now() WHERE id=w.id;
-    final_outcome := 'failed';
+    GET DIAGNOSTICS ledger_rows = ROW_COUNT;
+    IF ledger_rows = 1 THEN
+      UPDATE public.international_withdrawals SET status='failed',provider_transfer_id=_provider_transfer_id,
+        provider_status=_provider_status,updated_at=now() WHERE id=w.id;
+      final_outcome := 'failed';
+    ELSE
+      UPDATE public.international_withdrawals SET status='review',provider_transfer_id=coalesce(provider_transfer_id,_provider_transfer_id),
+        provider_status=_provider_status,updated_at=now() WHERE id=w.id;
+      final_outcome := 'review';
+    END IF;
   ELSE
     final_outcome := 'review';
   END IF;
