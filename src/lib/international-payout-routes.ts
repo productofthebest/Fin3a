@@ -8,8 +8,8 @@
  * BIC shape, ABA checksum, UK sort code, phone length). They are NOT mapped to
  * Flutterwave's per-corridor transfer schema (required beneficiary/meta fields,
  * bank-code lists, mobile-money network codes) and must not be treated as
- * provider-ready. Route metadata is in-memory only: not persisted, not imported by
- * any server function or UI, and never customer-enabled.
+ * provider-ready. The candidate catalog is static; trusted merchant verification
+ * is persisted separately and cannot by itself enable the global payout lock.
  */
 import { getBankPayoutCapability } from "./flutterwave-capabilities";
 
@@ -97,7 +97,7 @@ export function toMinorUnits(amount: number, currency: string): number | null {
   if (exp === undefined || !Number.isFinite(amount) || amount <= 0) return null;
   const scaled = amount * 10 ** exp;
   const rounded = Math.round(scaled);
-  if (Math.abs(scaled - rounded) > 1e-6) return null;
+  if (!Number.isSafeInteger(rounded) || Math.abs(scaled - rounded) > 1e-6) return null;
   return rounded;
 }
 
@@ -132,7 +132,7 @@ export function isValidBic(raw: string, country?: string): boolean {
 /** ABA routing number with checksum. */
 export function isValidAbaRouting(raw: string): boolean {
   const r = clean(raw);
-  if (!/^\d{9}$/.test(r)) return false;
+  if (!/^\d{9}$/.test(r) || /^0+$/.test(r)) return false;
   const w = [3, 7, 1];
   const sum = r.split("").reduce((acc, ch, i) => acc + Number(ch) * (w[i % 3] ?? 0), 0);
   return sum % 10 === 0;
