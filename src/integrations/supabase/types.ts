@@ -888,6 +888,53 @@ export type Database = {
         }
         Relationships: []
       }
+      flw_international_deposit_events: {
+        Row: {
+          amount: number | null
+          currency: string | null
+          event_key: string
+          id: string
+          intent_id: string | null
+          outcome: string
+          provider_status: string
+          provider_tx_id: string
+          tx_ref: string
+          verified_at: string
+        }
+        Insert: {
+          amount?: number | null
+          currency?: string | null
+          event_key: string
+          id?: string
+          intent_id?: string | null
+          outcome: string
+          provider_status: string
+          provider_tx_id: string
+          tx_ref: string
+          verified_at?: string
+        }
+        Update: {
+          amount?: number | null
+          currency?: string | null
+          event_key?: string
+          id?: string
+          intent_id?: string | null
+          outcome?: string
+          provider_status?: string
+          provider_tx_id?: string
+          tx_ref?: string
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flw_international_deposit_events_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "international_deposit_intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flw_topup_refunds: {
         Row: {
           amount: number
@@ -1076,6 +1123,69 @@ export type Database = {
           to_user_id?: string
         }
         Relationships: []
+      }
+      international_deposit_intents: {
+        Row: {
+          account_id: string
+          country: string
+          created_at: string
+          currency: string
+          expires_at: string
+          id: string
+          ledger_id: string | null
+          provider_tx_id: string | null
+          requested_amount: number
+          status: string
+          tx_ref: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          country: string
+          created_at?: string
+          currency: string
+          expires_at: string
+          id?: string
+          ledger_id?: string | null
+          provider_tx_id?: string | null
+          requested_amount: number
+          status?: string
+          tx_ref: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          country?: string
+          created_at?: string
+          currency?: string
+          expires_at?: string
+          id?: string
+          ledger_id?: string | null
+          provider_tx_id?: string | null
+          requested_amount?: number
+          status?: string
+          tx_ref?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_deposit_intents_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "international_deposit_intents_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "account_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       merchant_rules: {
         Row: {
@@ -2092,6 +2202,10 @@ export type Database = {
         Args: { _from: string; _to: string }
         Returns: Json
       }
+      admin_list_user_fiat_balances: {
+        Args: { _user_ids: string[] }
+        Returns: Json
+      }
       admin_list_users: {
         Args: { _limit: number; _offset: number; _search: string }
         Returns: Json
@@ -2215,6 +2329,17 @@ export type Database = {
       ai_web_reserve: {
         Args: { _guest: boolean; _id: string }
         Returns: boolean
+      }
+      apply_flw_international_deposit: {
+        Args: {
+          _amount: number
+          _currency: string
+          _provider_status: string
+          _provider_tx_id: string
+          _reference_matches: boolean
+          _tx_ref: string
+        }
+        Returns: Json
       }
       apply_flw_topup_evidence: {
         Args: {
