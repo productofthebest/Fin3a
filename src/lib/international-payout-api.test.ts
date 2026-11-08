@@ -17,6 +17,24 @@ describe("authenticated international payout preflight rules", () => {
     expect(internationalPayoutPreflightInput.safeParse({ ...validGhanaMobile, method: "card" }).success).toBe(false);
   });
 
+  it("rejects unknown beneficiary fields and non-string values", () => {
+    expect(internationalPayoutPreflightInput.safeParse({
+      ...validGhanaMobile,
+      beneficiary: { ...validGhanaMobile.beneficiary, admin: "true" },
+    }).success).toBe(false);
+    expect(internationalPayoutPreflightInput.safeParse({
+      ...validGhanaMobile,
+      beneficiary: { ...validGhanaMobile.beneficiary, accountName: { value: "Ama" } },
+    }).success).toBe(false);
+  });
+
+  it("rejects oversized beneficiary values", () => {
+    expect(internationalPayoutPreflightInput.safeParse({
+      ...validGhanaMobile,
+      beneficiary: { ...validGhanaMobile.beneficiary, accountName: "A".repeat(201) },
+    }).success).toBe(false);
+  });
+
   it("validates a Ghana mobile-money beneficiary but never enables the route", () => {
     expect(buildInternationalPayoutPreflight(validGhanaMobile, "GH")).toEqual({
       ok: false,
