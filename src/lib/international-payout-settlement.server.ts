@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { internationalWithdrawalsEnabled } from "./withdrawal-production";
 import {
   buildInternationalTransferPayload,
   type InternationalWithdrawalInput,
@@ -91,11 +92,11 @@ export async function submitInternationalWithdrawal(
   });
   if (reserved.error) return { ok: false as const, error: "withdrawal_reservation_unavailable" };
 
-  const reservation = reserved.data as { status?: string; reference?: string; payout?: number } | null;
+  const reservation = reserved.data as { status?: string; reference?: string; payout?: number; withdrawal_status?: string } | null;
   if (!reservation?.status) return { ok: false as const, error: "withdrawal_reservation_unavailable" };
   if (reservation.status === "existing" && reservation.reference) {
     // An idempotent replay reports the existing request; it never submits a second transfer.
-    return { ok: true as const, reference: reservation.reference, status: (reservation.status === "existing" ? reservation.status : "pending") as const };
+    return { ok: true as const, reference: reservation.reference, status: (reservation.withdrawal_status === "successful" || reservation.withdrawal_status === "failed" ? reservation.withdrawal_status : "pending") as "pending" | "successful" | "failed" };
   }
   if (reservation.status !== "reserved" || !reservation.reference || typeof reservation.payout !== "number") {
     const messages: Record<string, string> = {
