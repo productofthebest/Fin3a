@@ -74,6 +74,15 @@ CREATE TRIGGER international_ledger_immutable BEFORE UPDATE OR DELETE ON public.
 CREATE TRIGGER international_events_immutable BEFORE UPDATE OR DELETE ON public.international_withdrawal_events FOR EACH ROW EXECUTE FUNCTION public.international_history_immutable();
 CREATE TRIGGER international_withdrawals_retained BEFORE DELETE ON public.international_withdrawals FOR EACH ROW EXECUTE FUNCTION public.international_history_immutable();
 
+CREATE FUNCTION public.international_withdrawal_terms_immutable() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+  IF (to_jsonb(NEW)-'status'-'provider_transfer_id'-'review_reason'-'updated_at') IS DISTINCT FROM (to_jsonb(OLD)-'status'-'provider_transfer_id'-'review_reason'-'updated_at') THEN
+    RAISE EXCEPTION 'International withdrawal terms are immutable';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER international_withdrawal_terms BEFORE UPDATE ON public.international_withdrawals FOR EACH ROW EXECUTE FUNCTION public.international_withdrawal_terms_immutable();
+
 CREATE FUNCTION public.international_payouts_live_enabled() RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=public AS $$ SELECT false $$;
 REVOKE ALL ON FUNCTION public.international_payouts_live_enabled() FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.international_payouts_live_enabled() TO service_role;
@@ -82,9 +91,10 @@ CREATE FUNCTION public.admin_verify_international_route(_route_id text,_country 
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 BEGIN
   PERFORM public.admin_require();
-  IF _expires_at <= now() OR _expires_at > now()+interval '90 days' OR length(trim(_evidence_ref)) NOT BETWEEN 3 AND 200
+  IF _expires_at IS NULL OR _evidence_ref IS NULL OR _schema_version IS NULL OR _provider_codes IS NULL OR _country IS NULL OR _currency IS NULL OR _method IS NULL OR _environment IS NULL
+    OR _expires_at <= now() OR _expires_at > now()+interval '90 days' OR length(trim(_evidence_ref)) NOT BETWEEN 3 AND 200
     OR _schema_version <> 'flw-v3-gh-bank-momo-1' OR _country <> 'GH' OR _currency <> 'GHS'
-    OR cardinality(_provider_codes) NOT BETWEEN 1 AND 100 OR _environment NOT IN ('sandbox','production') THEN
+    OR cardinality(_provider_codes) NOT BETWEEN 1 AND 100 OR EXISTS(SELECT 1 FROM unnest(_provider_codes) c WHERE c IS NULL OR c !~ '^[A-Za-z0-9]{2,12}$') OR _environment NOT IN ('sandbox','production') THEN
     RAISE EXCEPTION 'Verified schema and current merchant evidence required';
   END IF;
   INSERT INTO public.international_merchant_routes(route_id,country,currency,method,environment,schema_version,provider_codes,evidence_ref,verified_by,expires_at,fee_minor,max_minor,revoked)
@@ -111,7 +121,7 @@ BEGIN
   IF NOT FOUND OR r.revoked OR r.environment<>'production' OR r.verified_at>now() OR r.expires_at<=now() THEN RETURN jsonb_build_object('status','route_unverified'); END IF;
   IF public.account_blocked(_user_id) THEN RETURN jsonb_build_object('status','blocked'); END IF;
   IF NOT EXISTS(SELECT 1 FROM public.user_settings WHERE user_id=_user_id AND country=r.country) THEN RETURN jsonb_build_object('status','country_mismatch'); END IF;
-  IF _amount_minor IS NULL OR _amount_minor<=r.fee_minor OR _amount_minor>r.max_minor OR jsonb_typeof(_beneficiary)<>'object' THEN RETURN jsonb_build_object('status','invalid'); END IF;
+  IF _amount_minor IS NULL OR _amount_minor<=r.fee_minor OR _amount_minor>r.max_minor OR _beneficiary IS NULL OR jsonb_typeof(_beneficiary)<>'object' THEN RETURN jsonb_build_object('status','invalid'); END IF;
   SELECT id INTO a FROM public.accounts WHERE user_id=_user_id AND currency=r.currency FOR UPDATE;
   IF a IS NULL THEN RETURN jsonb_build_object('status','no_account'); END IF;
   exponent := CASE WHEN r.currency IN ('UGX','RWF','XOF','XAF') THEN 0 ELSE 2 END;
@@ -169,7 +179,7 @@ DECLARE w public.international_withdrawals;
 BEGIN
   PERFORM public.admin_require();
   SELECT * INTO w FROM public.international_withdrawals WHERE id=_withdrawal_id FOR UPDATE;
-  IF NOT FOUND OR w.status<>'review' OR w.review_reason<>'verified_post_settlement_reversal' OR _confirmed_return_minor IS DISTINCT FROM w.amount_minor OR length(trim(_reason)) NOT BETWEEN 10 AND 500 THEN
+  IF NOT FOUND OR w.status<>'review' OR w.review_reason<>'verified_post_settlement_reversal' OR _confirmed_return_minor IS DISTINCT FROM w.amount_minor OR _reason IS NULL OR length(trim(_reason)) NOT BETWEEN 10 AND 500 THEN
     RAISE EXCEPTION 'Full provider return including fees must be verified; partial returns require separate review';
   END IF;
   INSERT INTO public.international_withdrawal_ledger(withdrawal_id,account_id,user_id,currency,kind,amount_minor) VALUES(w.id,w.account_id,w.user_id,w.currency,'reversal',_confirmed_return_minor);
