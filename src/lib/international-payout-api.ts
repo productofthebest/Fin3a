@@ -35,11 +35,63 @@ export type InternationalPayoutPreflightResult = {
   invalidFields?: string[];
 };
 
+type QueryResult = {
+  data: { country?: string; currency?: string } | null;
+  error: unknown | null;
+};
+
+type QueryBuilder = {
+  select(columns: string): QueryBuilder;
+  eq(column: string, value: string): QueryBuilder;
+  maybeSingle(): Promise<QueryResult>;
+};
+
+/** Minimal database contract keeps the server decision independently testable. */
+export type InternationalPayoutPreflightDatabase = {
+  rpc(name: "consume_rate_limit", args: {
+    _bucket: string;
+    _limit: number;
+    _window_seconds: number;
+  }): Promise<{ data: boolean | null; error: unknown | null }>;
+  from(table: "user_settings" | "accounts"): QueryBuilder;
+};
+
 /**
- * Non-monetary, fail-closed preflight. The wallet country is supplied by the
- * authenticated server after reading user_settings; the requested currency is
- * separately checked against an account owned by that user. No merchant
- * verification records are supplied, so this can never authorize a payout.
+ * Authenticated server decision. userId comes only from verified Supabase claims.
+ * Database errors, missing records, and rate-limit errors always fail closed.
+ */
+export async function runAuthenticatedInternationalPayoutPreflight(
+  input: InternationalPayoutPreflightInput,
+  userId: string,
+  supabase: InternationalPayoutPreflightDatabase,
+): Promise<InternationalPayoutPreflightResult> {
+  if (!userId) return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
+
+  const { data: allowed, error: rateError } = await supabase.rpc("consume_rate_limit", {
+    _bucket: "international_payout_preflight",
+    _limit: 20,
+    _window_seconds: 600,
+  });
+  if (rateError || allowed !== true) {
+    return { ok: false, enabled: false, reason: "temporarily_unavailable" };
+  }
+
+  const [{ data: settings, error: settingsError }, { data: account, error: accountError }] = await Promise.all([
+    supabase.from("user_settings").select("country").eq("user_id", userId).maybeSingle(),
+    supabase.from("accounts").select("currency").eq("user_id", userId)
+      .eq("currency", input.walletCurrency.toUpperCase()).maybeSingle(),
+  ]);
+
+  if (settingsError || accountError || !settings?.country || !account?.currency) {
+    return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
+  }
+
+  return buildInternationalPayoutPreflight(input, settings.country);
+}
+
+/**
+ * Non-monetary, fail-closed preflight. No merchant verification records are
+ * supplied, so this can never authorize a payout.
  */
 export function buildInternationalPayoutPreflight(
   input: InternationalPayoutPreflightInput,
@@ -54,9 +106,7 @@ export function buildInternationalPayoutPreflight(
   };
 
   const decision = evaluateRoute(request, []);
-  if (decision.ok) {
-    return { ok: false, enabled: false, reason: "not_merchant_verified" };
-  }
+  if (decision.ok) return { ok: false, enabled: false, reason: "not_merchant_verified" };
   if (decision.reason !== "not_merchant_verified") {
     return { ok: false, enabled: false, reason: decision.reason };
   }
