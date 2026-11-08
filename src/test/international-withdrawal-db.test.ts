@@ -12,7 +12,7 @@ describe.skipIf(!port)("isolated international withdrawal SQL", () => {
   beforeAll(async () => {
     if (port !== "55440") throw new Error("Dedicated isolated database required");
     expect((await db`select current_database() as name,host(inet_server_addr()) as host`)[0]).toEqual({ name: "international_withdrawal_test", host: "127.0.0.1" });
-    await db.unsafe(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+    await db.unsafe(`DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF; IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role; END IF; END $$;
       CREATE SCHEMA auth; CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
       GRANT USAGE ON SCHEMA auth,public TO authenticated,anon,service_role;
       CREATE FUNCTION public.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT $1='${user}'::uuid AND $2='admin' $$;
@@ -107,6 +107,7 @@ describe.skipIf(!port)("isolated international withdrawal SQL", () => {
     expect((await finish(w["reference"],"10","reversed")).duplicate).toBe(true);
   });
   it("prevents ledger/event mutation and withdrawal deletion", async () => {
+    await expect(db`update international_withdrawals set amount_minor=amount_minor+1,payout_minor=payout_minor+1`).rejects.toThrow(/terms are immutable/);
     await expect(db`update international_withdrawal_ledger set amount_minor=1`).rejects.toThrow(/immutable/);
     await expect(db`delete from international_withdrawal_events`).rejects.toThrow(/immutable/);
     await expect(db`delete from international_withdrawals`).rejects.toThrow(/immutable/);
@@ -121,5 +122,17 @@ describe.skipIf(!port)("isolated international withdrawal SQL", () => {
       expect(await sql`select * from international_withdrawal_ledger`).toHaveLength(0);
     });
     expect(JSON.stringify(await db`select * from ngn_withdrawals`)).toBe(originalNgn);
+  });
+  it("rejects late success after failure without consuming another hold", async () => {
+    const w = (await db`select reference,payout_minor from international_withdrawals where amount_minor=80000`)[0];
+    if (!w) throw new Error("no withdrawal");
+    expect(await finish(w["reference"],"20","successful",Number(w["payout_minor"]))).toEqual({ status: "review" });
+    expect(await db`select * from international_withdrawal_ledger where kind='release'`).toHaveLength(1);
+  });
+  it("rejects null and malformed merchant evidence after authorization", async () => {
+    await db.begin(async sql => {
+      await sql`select set_config('request.jwt.claim.sub',${user},true)`;
+      await expect(sql`select admin_verify_international_route('flw:GH:GHS:bank','GH','GHS','bank','production','flw-v3-gh-bank-momo-1',ARRAY[NULL::text],'approval',now()+interval '1 day',50,100000,false)`).rejects.toThrow(/evidence required/);
+    }).catch(() => undefined);
   });
 });

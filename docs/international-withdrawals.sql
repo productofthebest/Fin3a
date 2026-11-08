@@ -18,7 +18,7 @@ CREATE TABLE public.international_merchant_routes (
   CHECK (route_id = 'flw:' || country || ':' || currency || ':' || method)
 );
 GRANT SELECT ON public.international_merchant_routes TO authenticated;
-GRANT ALL ON public.international_merchant_routes TO service_role;
+GRANT SELECT ON public.international_merchant_routes TO service_role;
 ALTER TABLE public.international_merchant_routes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY international_routes_admin ON public.international_merchant_routes FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'admin'));
 
@@ -38,7 +38,7 @@ CREATE TABLE public.international_withdrawals (
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
 );
 GRANT SELECT ON public.international_withdrawals TO authenticated;
-GRANT ALL ON public.international_withdrawals TO service_role;
+GRANT SELECT ON public.international_withdrawals TO service_role;
 ALTER TABLE public.international_withdrawals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY international_withdrawal_owner ON public.international_withdrawals FOR SELECT TO authenticated USING (user_id = auth.uid());
 CREATE POLICY international_withdrawal_admin ON public.international_withdrawals FOR SELECT TO authenticated USING (public.has_role(auth.uid(),'admin'));
@@ -53,7 +53,7 @@ CREATE TABLE public.international_withdrawal_ledger (
   UNIQUE(withdrawal_id,kind)
 );
 GRANT SELECT ON public.international_withdrawal_ledger TO authenticated;
-GRANT ALL ON public.international_withdrawal_ledger TO service_role;
+GRANT SELECT ON public.international_withdrawal_ledger TO service_role;
 ALTER TABLE public.international_withdrawal_ledger ENABLE ROW LEVEL SECURITY;
 CREATE POLICY international_ledger_owner ON public.international_withdrawal_ledger FOR SELECT TO authenticated USING(user_id=auth.uid());
 CREATE POLICY international_ledger_admin ON public.international_withdrawal_ledger FOR SELECT TO authenticated USING(public.has_role(auth.uid(),'admin'));
@@ -64,7 +64,7 @@ CREATE TABLE public.international_withdrawal_events (
   amount_minor bigint NOT NULL, currency text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
 );
 GRANT SELECT ON public.international_withdrawal_events TO authenticated;
-GRANT ALL ON public.international_withdrawal_events TO service_role;
+GRANT SELECT ON public.international_withdrawal_events TO service_role;
 ALTER TABLE public.international_withdrawal_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY international_events_admin ON public.international_withdrawal_events FOR SELECT TO authenticated USING(public.has_role(auth.uid(),'admin'));
 
@@ -91,7 +91,8 @@ CREATE FUNCTION public.admin_verify_international_route(_route_id text,_country 
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 BEGIN
   PERFORM public.admin_require();
-  IF _expires_at IS NULL OR _evidence_ref IS NULL OR _schema_version IS NULL OR _provider_codes IS NULL OR _country IS NULL OR _currency IS NULL OR _method IS NULL OR _environment IS NULL
+  IF _route_id IS NULL OR _method NOT IN ('bank','mobile_money') OR _route_id IS DISTINCT FROM ('flw:' || _country || ':' || _currency || ':' || _method)
+    OR _expires_at IS NULL OR _evidence_ref IS NULL OR _schema_version IS NULL OR _provider_codes IS NULL OR _country IS NULL OR _currency IS NULL OR _method IS NULL OR _environment IS NULL
     OR _expires_at <= now() OR _expires_at > now()+interval '90 days' OR length(trim(_evidence_ref)) NOT BETWEEN 3 AND 200
     OR _schema_version <> 'flw-v3-gh-bank-momo-1' OR _country <> 'GH' OR _currency <> 'GHS'
     OR cardinality(_provider_codes) NOT BETWEEN 1 AND 100 OR EXISTS(SELECT 1 FROM unnest(_provider_codes) c WHERE c IS NULL OR c !~ '^[A-Za-z0-9]{2,12}$') OR _environment NOT IN ('sandbox','production') THEN
@@ -111,6 +112,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE a uuid; r public.international_merchant_routes; w public.international_withdrawals; exponent integer; opening numeric; reserved numeric;
 BEGIN
   IF NOT public.international_payouts_live_enabled() THEN RETURN jsonb_build_object('status','locked'); END IF;
+  IF _user_id IS NULL OR _route_id IS NULL OR _idempotency_key IS NULL OR _amount_minor IS NULL OR _beneficiary IS NULL THEN RETURN jsonb_build_object('status','invalid'); END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(_idempotency_key::text,913));
   SELECT * INTO w FROM public.international_withdrawals WHERE idempotency_key=_idempotency_key;
   IF FOUND THEN
@@ -125,7 +127,8 @@ BEGIN
   SELECT id INTO a FROM public.accounts WHERE user_id=_user_id AND currency=r.currency FOR UPDATE;
   IF a IS NULL THEN RETURN jsonb_build_object('status','no_account'); END IF;
   exponent := CASE WHEN r.currency IN ('UGX','RWF','XOF','XAF') THEN 0 ELSE 2 END;
-  SELECT coalesce(sum(CASE WHEN kind IN ('deposit','transfer_in','swap_in') THEN amount ELSE -amount END),0)*power(10,exponent) INTO opening
+  IF EXISTS(SELECT 1 FROM public.account_ledger WHERE account_id=a AND currency=r.currency AND kind NOT IN ('deposit','transfer_in','swap_in','withdrawal','transfer_out','swap_out')) THEN RETURN jsonb_build_object('status','unavailable'); END IF;
+  SELECT coalesce(sum(CASE WHEN kind IN ('deposit','transfer_in','swap_in') THEN amount WHEN kind IN ('withdrawal','transfer_out','swap_out') THEN -amount ELSE 0 END),0)*power(10,exponent) INTO opening
     FROM public.account_ledger WHERE account_id=a AND currency=r.currency AND status IN ('completed','pending') AND NOT(status='pending' AND kind IN ('deposit','transfer_in','swap_in'));
   SELECT coalesce(sum(CASE WHEN kind='reservation' THEN amount_minor ELSE -amount_minor END),0) INTO reserved FROM public.international_withdrawal_ledger WHERE account_id=a AND currency=r.currency;
   IF opening<>trunc(opening) OR opening-reserved<_amount_minor THEN RETURN jsonb_build_object('status','insufficient'); END IF;
@@ -182,6 +185,8 @@ BEGIN
   IF NOT FOUND OR w.status<>'review' OR w.review_reason<>'verified_post_settlement_reversal' OR _confirmed_return_minor IS DISTINCT FROM w.amount_minor OR _reason IS NULL OR length(trim(_reason)) NOT BETWEEN 10 AND 500 THEN
     RAISE EXCEPTION 'Full provider return including fees must be verified; partial returns require separate review';
   END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.international_withdrawal_ledger WHERE withdrawal_id=w.id AND kind='reservation' AND amount_minor=w.amount_minor)
+    OR EXISTS(SELECT 1 FROM public.international_withdrawal_ledger WHERE withdrawal_id=w.id AND kind IN ('release','reversal')) THEN RAISE EXCEPTION 'Reversal ledger requires review'; END IF;
   INSERT INTO public.international_withdrawal_ledger(withdrawal_id,account_id,user_id,currency,kind,amount_minor) VALUES(w.id,w.account_id,w.user_id,w.currency,'reversal',_confirmed_return_minor);
   UPDATE public.international_withdrawals SET status='reversed',updated_at=now() WHERE id=w.id;
   INSERT INTO public.admin_audit_log(admin_id,action,target_user_id,detail) VALUES(auth.uid(),'international_reversal_review',w.user_id,jsonb_build_object('withdrawal_id',w.id,'return_minor',_confirmed_return_minor,'reason',_reason));
