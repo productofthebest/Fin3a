@@ -64,6 +64,7 @@ export async function runAuthenticatedInternationalPayoutPreflight(
   input: InternationalPayoutPreflightInput,
   userId: string,
   supabase: InternationalPayoutPreflightDatabase,
+  routeRecords: readonly MerchantRouteVerification[] = [],
 ): Promise<InternationalPayoutPreflightResult> {
   if (!userId) return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
 
