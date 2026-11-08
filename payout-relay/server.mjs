@@ -106,7 +106,7 @@ function route(path, method) {
   }
   if (method === "GET" && u.pathname === "/v1/flutterwave/transfers" && [...u.searchParams.keys()].length === 1) {
     const reference = u.searchParams.get("reference") || "";
-    if (/^F3W-[0-9a-f-]{36}$/.test(reference)) return { method: "GET", providerPath: `/transfers?reference=${encodeURIComponent(reference)}`, kind: "status" };
+    if (/^F3[WX]-[0-9a-f-]{36}$/.test(reference)) return { method: "GET", providerPath: `/transfers?reference=${encodeURIComponent(reference)}`, kind: "status" };
   }
   if (method === "GET" && /^\/v1\/flutterwave\/transactions\/[1-9]\d{0,19}\/verify$/.test(u.pathname) && !u.search) {
     const transactionId = u.pathname.split("/").at(-2);
