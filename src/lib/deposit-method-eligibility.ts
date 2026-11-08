@@ -2,6 +2,16 @@ import { getCollectionCapability, supportsApplePay, supportsCollectionCards } fr
 
 export type DepositMethodId = "bank-transfer" | "debit-card" | "apple-pay" | "google-pay";
 
+/** The established NGN virtual-account flow is independent of hosted collection coverage. */
+export function getDepositCollectionMethods(country: string, currency: string): string[] {
+  const code = country.trim().toUpperCase();
+  const methods: string[] = [...(getCollectionCapability(code)?.methods ?? [])];
+  if (code === "NG" && currency.trim().toUpperCase() === "NGN" && !methods.includes("banktransfer")) {
+    methods.unshift("banktransfer");
+  }
+  return methods;
+}
+
 export type DepositMethodEligibility = {
   countrySupported: boolean | null;
   merchantConfirmed: false;
