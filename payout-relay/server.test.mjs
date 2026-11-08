@@ -155,7 +155,7 @@ test("accepts documented Ghana mobile-money payout operators for GHS", async () 
       method: "POST", headers: { ...auth, "content-type": "application/json" },
       body: JSON.stringify({
         destination_type: "mobile_money", destination_country: "GH",
-        account_bank: operator, account_number: "+233241234567",
+        account_bank: operator, account_number: "233241234567",
         beneficiary_name: "Test Beneficiary", amount: 100,
         currency: "GHS", debit_currency: "GHS",
         reference: "F3W-12345678-1234-1234-1234-123456789012",
@@ -172,7 +172,7 @@ test("rejects Ghana mobile-money payout when the destination country is not GH",
     method: "POST", headers: { ...auth, "content-type": "application/json" },
     body: JSON.stringify({
       destination_type: "mobile_money", destination_country: "KE",
-      account_bank: "MTN", account_number: "+233241234567",
+      account_bank: "MTN", account_number: "233241234567",
       beneficiary_name: "Test Beneficiary", amount: 100,
       currency: "GHS", debit_currency: "GHS",
       reference: "F3W-12345678-1234-1234-1234-123456789012",
