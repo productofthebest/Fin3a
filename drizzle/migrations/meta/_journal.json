@@ -351,6 +351,13 @@
       "when": 1794060000000,
       "tag": "0049_admin_all_fiat_holdings",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794060001000,
+      "tag": "0050_international_withdrawal_ledger_foundation",
+      "breakpoints": true
     }
   ]
 }
