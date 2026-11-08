@@ -1,39 +1,43 @@
-# Admin → Users all-fiat holdings: safe minimal deployment
+# International withdrawals — audit and phased plan
 
-## Inspection findings (read-only, nothing applied)
+## Audit findings (current code, read-only)
 
-- Live database: 48 migrations recorded, last is `0047_activity_history_retention`. `0048` and `0049` are both unapplied.
-- **0048 is not needed by 0049.** 0048 only adds new international-deposit objects (`international_deposit_intents`, `flw_international_deposit_events`, a trigger, and `apply_flw_international_deposit`). 0049 references none of them.
-- **None of 0048's objects exist yet.** Nothing is half-applied: no tables, trigger, or function.
-- **Everything 0049 depends on already exists live:**
-  - `admin_require() -> void`, security definer
-  - `admin_balance(_user_id uuid, _currency text, _completed_only boolean) -> numeric`, security definer
-  - `accounts.user_id`, `accounts.currency`
-  - `account_ledger.user_id`, `.currency`, `.status`
-- **0049 matches the app.** It creates `admin_list_user_fiat_balances(_user_ids uuid[]) -> jsonb`: read-only, admin-checked, executable by signed-in users only. Admin → Users calls it with `{ _user_ids }`, the same shape, in both the user list and the user profile.
-- **0049 only reads.** It creates no accounts and writes no ledger rows, and it doesn't change any deposit, withdrawal, transfer, or balance.
-- **Ordering risk.** The update tool runs saved updates in date order and skips any older update once a newer one is recorded. If 0049 is applied alone, 0048 may be skipped later.
-- **Side note.** The Flutterwave webhook already imports the international-deposit code. Until 0048 is applied, only that international path can fail. NGN top-ups don't use it.
+1. **Customer UI and API wiring: missing.** Transfer has an "international" option for non-Nigerian users, but its bank and account fields are disabled placeholders ("coming soon"). No server function, route or Flutterwave call exists for international or mobile-money payouts.
+2. **Ledger reservations: NGN only.** `ngn_withdrawals`, `reserve_ngn_withdrawal` and `finish_ngn_withdrawal` (migration 0045) give an atomic hold, idempotency key, release on failure and webhook completion, but they are fixed to NGN, 10-digit NUBAN numbers and Nigerian bank codes. Nothing handles other currencies, mobile money, FX-quoted payouts or reconciliation of partial or reversed settlement.
+3. **Beneficiary validation: missing.** `withdrawalInput` only accepts NGN bank fields. Nothing validates IBAN/SWIFT/sort code/routing numbers, mobile-money MSISDN and network, or recipient address/KYC fields, and nothing ties the destination country and currency to the user's wallet country.
+4. **Capability checks: documentation only.** `flutterwave-capabilities.ts` lists Flutterwave's published payout countries, but its own comments say merchant approval is not verified. No live check confirms your merchant account is enabled for each route.
+5. **Shared blockers (from earlier work):** the `withdrawalsEnabled` lock (fixed-IP relay, IP whitelist, production verification) also blocks all payouts. Non-NGN wallets cannot be funded yet (0048 international deposits is still unapplied), so no balance exists to withdraw.
+6. **Tests:** existing tests cover NGN withdrawals, Flutterwave processing, the webhook and capabilities. There are no tests for international payouts.
 
-## Execution plan (needs your approval)
+## Phased plan (no live payouts, no funds moved)
 
-1. Apply only `0049_admin_all_fiat_holdings`, using its saved text exactly as written. No 0048 tables or functions get created.
-2. Keep 0048 for later. When international deposits are approved, apply it as a new, separately recorded update. That way it can't be skipped because of the ordering, and the saved SQL stays the same.
-3. Check after applying, reading only:
-   - the function exists with the right inputs
-   - signed-in users can run it, anonymous visitors can't
-   - a non-admin call is refused
-   - an admin call returns balances that match the existing NGN/USD figures for the same users
-4. Open Admin → Users signed in as admin. Confirm each user shows every currency they hold, and that the profile balances still match what they were before.
-5. Re-run the migration-history check and report what was applied and what's still pending (0048).
+**Phase A — rules and validation (pure code + tests)**
+- Route table: country, currency, method (bank or mobile money), required fields and limits. A route is used only if it is both documented and verified for your merchant account.
+- Per-route beneficiary validators (IBAN, SWIFT, US routing, UK sort code, GH/KE/UG mobile money, etc.) and a check that the destination currency matches the wallet.
+- Unit tests for each validator and for rejection when country and currency don't match.
 
-## Safety
+**Phase B — database (additive migration, needs your approval)**
+- New `international_withdrawals` table plus `reserve_international_withdrawal` and `finish_international_withdrawal`. They lock the row, check the balance per currency, enforce the idempotency key, add a hold to the ledger, release it on failure, and keep the history immutable.
+- Reconciliation states: pending, successful, failed and reversed. A reversal after success creates a new credit entry for Admin review and never edits existing history.
+- The NGN tables and functions stay untouched.
 
-- No data changes, no deletions, no edits to existing functions, tables, or ledger rows.
-- Undo if needed: drop only the new read-only function. Wallet data isn't touched.
-- Publishing isn't needed for the database part. One backend serves both preview and live.
+**Phase C — capability verification**
+- Admin-only, read-only check of which routes your merchant account allows, saved with a timestamp. Routes that fail or are unchecked stay hidden from customers.
 
-## Your decision
+**Phase D — server and UI wiring (stays locked)**
+- A protected server function built like the NGN flow: lock first, rate limit, validate, reserve, then send through the payout relay. The webhook gains a separate international branch that re-checks each transfer with Flutterwave.
+- The Transfer dialog gets real fields per route, a review screen, the fee and quote shown, and a "temporarily unavailable" state while locked.
 
-- Option A (recommended): apply 0049 only now, and keep 0048 until international deposits are approved.
-- Option B: apply both. This switches on the international-deposit foundation, which hasn't been tested with real payments.
+**Phase E — verification before activation**
+- Flutterwave sandbox tests from start to finish, plus simulated webhook duplicates and failures. Then your approval, fixed-IP hosting and a small live payout per route.
+
+## Decisions needed from you
+- Which countries and methods come first (e.g. Ghana mobile money, Kenya M-Pesa, US/UK/EU bank).
+- Fees for international payouts.
+- Whether 0048 (funding non-NGN wallets) is applied first, since withdrawals need funded balances.
+
+## Technical details
+- Keep `withdrawalsEnabled` as the single global lock and add a per-route lock `isRouteVerified(country, method)`.
+- Amounts are integer minor units. Currency exponents come from one table (e.g. XOF/XAF/UGX/RWF have 0 decimals).
+- Webhook idempotency key per transfer ID, kept apart from NGN events.
+- Deployment dependencies: payout relay with fixed IP, `FLW_*` verification flags, whitelisted IP, Flutterwave merchant enablement per corridor, beneficiary KYC rules, and the migration approval.
