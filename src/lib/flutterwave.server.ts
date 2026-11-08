@@ -2,7 +2,7 @@
 const BASE = "https://api.flutterwave.com/v3";
 import { z } from "zod";
 import { payoutFetch } from "./payout-transport.server";
-import { withdrawalsEnabled } from "./withdrawal-production";
+import { withdrawalsEnabled, internationalWithdrawalsEnabled } from "./withdrawal-production";
 
 async function flw<T>(path: string, init?: RequestInit): Promise<T> {
   const key = process.env["FLW_SECRET_KEY"];
@@ -101,6 +101,27 @@ export async function createNgnTransfer(input: { bankCode: string; accountNumber
   }
   throw new Error("PROVIDER_UNCERTAIN");
 }
+/** Sends a provider-schema-validated international bank payout through the fixed-egress relay. */
+export async function createInternationalTransfer(input: {
+  destination_country: string; account_number: string; beneficiary_name: string; amount: number; currency: string;
+  debit_currency: string; reference: string; narration: string; meta: Array<Record<string, string>>;
+}) {
+  if (!internationalWithdrawalsEnabled(process.env)) throw new ProviderRejected("international withdrawals disabled");
+  const res = await payoutFetch("/transfers", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const body = (await res.json().catch(() => null)) as { status?: string; data?: unknown } | null;
+  if (res.ok && body?.status === "success") {
+    const parsed = transferSchema.safeParse(body.data);
+    return parsed.success ? parsed.data : null;
+  }
+  if (res.status >= 400 && res.status < 500 && body?.status === "error") {
+    throw new ProviderRejected("provider rejected international transfer");
+  }
+  throw new Error("PROVIDER_UNCERTAIN");
+}
+
 export async function getTransfer(id: string) {
   if (!/^[1-9]\d{0,19}$/.test(id)) throw new Error("INVALID_PROVIDER_ID");
   const res = await payoutFetch(`/transfers/${id}`);
@@ -111,7 +132,7 @@ export async function getTransfer(id: string) {
   return parsed.data;
 }
 export async function findTransferByReference(reference: string) {
-  if (!/^F3W-[0-9a-f-]{36}$/.test(reference)) throw new Error("INVALID_REFERENCE");
+  if (!/^F3[WX]-[0-9a-f-]{36}$/.test(reference)) throw new Error("INVALID_REFERENCE");
   const res = await payoutFetch(`/transfers?reference=${encodeURIComponent(reference)}`);
   const body = await res.json() as { status?: string; data?: unknown };
   if (!res.ok || body.status !== "success" || !Array.isArray(body.data)) throw new Error("PROVIDER_ERROR");

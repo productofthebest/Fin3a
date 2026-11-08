@@ -73,7 +73,40 @@ describe("authenticated international payout preflight", () => {
 
   it("validates a beneficiary but never enables an unverified route", () => {
     expect(buildInternationalPayoutPreflight(validGhanaMobile, "GH")).toEqual({
-      ok: false, enabled: false, reason: "not_merchant_verified", beneficiaryValid: true, invalidFields: [],
+      ok: false, enabled: false, reason: "provider_schema_pending", beneficiaryValid: true, invalidFields: [],
+    });
+  });
+
+  it("enables only a provider-schema-valid route with exact current merchant evidence", () => {
+    const input = {
+      walletCurrency: "USD",
+      destinationCountry: "US",
+      currency: "USD",
+      method: "bank" as const,
+      beneficiary: {
+        accountName: "Jane Doe",
+        accountNumber: "123456789",
+        routingNumber: "021000021",
+        swiftCode: "IRVTUS3N",
+        bankName: "Test Bank",
+        accountType: "checking",
+        address: "1 Main Street, San Francisco",
+        postalCode: "94105",
+        streetNumber: "1",
+        streetName: "Main Street",
+      },
+    };
+    const evidence = [{
+      routeId: "flw:US:USD:bank",
+      verifiedAt: "2026-11-01T00:00:00Z",
+      verifiedBy: "admin-1",
+      evidenceRef: "merchant-approval-123",
+    }];
+    expect(buildInternationalPayoutPreflight(input, "US", evidence)).toMatchObject({
+      ok: true, enabled: true, reason: "route_verified", routeId: "flw:US:USD:bank",
+    });
+    expect(buildInternationalPayoutPreflight(input, "US", [])).toMatchObject({
+      ok: false, enabled: false, reason: "not_merchant_verified", beneficiaryValid: true,
     });
   });
 
@@ -106,7 +139,7 @@ describe("authenticated international payout preflight", () => {
   it("uses only the verified user id for both wallet-context queries", async () => {
     const { db, filters, rpc } = fakeDatabase();
     const result = await runAuthenticatedInternationalPayoutPreflight(validGhanaMobile, "user-123", db);
-    expect(result.reason).toBe("not_merchant_verified");
+    expect(result.reason).toBe("provider_schema_pending");
     expect(rpc).toHaveBeenCalledWith("consume_rate_limit", {
       _bucket: "international_payout_preflight", _limit: 20, _window_seconds: 600,
     });
