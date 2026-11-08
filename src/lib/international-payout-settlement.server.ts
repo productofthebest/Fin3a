@@ -109,8 +109,14 @@ export async function submitInternationalWithdrawal(
     return { ok: false as const, error: messages[reservation.status] ?? "withdrawal_unavailable" };
   }
 
+  // The database generates the authoritative F3X reference during reservation.
+  // Rebuild the provider payload with that exact reference so provider status,
+  // webhook lookup, and ledger settlement all address the same withdrawal row.
+  const providerPayload = buildInternationalTransferPayload(input, reservation.reference);
+  if (!providerPayload.ok) return { ok: false as const, error: providerPayload.reason };
+
   try {
-    const created = await createInternationalTransfer(built.payload);
+    const created = await createInternationalTransfer(providerPayload.payload);
     if (!created) return { ok: true as const, reference: reservation.reference, status: "pending" as const };
     try {
       const verified = await getTransfer(created.id);
