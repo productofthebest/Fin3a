@@ -3,7 +3,7 @@ import { isValidAbaRouting, isValidBic, isValidIban, findRoute, toMinorUnits } f
 
 const allowedBeneficiaryFields = new Set([
   "accountName", "accountNumber", "routingNumber", "swiftCode", "bankName",
-  "accountType", "address", "postalCode", "streetNumber", "streetName", "city",
+  "accountType", "address", "postalCode", "streetNumber", "streetName", "city", "iban",
   "email", "mobileNumber", "firstName", "lastName", "beneficiaryMerchantName",
 ]);
 
