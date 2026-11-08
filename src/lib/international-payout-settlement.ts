@@ -117,7 +117,10 @@ export function buildInternationalTransferPayload(
         && !sameName(accountName, b.firstName + " " + b.lastName)) invalid.push("beneficiaryNameMismatch");
     } else if (b.accountType === "corporate") {
       if (!text(b.beneficiaryMerchantName, 120)) invalid.push("beneficiaryMerchantName");
-      else meta.beneficiary_merchant_name = b.beneficiaryMerchantName.trim();
+      else {
+        meta.beneficiary_merchant_name = b.beneficiaryMerchantName.trim();
+        if (text(accountName, 120) && !sameName(accountName, b.beneficiaryMerchantName)) invalid.push("beneficiaryNameMismatch");
+      }
     }
     if (swift) {
       if (!isValidBic(swift, "GB")) invalid.push("swiftCode");
