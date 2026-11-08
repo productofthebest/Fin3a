@@ -159,3 +159,7 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 
 ## Admin all-fiat holdings (Nov 7)
 - [ ] Apply only 0049 (Admin → Users all-fiat balances), leaving 0048 pending. Blocked: the update tool runs every pending update in order, so 0048 would also run. Owner must choose: apply both, or switch 0048 off first.
+
+## International withdrawals (Nov 8)
+- [x] Phase A: pure route rules + beneficiary validators (`international-payout-routes.ts`), all routes off without a merchant verification record; 15 tests pass.
+- [ ] Phases B–E (reservation migration, merchant capability check, server/UI wiring, sandbox + live verification) — awaiting owner approval, fixed-IP relay, merchant enablement and funded non-NGN wallets (0048).
