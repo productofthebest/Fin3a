@@ -65,7 +65,8 @@ export async function submitInternationalWithdrawal(
   userId: string,
   authenticatedClient: RpcClient,
 ) {
-  if (!userId) return { ok: false as const, error: "wallet_context_unavailable" };\n  if (!internationalWithdrawalsEnabled(process.env)) return { ok: false as const, error: "international_withdrawals_locked" };
+  if (!userId) return { ok: false as const, error: "wallet_context_unavailable" };
+  if (!internationalWithdrawalsEnabled(process.env)) return { ok: false as const, error: "international_withdrawals_locked" };
   const allowed = await authenticatedClient.rpc("consume_rate_limit", {
     _bucket: "international_withdrawal",
     _limit: 5,
