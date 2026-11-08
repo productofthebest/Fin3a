@@ -118,6 +118,25 @@ describe("documented Flutterwave international bank payout payloads", () => {
     }
   });
 
+  it("keeps idempotency fingerprints stable across generated provider references", () => {
+    const input = {
+      walletCurrency: "USD",
+      destinationCountry: "US",
+      currency: "USD",
+      method: "bank" as const,
+      amount: 25,
+      idempotencyKey,
+      beneficiary: {
+        accountName: "Jane Doe", accountNumber: "123456789", routingNumber: "021000021",
+        swiftCode: "IRVTUS3N", bankName: "Test Bank", accountType: "checking",
+        address: "1 Main Street", postalCode: "94105", streetNumber: "1", streetName: "Main Street",
+      },
+    };
+    const first = buildInternationalTransferPayload(input, ref);
+    const second = buildInternationalTransferPayload(input, "F3X-00000000-0000-4000-8000-000000000003");
+    expect(first.ok && second.ok && first.fingerprint === second.fingerprint).toBe(true);
+  });
+
   it("rejects unsupported corridors and currency precision", () => {
     const unsupported = buildInternationalTransferPayload({
       walletCurrency: "GHS",
