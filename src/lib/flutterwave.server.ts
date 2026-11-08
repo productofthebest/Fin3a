@@ -103,7 +103,7 @@ export async function createNgnTransfer(input: { bankCode: string; accountNumber
 }
 /** Sends a provider-schema-validated international bank payout through the fixed-egress relay. */
 export async function createInternationalTransfer(input: {
-  account_number: string; beneficiary_name: string; amount: number; currency: string;
+  destination_country: string; account_number: string; beneficiary_name: string; amount: number; currency: string;
   debit_currency: string; reference: string; narration: string; meta: Array<Record<string, string>>;
 }) {
   if (!internationalWithdrawalsEnabled(process.env)) throw new ProviderRejected("international withdrawals disabled");
