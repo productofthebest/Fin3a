@@ -77,6 +77,39 @@ describe("authenticated international payout preflight", () => {
     });
   });
 
+  it("enables only a provider-schema-valid route with exact current merchant evidence", () => {
+    const input = {
+      walletCurrency: "USD",
+      destinationCountry: "US",
+      currency: "USD",
+      method: "bank" as const,
+      beneficiary: {
+        accountName: "Jane Doe",
+        accountNumber: "123456789",
+        routingNumber: "021000021",
+        swiftCode: "IRVTUS3N",
+        bankName: "Test Bank",
+        accountType: "checking",
+        address: "1 Main Street, San Francisco",
+        postalCode: "94105",
+        streetNumber: "1",
+        streetName: "Main Street",
+      },
+    };
+    const evidence = [{
+      routeId: "flw:US:USD:bank",
+      verifiedAt: "2026-11-01T00:00:00Z",
+      verifiedBy: "admin-1",
+      evidenceRef: "merchant-approval-123",
+    }];
+    expect(buildInternationalPayoutPreflight(input, "US", evidence)).toMatchObject({
+      ok: true, enabled: true, reason: "route_verified", routeId: "flw:US:USD:bank",
+    });
+    expect(buildInternationalPayoutPreflight(input, "US", [])).toMatchObject({
+      ok: false, enabled: false, reason: "not_merchant_verified", beneficiaryValid: true,
+    });
+  });
+
   it("reports invalid beneficiary fields without exposing normalized account data", () => {
     expect(buildInternationalPayoutPreflight({
       ...validGhanaMobile, beneficiary: { accountName: "Ama", network: "MPESA", mobileNumber: "0241234567" },
