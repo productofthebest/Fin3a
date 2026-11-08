@@ -25,6 +25,7 @@ export const internationalWithdrawalInput = z.object({
 export type InternationalWithdrawalInput = z.infer<typeof internationalWithdrawalInput>;
 
 export type ProviderTransferPayload = {
+  destination_country: string;
   account_number: string;
   beneficiary_name: string;
   amount: number;
@@ -151,6 +152,7 @@ export function buildInternationalTransferPayload(
   if (invalid.length) return { ok: false, reason: "invalid_beneficiary", invalidFields: [...new Set(invalid)] };
 
   const payload: ProviderTransferPayload = {
+    destination_country: country,
     account_number: accountNumber,
     beneficiary_name: accountName,
     amount: input.amount,
