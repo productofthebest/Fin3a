@@ -1,18 +1,22 @@
 import { z } from "zod";
+import { buildInternationalTransferPayload } from "./international-payout-settlement";
 import {
   evaluateRoute,
   findRoute,
   validateBeneficiary,
   type BeneficiaryInput,
   type RouteRequest,
+  type MerchantRouteVerification,
 } from "./international-payout-routes";
 
 const beneficiaryFields = new Set([
   "accountName", "network", "mobileNumber", "accountNumber", "routingNumber",
   "address", "sortCode", "branchCode", "bankCode", "iban", "swiftCode",
+  "bankName", "accountType", "email", "postalCode", "streetNumber", "streetName",
+  "city", "firstName", "lastName", "beneficiaryMerchantName",
 ]);
 
-const beneficiaryInput = z.record(z.string(), z.string().max(200)).refine(
+export const beneficiaryInput = z.record(z.string(), z.string().max(200)).refine(
   fields => Object.keys(fields).every(key => beneficiaryFields.has(key)),
   "Unsupported beneficiary field",
 );
@@ -27,13 +31,9 @@ export const internationalPayoutPreflightInput = z.object({
 
 export type InternationalPayoutPreflightInput = z.infer<typeof internationalPayoutPreflightInput>;
 
-export type InternationalPayoutPreflightResult = {
-  ok: false;
-  enabled: false;
-  reason: string;
-  beneficiaryValid?: boolean;
-  invalidFields?: string[];
-};
+export type InternationalPayoutPreflightResult =
+  | { ok: true; enabled: true; reason: "route_verified"; routeId: string; beneficiaryValid: true; invalidFields: [] }
+  | { ok: false; enabled: false; reason: string; beneficiaryValid?: boolean; invalidFields?: string[] };
 
 type QueryResult = {
   data: { country?: string; currency?: string } | null;
@@ -95,7 +95,7 @@ export async function runAuthenticatedInternationalPayoutPreflight(
       return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
     }
 
-    return buildInternationalPayoutPreflight(input, settings.country);
+    return buildInternationalPayoutPreflight(input, settings.country, routeRecords);
   } catch {
     return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
   }
@@ -108,6 +108,7 @@ export async function runAuthenticatedInternationalPayoutPreflight(
 export function buildInternationalPayoutPreflight(
   input: InternationalPayoutPreflightInput,
   trustedWalletCountry: string,
+  records: readonly MerchantRouteVerification[] = [],
 ): InternationalPayoutPreflightResult {
   const request: RouteRequest = {
     walletCountry: trustedWalletCountry,
@@ -117,31 +118,47 @@ export function buildInternationalPayoutPreflight(
     method: input.method,
   };
 
-  const decision = evaluateRoute(request, []);
-  if (decision.ok) return { ok: false, enabled: false, reason: "not_merchant_verified" };
-  if (decision.reason !== "not_merchant_verified") {
+  const decision = evaluateRoute(request, records);
+  if (!decision.ok && decision.reason !== "not_merchant_verified") {
     return { ok: false, enabled: false, reason: decision.reason };
   }
 
   const route = findRoute(input.destinationCountry, input.currency, input.method);
   if (!route) return { ok: false, enabled: false, reason: "unknown_route" };
 
-  const validation = validateBeneficiary(route, input.beneficiary as BeneficiaryInput);
-  if (!validation.ok) {
+  // Only USD/GBP/EUR bank corridors have a complete V3 payload mapper today.
+  // Other listed corridors remain validation-only and cannot submit transfers.
+  if (input.method !== "bank" || !["USD", "GBP", "EUR"].includes(route.currency)) {
+    const validation = validateBeneficiary(route, input.beneficiary as BeneficiaryInput);
+    if (!validation.ok) {
+      return { ok: false, enabled: false, reason: "invalid_beneficiary", beneficiaryValid: false, invalidFields: validation.errors };
+    }
+    return { ok: false, enabled: false, reason: "provider_schema_pending", beneficiaryValid: true, invalidFields: [] };
+  }
+
+  const payloadCheck = buildInternationalTransferPayload({
+    walletCurrency: input.walletCurrency,
+    destinationCountry: input.destinationCountry,
+    currency: input.currency,
+    method: "bank",
+    amount: 1,
+    idempotencyKey: "00000000-0000-4000-8000-000000000000",
+    beneficiary: input.beneficiary,
+  }, "F3X-00000000-0000-4000-8000-000000000000");
+
+  if (!payloadCheck.ok) {
     return {
       ok: false,
       enabled: false,
-      reason: "invalid_beneficiary",
+      reason: payloadCheck.reason,
       beneficiaryValid: false,
-      invalidFields: validation.errors,
+      invalidFields: payloadCheck.invalidFields ?? [],
     };
   }
 
-  return {
-    ok: false,
-    enabled: false,
-    reason: "not_merchant_verified",
-    beneficiaryValid: true,
-    invalidFields: [],
-  };
+  if (!decision.ok) {
+    return { ok: false, enabled: false, reason: "not_merchant_verified", beneficiaryValid: true, invalidFields: [] };
+  }
+
+  return { ok: true, enabled: true, reason: "route_verified", routeId: route.id, beneficiaryValid: true, invalidFields: [] };
 }
