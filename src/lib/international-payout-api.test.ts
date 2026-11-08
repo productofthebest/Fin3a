@@ -146,4 +146,29 @@ describe("authenticated international payout preflight", () => {
     expect(rpc).not.toHaveBeenCalled();
     expect(from).not.toHaveBeenCalled();
   });
+
+  it("fails closed when the rate-limit RPC throws", async () => {
+    const db = {
+      rpc: vi.fn().mockRejectedValue(new Error("network failure")),
+      from: vi.fn(),
+    } as unknown as InternationalPayoutPreflightDatabase;
+    await expect(runAuthenticatedInternationalPayoutPreflight(validGhanaMobile, "user-123", db))
+      .resolves.toEqual({ ok: false, enabled: false, reason: "temporarily_unavailable" });
+  });
+
+  it("fails closed when wallet queries throw", async () => {
+    const db = {
+      rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+      from: vi.fn(() => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () => Promise.reject(new Error("database unavailable")),
+            eq: () => ({ maybeSingle: () => Promise.reject(new Error("database unavailable")) }),
+          }),
+        }),
+      })),
+    } as unknown as InternationalPayoutPreflightDatabase;
+    await expect(runAuthenticatedInternationalPayoutPreflight(validGhanaMobile, "user-123", db))
+      .resolves.toEqual({ ok: false, enabled: false, reason: "wallet_context_unavailable" });
+  });
 });
