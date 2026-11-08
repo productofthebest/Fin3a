@@ -161,6 +161,7 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 - [x] Read-only Nov 8 inspection confirms 0048 and 0049 already recorded/applied before this task; no Admin/deposit updates applied in this task. Historical missing snapshots and unrelated unlisted files remain unrepaired.
 
 ## International withdrawals (Nov 8)
+- [x] Nov 8 06:37: restored Nigeria NGN bank-transfer entry independently of hosted-collection metadata; existing virtual-account creation/verification untouched. 27 tests pass, build OK; signed-in desktop/393px Bank transfer → amount 200 → receive 150 and enabled account-number button verified. No account request submitted, provider call or money moved; new funded deposit untested.
 - [ ] Nov 8 06:35: continue international deposit/withdrawal preparation using existing Flutterwave credentials. Activation waits on verified merchant routes, configured fixed-egress transport, deposit intent/checkout wiring and shared non-NGN reservation accounting; no live payouts or financial writes.
 - [x] Phase A: pure route rules + beneficiary validators (`international-payout-routes.ts`), all routes off without a merchant verification record; 15 tests pass.
 - [x] Approved Nov 8 preparation: separate international reservation/settlement/review RPCs and immutable minor-unit ledger, admin evidence records, protected locked API, provider-GET webhook reconciliation and bank/mobile-money UI. No sender is exposed; generic corridors remain preliminary, Ghana schema adapter only. NGN files and live row/function fingerprints unchanged.

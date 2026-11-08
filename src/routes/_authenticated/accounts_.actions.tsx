@@ -7,7 +7,7 @@ import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
 import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
-import { getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
+import { getDepositCollectionMethods, getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
 import { NgnTopupPanel } from "@/components/ngn-topup-panel";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -48,7 +48,7 @@ function Page() {
   const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "NGN");
   const country = (data.country ?? "NG").toUpperCase();
   const collection = getCollectionCapability(country);
-  const collectionMethods: readonly string[] = collection?.methods ?? [];
+  const collectionMethods = getDepositCollectionMethods(country, currency);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
   const visibleCollectionMethods = country === "NG"
@@ -105,7 +105,7 @@ function Page() {
           </DialogHeader>
           <div className="flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Availability</span><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility?.usable ? "Available" : "Not enabled"}</span></div>
           <p className="text-sm text-muted-foreground">{selectedEligibility?.message}</p>
-          <p className="text-xs text-muted-foreground">Country: {country} · Currency: {currency}. This payment method is not enabled until Fin3a confirms that it can accept and verify the payment.</p>
+          <p className="text-xs text-muted-foreground">Country: {country} · Currency: {currency}.{!selectedEligibility?.usable && " This payment method is not enabled until Fin3a confirms that it can accept and verify the payment."}</p>
           {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility?.usable && <section className="space-y-3 border-t border-border pt-4" aria-label="NGN bank transfer top-up"><h2 className="font-display text-lg font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
         </DialogContent>}
       </Dialog>
