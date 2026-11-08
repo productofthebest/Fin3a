@@ -8,13 +8,13 @@
 - NGN withdrawal record count/hash unchanged: 2 / `4976596f262bf9557f33e3814bd05deb`. NGN ledger count/hash unchanged: 4 / `938063a394813c478722e6fbeed2a747`.
 - NGN reserve/finish/rate-limit definition hashes unchanged; NGN source files, common provider client, relay transport and 0045 migration SHA256 unchanged.
 - Type-only FX generic schema-input correction restores pre-existing compile errors, no FX behavior changed. Admin Users untouched.
-- Signed-in Wallet entry, bank/mobile-money selection, amount input, disabled recipient and payout controls verified at 1280×1800 / 393×852; screenshots inspected, no page errors/overflow. No provider call or payout made.
+- Signed-in direct international page, bank/mobile-money selection, amount input, disabled recipient and payout controls verified at 1280×1800 / 393×852; screenshots inspected, no page errors/overflow. Owner account is Nigeria, so the international Wallet link is intentionally absent; non-Nigeria Wallet-link flow remains unverified. No provider call or payout made.
 
 ## Tests
 - Focused international / Flutterwave / NGN: 110 passed, 1 safely skipped (existing live-backend fixture test).
 - Isolated loopback PostgreSQL: 13 passed, testing real SQL, permissions/RLS, concurrent reservations, idempotency, exact settlement, failure release, immutable terms/events, reversal review, late contradictory outcome and evidence rejection.
 - Relay: 17 passed using provider fetch mocks, no network payout.
-- Preview compile: build OK. Final full-suite counts are recorded in the task report.
+- Final full suite: 485 passed, 2 skipped across 61 files; isolated international tests included. Skips are existing Flutterwave live-backend fixture and Activity isolated-backend tests. Preview compile/typecheck: build OK.
 
 ## Not activation-ready
 - Separate international reservations are NOT yet integrated into every existing non-NGN balance reader/transfer/QR/split/swap debit path. Hard-false gates deliberately prevent cross-path overspending. No international POST sender exists; protected create API rejects before funds/provider operations.
