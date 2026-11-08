@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -64,7 +64,7 @@ export async function submitInternationalWithdrawal(
   userId: string,
   authenticatedClient: RpcClient,
 ) {
-  if (!userId) return { ok: false as const, error: "wallet_context_unavailable" };
+  if (!userId) return { ok: false as const, error: "wallet_context_unavailable" };\n  if (!internationalWithdrawalsEnabled(process.env)) return { ok: false as const, error: "international_withdrawals_locked" };
   const allowed = await authenticatedClient.rpc("consume_rate_limit", {
     _bucket: "international_withdrawal",
     _limit: 5,
@@ -74,7 +74,7 @@ export async function submitInternationalWithdrawal(
     return { ok: false as const, error: "temporarily_unavailable" };
   }
 
-  const reference = `F3X-${crypto.randomUUID()}`;
+  const reference = `F3X-${randomUUID()}`;
   const built = buildInternationalTransferPayload(input, reference);
   if (!built.ok) return { ok: false as const, error: built.reason, invalidFields: built.invalidFields };
 
@@ -95,7 +95,7 @@ export async function submitInternationalWithdrawal(
   if (!reservation?.status) return { ok: false as const, error: "withdrawal_reservation_unavailable" };
   if (reservation.status === "existing" && reservation.reference) {
     // An idempotent replay reports the existing request; it never submits a second transfer.
-    return { ok: true as const, reference: reservation.reference, status: "pending" as const };
+    return { ok: true as const, reference: reservation.reference, status: (reservation.status === "existing" ? reservation.status : "pending") as const };
   }
   if (reservation.status !== "reserved" || !reservation.reference || typeof reservation.payout !== "number") {
     const messages: Record<string, string> = {
