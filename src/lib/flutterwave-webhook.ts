@@ -5,7 +5,7 @@ export const WEBHOOK_VERSION = "fin3a-flw-v3-3";
 export const MAX_WEBHOOK_BYTES = 32_768;
 const id = z.union([z.number().int().positive().safe(), z.string().regex(/^[1-9]\d{0,19}$/)]).transform(String);
 const ref = z.string().regex(/^F3[TI]-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-const transferRef = z.string().regex(/^F3W-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+const transferRef = z.string().regex(/^F3[WX]-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 export const chargeNotice = z.object({ event: z.literal("charge.completed"), data: z.object({ id, tx_ref: ref }) });
 // Payout notices only carry the reference; status is always re-verified with Flutterwave.
 export const transferNotice = z.object({ event: z.literal("transfer.completed"), data: z.object({ id, reference: transferRef }) });
