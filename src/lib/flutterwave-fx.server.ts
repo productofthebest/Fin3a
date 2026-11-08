@@ -56,7 +56,7 @@ export function assertSupportedFxPair(baseCurrency: string, targetCurrency: stri
   }
 }
 
-async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>, init?: RequestInit): Promise<T> {
   const key = process.env["FLW_SECRET_KEY"];
   if (!flutterwaveFxEnabled(process.env)) throw new Error("FX_NOT_ENABLED");
   if (!key) throw new Error("FX_NOT_CONFIGURED");
