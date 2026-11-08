@@ -8,7 +8,6 @@ import {
 } from "./international-payout-routes";
 
 export const internationalPayoutPreflightInput = z.object({
-  walletCountry: z.string().trim().length(2).regex(/^[A-Za-z]{2}$/),
   walletCurrency: z.string().trim().length(3).regex(/^[A-Za-z]{3}$/),
   destinationCountry: z.string().trim().length(2).regex(/^[A-Za-z]{2}$/),
   currency: z.string().trim().length(3).regex(/^[A-Za-z]{3}$/),
@@ -27,16 +26,17 @@ export type InternationalPayoutPreflightResult = {
 };
 
 /**
- * Non-monetary, fail-closed preflight. Merchant verification records are
- * intentionally not supplied here: no persisted, independently evidenced
- * route approval exists yet. This function can validate input shape only;
- * it can never authorize or initiate a payout.
+ * Non-monetary, fail-closed preflight. The wallet country is supplied by the
+ * authenticated server after reading user_settings; the requested currency is
+ * separately checked against an account owned by that user. No merchant
+ * verification records are supplied, so this can never authorize a payout.
  */
 export function buildInternationalPayoutPreflight(
   input: InternationalPayoutPreflightInput,
+  trustedWalletCountry: string,
 ): InternationalPayoutPreflightResult {
   const request: RouteRequest = {
-    walletCountry: input.walletCountry,
+    walletCountry: trustedWalletCountry,
     walletCurrency: input.walletCurrency,
     destinationCountry: input.destinationCountry,
     currency: input.currency,
@@ -45,7 +45,6 @@ export function buildInternationalPayoutPreflight(
 
   const decision = evaluateRoute(request, []);
   if (decision.ok) {
-    // Defensive invariant: the empty verification set must never authorize.
     return { ok: false, enabled: false, reason: "not_merchant_verified" };
   }
   if (decision.reason !== "not_merchant_verified") {
