@@ -67,26 +67,38 @@ export async function runAuthenticatedInternationalPayoutPreflight(
 ): Promise<InternationalPayoutPreflightResult> {
   if (!userId) return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
 
-  const { data: allowed, error: rateError } = await supabase.rpc("consume_rate_limit", {
-    _bucket: "international_payout_preflight",
-    _limit: 20,
-    _window_seconds: 600,
-  });
+  let allowed: boolean | null;
+  let rateError: unknown | null;
+  try {
+    const rateResult = await supabase.rpc("consume_rate_limit", {
+      _bucket: "international_payout_preflight",
+      _limit: 20,
+      _window_seconds: 600,
+    });
+    allowed = rateResult.data;
+    rateError = rateResult.error;
+  } catch {
+    return { ok: false, enabled: false, reason: "temporarily_unavailable" };
+  }
   if (rateError || allowed !== true) {
     return { ok: false, enabled: false, reason: "temporarily_unavailable" };
   }
 
-  const [{ data: settings, error: settingsError }, { data: account, error: accountError }] = await Promise.all([
-    supabase.from("user_settings").select("country").eq("user_id", userId).maybeSingle(),
-    supabase.from("accounts").select("currency").eq("user_id", userId)
-      .eq("currency", input.walletCurrency.toUpperCase()).maybeSingle(),
-  ]);
+  try {
+    const [{ data: settings, error: settingsError }, { data: account, error: accountError }] = await Promise.all([
+      supabase.from("user_settings").select("country").eq("user_id", userId).maybeSingle(),
+      supabase.from("accounts").select("currency").eq("user_id", userId)
+        .eq("currency", input.walletCurrency.toUpperCase()).maybeSingle(),
+    ]);
 
-  if (settingsError || accountError || !settings?.country || !account?.currency) {
+    if (settingsError || accountError || !settings?.country || !account?.currency) {
+      return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
+    }
+
+    return buildInternationalPayoutPreflight(input, settings.country);
+  } catch {
     return { ok: false, enabled: false, reason: "wallet_context_unavailable" };
   }
-
-  return buildInternationalPayoutPreflight(input, settings.country);
 }
 
 /**
