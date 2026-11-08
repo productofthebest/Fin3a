@@ -160,7 +160,8 @@ export function buildInternationalTransferPayload(
     narration: "Fin3a international withdrawal",
     meta: [meta],
   };
-  const fingerprint = stableFingerprint({ routeId: route.id, payload });
+  const { reference: _reference, ...fingerprintPayload } = payload;
+  const fingerprint = stableFingerprint({ routeId: route.id, payload: fingerprintPayload });
   return { ok: true, routeId: route.id, payload, fingerprint };
 }
 
