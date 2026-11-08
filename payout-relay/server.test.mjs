@@ -115,7 +115,7 @@ test("forwards valid USD, GBP and EUR transfers only after country and metadata 
       body: JSON.stringify({
         destination_type: "bank", destination_country: item.country, account_number: item.accountNumber,
         beneficiary_name: "Jane Doe", amount: 500, currency: item.currency, debit_currency: "NGN",
-        reference: "F3W-12345678-1234-1234-1234-123456789012", meta: item.meta,
+        reference: "F3X-12345678-1234-1234-1234-123456789012", meta: item.meta,
       }),
     });
     assert.equal(r.status, 200, item.currency + " should pass the provider-specific validation");
