@@ -111,20 +111,36 @@ export function buildInternationalPayoutPreflight(
   trustedWalletCountry: string,
   records: readonly MerchantRouteVerification[] = [],
 ): InternationalPayoutPreflightResult {
+  const walletCountry = trustedWalletCountry.trim().toUpperCase();
+  const destinationCountry = input.destinationCountry.trim().toUpperCase();
+  const currency = input.currency.trim().toUpperCase();
+
+  // USD bank withdrawals are available only for a US wallet and US bank destination.
+  // This is a server-side restriction; changing a client-side selector cannot bypass it.
+  if (input.method === "bank" && currency === "USD" &&
+      (walletCountry !== "US" || destinationCountry !== "US" || input.walletCurrency.trim().toUpperCase() !== "USD")) {
+    return { ok: false, enabled: false, reason: "usd_bank_withdrawal_requires_us_wallet" };
+  }
+
   const request: RouteRequest = {
-    walletCountry: trustedWalletCountry,
+    walletCountry,
     walletCurrency: input.walletCurrency,
-    destinationCountry: input.destinationCountry,
-    currency: input.currency,
+    destinationCountry,
+    currency,
     method: input.method,
   };
+
+  // All fiat bank withdrawals must stay within the authenticated wallet country.
+  if (input.method === "bank" && walletCountry !== destinationCountry) {
+    return { ok: false, enabled: false, reason: "wallet_country_mismatch" };
+  }
 
   const decision = evaluateRoute(request, records);
   if (!decision.ok && decision.reason !== "not_merchant_verified") {
     return { ok: false, enabled: false, reason: decision.reason };
   }
 
-  const route = findRoute(input.destinationCountry, input.currency, input.method);
+  const route = findRoute(destinationCountry, currency, input.method);
   if (!route) return { ok: false, enabled: false, reason: "unknown_route" };
 
   // Only USD/GBP/EUR bank corridors have a complete V3 payload mapper today.
@@ -139,8 +155,8 @@ export function buildInternationalPayoutPreflight(
 
   const payloadCheck = buildInternationalTransferPayload({
     walletCurrency: input.walletCurrency,
-    destinationCountry: input.destinationCountry,
-    currency: input.currency,
+    destinationCountry,
+    currency,
     method: "bank",
     amount: 1,
     idempotencyKey: "00000000-0000-4000-8000-000000000000",
