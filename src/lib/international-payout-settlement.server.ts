@@ -97,7 +97,7 @@ export async function submitInternationalWithdrawal(
   if (!reservation?.status) return { ok: false as const, error: "withdrawal_reservation_unavailable" };
   if (reservation.status === "existing" && reservation.reference) {
     // An idempotent replay reports the existing request; it never submits a second transfer.
-    return { ok: true as const, reference: reservation.reference, status: (reservation.withdrawal_status === "successful" || reservation.withdrawal_status === "failed" ? reservation.withdrawal_status : "pending") as "pending" | "successful" | "failed" };
+    return { ok: true as const, reference: reservation.reference, status: (["successful", "failed", "review"].includes(reservation.withdrawal_status ?? "") ? reservation.withdrawal_status : "pending") as "pending" | "successful" | "failed" | "review" };
   }
   if (reservation.status !== "reserved" || !reservation.reference || typeof reservation.payout !== "number") {
     const messages: Record<string, string> = {
