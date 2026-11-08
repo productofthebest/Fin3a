@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { blocksSignIn } from "./admin-users";
+// admin_list_user_fiat_balances is created by migration 0049 (not yet applied), so generated types lack it.
+type PendingRpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 
 // Every function below is re-checked in the database (admin_require → has_role 'admin').
 // Passwords, OTP hashes and credentials are never selected.
