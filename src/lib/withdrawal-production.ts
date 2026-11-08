@@ -11,6 +11,7 @@ export const withdrawalInput = z.object({
 
 export type WithdrawalConfig = {
   FLW_WITHDRAWALS_ENABLED?: string;
+  FLW_INTERNATIONAL_WITHDRAWALS_ENABLED?: string;
   FLW_PAYOUT_ENVIRONMENT?: string;
   FLW_STATIC_EGRESS_VERIFIED?: string;
   FLW_IP_WHITELIST_VERIFIED?: string;
@@ -31,13 +32,22 @@ export function relayOrigin(value: string | undefined): string | null {
   } catch { return null; }
 }
 
-export function withdrawalsEnabled(config: WithdrawalConfig): boolean {
-  return config.FLW_WITHDRAWALS_ENABLED === "true"
-    && config.FLW_PAYOUT_ENVIRONMENT === "production"
+function payoutPrerequisitesVerified(config: WithdrawalConfig): boolean {
+  return config.FLW_PAYOUT_ENVIRONMENT === "production"
     && config.FLW_STATIC_EGRESS_VERIFIED === "true"
     && config.FLW_IP_WHITELIST_VERIFIED === "true"
     && config.FLW_PRODUCTION_VERIFIED === "true"
     && Boolean(relayOrigin(config.FLW_PAYOUT_RELAY_URL) && config.FLW_PAYOUT_RELAY_TOKEN && config.FLW_WEBHOOK_HASH);
+}
+
+/** Existing NGN withdrawals retain their independent kill switch. */
+export function withdrawalsEnabled(config: WithdrawalConfig): boolean {
+  return config.FLW_WITHDRAWALS_ENABLED === "true" && payoutPrerequisitesVerified(config);
+}
+
+/** International withdrawals require a separate explicit gate and the same verified transport controls. */
+export function internationalWithdrawalsEnabled(config: WithdrawalConfig): boolean {
+  return config.FLW_INTERNATIONAL_WITHDRAWALS_ENABLED === "true" && payoutPrerequisitesVerified(config);
 }
 
 export function sameWithdrawal(a: { amount: number; bank_code: string; account_number: string }, b: z.infer<typeof withdrawalInput>): boolean {
