@@ -36,6 +36,7 @@ import { Route as ApiLandingChatRouteImport } from './routes/api/landing-chat'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as PayFin3aIdRouteImport } from './routes/pay.$fin3aId'
 import { Route as AuthenticatedAccountsActionsRouteImport } from './routes/_authenticated/accounts_.actions'
+import { Route as AuthenticatedAccountsInternationalWithdrawalRouteImport } from './routes/_authenticated/accounts_.international-withdrawal'
 import { Route as AuthenticatedAccountsQrRouteImport } from './routes/_authenticated/accounts_.qr'
 import { Route as AuthenticatedAccountsShareRouteImport } from './routes/_authenticated/accounts_.share'
 import { Route as AuthenticatedAccountsSplitRouteImport } from './routes/_authenticated/accounts_.split'
@@ -183,6 +184,12 @@ const AuthenticatedAccountsActionsRoute =
     path: '/accounts/actions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAccountsInternationalWithdrawalRoute =
+  AuthenticatedAccountsInternationalWithdrawalRouteImport.update({
+    id: '/accounts_/international-withdrawal',
+    path: '/accounts/international-withdrawal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAccountsQrRoute = AuthenticatedAccountsQrRouteImport.update({
   id: '/accounts_/qr',
   path: '/accounts/qr',
@@ -256,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/pay/$fin3aId': typeof PayFin3aIdRoute
   '/accounts/actions': typeof AuthenticatedAccountsActionsRoute
+  '/accounts/international-withdrawal': typeof AuthenticatedAccountsInternationalWithdrawalRoute
   '/accounts/qr': typeof AuthenticatedAccountsQrRoute
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
@@ -292,6 +300,7 @@ export interface FileRoutesByTo {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/pay/$fin3aId': typeof PayFin3aIdRoute
   '/accounts/actions': typeof AuthenticatedAccountsActionsRoute
+  '/accounts/international-withdrawal': typeof AuthenticatedAccountsInternationalWithdrawalRoute
   '/accounts/qr': typeof AuthenticatedAccountsQrRoute
   '/accounts/share': typeof AuthenticatedAccountsShareRoute
   '/accounts/split': typeof AuthenticatedAccountsSplitRoute
@@ -330,6 +339,7 @@ export interface FileRoutesById {
   '/api/transcribe': typeof ApiTranscribeRoute
   '/pay/$fin3aId': typeof PayFin3aIdRoute
   '/_authenticated/accounts_/actions': typeof AuthenticatedAccountsActionsRoute
+  '/_authenticated/accounts_/international-withdrawal': typeof AuthenticatedAccountsInternationalWithdrawalRoute
   '/_authenticated/accounts_/qr': typeof AuthenticatedAccountsQrRoute
   '/_authenticated/accounts_/share': typeof AuthenticatedAccountsShareRoute
   '/_authenticated/accounts_/split': typeof AuthenticatedAccountsSplitRoute
@@ -368,6 +378,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/pay/$fin3aId'
     | '/accounts/actions'
+    | '/accounts/international-withdrawal'
     | '/accounts/qr'
     | '/accounts/share'
     | '/accounts/split'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/pay/$fin3aId'
     | '/accounts/actions'
+    | '/accounts/international-withdrawal'
     | '/accounts/qr'
     | '/accounts/share'
     | '/accounts/split'
@@ -441,6 +453,7 @@ export interface FileRouteTypes {
     | '/api/transcribe'
     | '/pay/$fin3aId'
     | '/_authenticated/accounts_/actions'
+    | '/_authenticated/accounts_/international-withdrawal'
     | '/_authenticated/accounts_/qr'
     | '/_authenticated/accounts_/share'
     | '/_authenticated/accounts_/split'
@@ -656,6 +669,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountsActionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/accounts_/international-withdrawal': {
+      id: '/_authenticated/accounts_/international-withdrawal'
+      path: '/accounts/international-withdrawal'
+      fullPath: '/accounts/international-withdrawal'
+      preLoaderRoute: typeof AuthenticatedAccountsInternationalWithdrawalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accounts_/qr': {
       id: '/_authenticated/accounts_/qr'
       path: '/accounts/qr'
@@ -735,6 +755,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
   AuthenticatedSpendingRoute: typeof AuthenticatedSpendingRoute
   AuthenticatedAccountsActionsRoute: typeof AuthenticatedAccountsActionsRoute
+  AuthenticatedAccountsInternationalWithdrawalRoute: typeof AuthenticatedAccountsInternationalWithdrawalRoute
   AuthenticatedAccountsQrRoute: typeof AuthenticatedAccountsQrRoute
   AuthenticatedAccountsShareRoute: typeof AuthenticatedAccountsShareRoute
   AuthenticatedAccountsSplitRoute: typeof AuthenticatedAccountsSplitRoute
@@ -762,6 +783,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
   AuthenticatedSpendingRoute: AuthenticatedSpendingRoute,
   AuthenticatedAccountsActionsRoute: AuthenticatedAccountsActionsRoute,
+  AuthenticatedAccountsInternationalWithdrawalRoute:
+    AuthenticatedAccountsInternationalWithdrawalRoute,
   AuthenticatedAccountsQrRoute: AuthenticatedAccountsQrRoute,
   AuthenticatedAccountsShareRoute: AuthenticatedAccountsShareRoute,
   AuthenticatedAccountsSplitRoute: AuthenticatedAccountsSplitRoute,
