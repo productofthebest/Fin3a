@@ -3,6 +3,13 @@
  * Nothing here calls a provider, touches balances, or enables a payout.
  * Every route is disabled unless an explicit merchant-route verification record
  * is supplied; published provider capability metadata is never treated as approval.
+ *
+ * PRELIMINARY: the beneficiary validators are generic format checks (IBAN checksum,
+ * BIC shape, ABA checksum, UK sort code, phone length). They are NOT mapped to
+ * Flutterwave's per-corridor transfer schema (required beneficiary/meta fields,
+ * bank-code lists, mobile-money network codes) and must not be treated as
+ * provider-ready. Route metadata is in-memory only: not persisted, not imported by
+ * any server function or UI, and never customer-enabled.
  */
 import { getBankPayoutCapability } from "./flutterwave-capabilities";
 
