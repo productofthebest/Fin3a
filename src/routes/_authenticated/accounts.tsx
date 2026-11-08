@@ -118,7 +118,7 @@ function Page() {
       <div className="mt-6 flex flex-wrap gap-2">
         <Button onClick={() => setSwapOpen(true)}><ArrowLeftRight className="size-4" />Swap</Button>
         <Button asChild variant="outline"><Link to="/accounts/actions" search={{ action: "deposit" }}><ArrowDownToLine className="size-4" />Deposit</Link></Button>
-        {data.country !== "NG" && <Button asChild variant="outline"><Link to="/accounts/international-withdrawal"><Globe className="size-4" />Withdraw</Link></Button>}
+        <Button asChild variant="outline"><Link to="/accounts/international-withdrawal"><Globe className="size-4" />Withdraw</Link></Button>
                 <Button variant="outline" onClick={() => setTransferOpen(true)}><ArrowLeftRight className="size-4" />Transfer</Button>
       </div>
       <AccountTransferDialog open={transferOpen} onOpenChange={setTransferOpen} balances={data.accounts} country={data.country ?? "NG"} />
