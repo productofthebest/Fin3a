@@ -96,7 +96,9 @@ export function toMinorUnits(amount: number, currency: string): number | null {
 
 // ---------- Beneficiary validators ----------
 
-export type BeneficiaryResult = { ok: true; normalized: Record<string, string> } | { ok: false; errors: string[] };
+type BeneficiaryField = "accountName" | "network" | "mobileNumber" | "accountNumber" | "routingNumber" | "address" | "sortCode" | "branchCode" | "bankCode" | "iban" | "swiftCode";
+export type BeneficiaryInput = Partial<Record<BeneficiaryField, unknown>>;
+export type BeneficiaryResult = { ok: true; normalized: Partial<Record<BeneficiaryField, string>> } | { ok: false; errors: string[] };
 
 const clean = (v: unknown) => (typeof v === "string" ? v.replace(/[\s-]/g, "").toUpperCase() : "");
 const nameOk = (v: unknown) => typeof v === "string" && /^[\p{L}][\p{L} .'-]{1,99}$/u.test(v.trim());
@@ -124,8 +126,8 @@ export function isValidBic(raw: string, country?: string): boolean {
 export function isValidAbaRouting(raw: string): boolean {
   const r = clean(raw);
   if (!/^\d{9}$/.test(r)) return false;
-  const d = r.split("").map(Number);
-  const sum = 3 * (d[0] + d[3] + d[6]) + 7 * (d[1] + d[4] + d[7]) + (d[2] + d[5] + d[8]);
+  const w = [3, 7, 1];
+  const sum = r.split("").reduce((acc, ch, i) => acc + Number(ch) * (w[i % 3] ?? 0), 0);
   return sum % 10 === 0;
 }
 
@@ -139,9 +141,9 @@ export function normalizeMobileNumber(raw: string, dial: { prefix: string; lengt
   return dial.prefix + n;
 }
 
-export function validateBeneficiary(route: PayoutRoute, input: Record<string, unknown>): BeneficiaryResult {
+export function validateBeneficiary(route: PayoutRoute, input: BeneficiaryInput): BeneficiaryResult {
   const errors: string[] = [];
-  const out: Record<string, string> = {};
+  const out: Partial<Record<BeneficiaryField, string>> = {};
   if (!nameOk(input.accountName)) errors.push("accountName");
   else out.accountName = String(input.accountName).trim();
 
