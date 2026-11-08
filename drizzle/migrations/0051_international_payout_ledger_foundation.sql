@@ -99,7 +99,7 @@ BEGIN
     IF existing.request_fingerprint <> _request_fingerprint THEN
       RAISE EXCEPTION 'Idempotency conflict';
     END IF;
-    RETURN jsonb_build_object('status','existing','reference',existing.reference,'payout',existing.payout);
+    RETURN jsonb_build_object('status','existing','reference',existing.reference,'payout',existing.payout,'withdrawal_status',existing.status);
   END IF;
 
   SELECT country INTO wallet_country FROM public.user_settings WHERE user_id = _user_id;
