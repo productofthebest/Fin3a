@@ -114,7 +114,10 @@ BEGIN
   IF FOUND THEN
     IF existing.user_id <> _user_id OR existing.country <> _country
        OR existing.currency <> _currency OR existing.method <> _method
-       OR existing.amount <> amt OR existing.beneficiary_account <> _beneficiary_account THEN
+       OR existing.amount <> amt OR existing.beneficiary_name <> trim(_beneficiary_name)
+       OR existing.beneficiary_account <> trim(_beneficiary_account)
+       OR existing.bank_code IS DISTINCT FROM _bank_code OR existing.bank_name IS DISTINCT FROM _bank_name
+       OR existing.network IS DISTINCT FROM _network THEN
       RAISE EXCEPTION 'Idempotency conflict';
     END IF;
     RETURN jsonb_build_object('status',existing.status,'reference',existing.reference,'duplicate',true);
