@@ -73,7 +73,7 @@ describe("authenticated international payout preflight", () => {
 
   it("validates a beneficiary but never enables an unverified route", () => {
     expect(buildInternationalPayoutPreflight(validGhanaMobile, "GH")).toEqual({
-      ok: false, enabled: false, reason: "not_merchant_verified", beneficiaryValid: true, invalidFields: [],
+      ok: false, enabled: false, reason: "provider_schema_pending", beneficiaryValid: true, invalidFields: [],
     });
   });
 
@@ -106,7 +106,7 @@ describe("authenticated international payout preflight", () => {
   it("uses only the verified user id for both wallet-context queries", async () => {
     const { db, filters, rpc } = fakeDatabase();
     const result = await runAuthenticatedInternationalPayoutPreflight(validGhanaMobile, "user-123", db);
-    expect(result.reason).toBe("not_merchant_verified");
+    expect(result.reason).toBe("provider_schema_pending");
     expect(rpc).toHaveBeenCalledWith("consume_rate_limit", {
       _bucket: "international_payout_preflight", _limit: 20, _window_seconds: 600,
     });
