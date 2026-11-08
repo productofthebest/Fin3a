@@ -7,12 +7,22 @@ import {
   type RouteRequest,
 } from "./international-payout-routes";
 
+const beneficiaryFields = new Set([
+  "accountName", "network", "mobileNumber", "accountNumber", "routingNumber",
+  "address", "sortCode", "branchCode", "bankCode", "iban", "swiftCode",
+]);
+
+const beneficiaryInput = z.record(z.string(), z.string().max(200)).refine(
+  fields => Object.keys(fields).every(key => beneficiaryFields.has(key)),
+  "Unsupported beneficiary field",
+);
+
 export const internationalPayoutPreflightInput = z.object({
   walletCurrency: z.string().trim().length(3).regex(/^[A-Za-z]{3}$/),
   destinationCountry: z.string().trim().length(2).regex(/^[A-Za-z]{2}$/),
   currency: z.string().trim().length(3).regex(/^[A-Za-z]{3}$/),
   method: z.enum(["bank", "mobile_money"]),
-  beneficiary: z.record(z.string(), z.unknown()),
+  beneficiary: beneficiaryInput,
 }).strict();
 
 export type InternationalPayoutPreflightInput = z.infer<typeof internationalPayoutPreflightInput>;
