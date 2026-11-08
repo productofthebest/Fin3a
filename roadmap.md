@@ -162,4 +162,6 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 
 ## International withdrawals (Nov 8)
 - [x] Phase A: pure route rules + beneficiary validators (`international-payout-routes.ts`), all routes off without a merchant verification record; 15 tests pass.
-- [ ] Phases B–E (reservation migration, merchant capability check, server/UI wiring, sandbox + live verification) — awaiting owner approval, fixed-IP relay, merchant enablement and funded non-NGN wallets (0048).
+- [ ] Approved Nov 8: implement additive isolated international reservation/settlement, fail-closed merchant approvals, protected API/reconciliation and bank/mobile-money UI; preserve NGN byte-for-byte, no customer fund movement or live payouts.
+- [ ] Validate approved migration in isolated PostgreSQL, run international/Flutterwave/NGN regressions, then apply only the approved additive migration if history permits; no backfills or unrelated updates.
+- [ ] Activation remains blocked on global lock OFF, route evidence, fixed-IP/whitelist, provider-schema and funded isolated verification; merge/sync only after all tests pass and platform merge access exists.
