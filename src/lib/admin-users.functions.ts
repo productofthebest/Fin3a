@@ -2,8 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { blocksSignIn } from "./admin-users";
-// admin_list_user_fiat_balances is created by migration 0049 (not yet applied), so generated types lack it.
-type PendingRpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 
 // Every function below is re-checked in the database (admin_require → has_role 'admin').
 // Passwords, OTP hashes and credentials are never selected.
@@ -39,7 +37,7 @@ export const listUsers = createServerFn({ method: "GET" }).middleware([requireSu
     const userIds = result.rows.map((row) => row.user_id);
     let balancesByUser: Record<string, FiatBalance[]> = {};
     if (userIds.length) {
-      const { data: balances, error: balanceError } = await (context.supabase.rpc as unknown as PendingRpc).call(context.supabase, "admin_list_user_fiat_balances", { _user_ids: userIds });
+      const { data: balances, error: balanceError } = await context.supabase.rpc("admin_list_user_fiat_balances", { _user_ids: userIds });
       if (balanceError) fail(balanceError.message);
       balancesByUser = clean<Record<string, FiatBalance[]>>(balances ?? {});
     }
@@ -66,7 +64,7 @@ export const getUserDetail = createServerFn({ method: "POST" }).middleware([requ
     if (error) fail(error.message);
     const { data: country } = await context.supabase.rpc("admin_user_country", { _user_id: data.userId });
     const c = (country as string | null) ?? "NG";
-    const { data: balances, error: balanceError } = await (context.supabase.rpc as unknown as PendingRpc).call(context.supabase, "admin_list_user_fiat_balances", { _user_ids: [data.userId] });
+    const { data: balances, error: balanceError } = await context.supabase.rpc("admin_list_user_fiat_balances", { _user_ids: [data.userId] });
     if (balanceError) fail(balanceError.message);
     const balancesByUser = clean<Record<string, FiatBalance[]>>(balances ?? {});
     return { ...clean<UserDetail>(r), country: c, fiat_balances: balancesByUser[data.userId] ?? [] };
