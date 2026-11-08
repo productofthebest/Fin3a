@@ -1187,6 +1187,218 @@ export type Database = {
           },
         ]
       }
+      international_merchant_routes: {
+        Row: {
+          country: string
+          currency: string
+          environment: string
+          evidence_ref: string
+          expires_at: string
+          fee_minor: number
+          max_minor: number
+          method: string
+          provider_codes: string[]
+          revoked: boolean
+          route_id: string
+          schema_version: string
+          verified_at: string
+          verified_by: string
+        }
+        Insert: {
+          country: string
+          currency: string
+          environment: string
+          evidence_ref: string
+          expires_at: string
+          fee_minor: number
+          max_minor: number
+          method: string
+          provider_codes: string[]
+          revoked?: boolean
+          route_id: string
+          schema_version: string
+          verified_at?: string
+          verified_by: string
+        }
+        Update: {
+          country?: string
+          currency?: string
+          environment?: string
+          evidence_ref?: string
+          expires_at?: string
+          fee_minor?: number
+          max_minor?: number
+          method?: string
+          provider_codes?: string[]
+          revoked?: boolean
+          route_id?: string
+          schema_version?: string
+          verified_at?: string
+          verified_by?: string
+        }
+        Relationships: []
+      }
+      international_withdrawal_events: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          currency: string
+          event_key: string
+          outcome: string
+          provider_transfer_id: string
+          withdrawal_id: string
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          currency: string
+          event_key: string
+          outcome: string
+          provider_transfer_id: string
+          withdrawal_id: string
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          currency?: string
+          event_key?: string
+          outcome?: string
+          provider_transfer_id?: string
+          withdrawal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_withdrawal_events_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "international_withdrawals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      international_withdrawal_ledger: {
+        Row: {
+          account_id: string
+          amount_minor: number
+          created_at: string
+          currency: string
+          id: string
+          kind: string
+          user_id: string
+          withdrawal_id: string
+        }
+        Insert: {
+          account_id: string
+          amount_minor: number
+          created_at?: string
+          currency: string
+          id?: string
+          kind: string
+          user_id: string
+          withdrawal_id: string
+        }
+        Update: {
+          account_id?: string
+          amount_minor?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kind?: string
+          user_id?: string
+          withdrawal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_withdrawal_ledger_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "international_withdrawal_ledger_withdrawal_id_fkey"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "international_withdrawals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      international_withdrawals: {
+        Row: {
+          account_id: string
+          amount_minor: number
+          beneficiary: Json
+          created_at: string
+          currency: string
+          exponent: number
+          fee_minor: number
+          id: string
+          idempotency_key: string
+          payout_minor: number
+          provider_transfer_id: string | null
+          reference: string
+          review_reason: string | null
+          route_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount_minor: number
+          beneficiary: Json
+          created_at?: string
+          currency: string
+          exponent: number
+          fee_minor: number
+          id?: string
+          idempotency_key: string
+          payout_minor: number
+          provider_transfer_id?: string | null
+          reference?: string
+          review_reason?: string | null
+          route_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount_minor?: number
+          beneficiary?: Json
+          created_at?: string
+          currency?: string
+          exponent?: number
+          fee_minor?: number
+          id?: string
+          idempotency_key?: string
+          payout_minor?: number
+          provider_transfer_id?: string | null
+          reference?: string
+          review_reason?: string | null
+          route_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_withdrawals_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "international_withdrawals_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "international_merchant_routes"
+            referencedColumns: ["route_id"]
+          },
+        ]
+      }
       merchant_rules: {
         Row: {
           category_id: string | null
@@ -2222,6 +2434,14 @@ export type Database = {
         Returns: string
       }
       admin_require: { Args: never; Returns: undefined }
+      admin_review_international_reversal: {
+        Args: {
+          _confirmed_return_minor: number
+          _reason: string
+          _withdrawal_id: string
+        }
+        Returns: undefined
+      }
       admin_set_account_status: {
         Args: { _reason: string; _status: string; _user_id: string }
         Returns: string
@@ -2257,6 +2477,23 @@ export type Database = {
       }
       admin_user_detail: { Args: { _user_id: string }; Returns: Json }
       admin_user_stats: { Args: never; Returns: Json }
+      admin_verify_international_route: {
+        Args: {
+          _country: string
+          _currency: string
+          _environment: string
+          _evidence_ref: string
+          _expires_at: string
+          _fee_minor: number
+          _max_minor: number
+          _method: string
+          _provider_codes: string[]
+          _revoked: boolean
+          _route_id: string
+          _schema_version: string
+        }
+        Returns: undefined
+      }
       ai_admin_overview: { Args: never; Returns: Json }
       ai_admin_set_price: {
         Args: {
@@ -2410,6 +2647,16 @@ export type Database = {
         }
         Returns: Json
       }
+      finish_international_withdrawal: {
+        Args: {
+          _amount_minor: number
+          _currency: string
+          _outcome: string
+          _provider_transfer_id: string
+          _reference: string
+        }
+        Returns: Json
+      }
       finish_ngn_withdrawal: {
         Args: {
           _amount: number
@@ -2438,6 +2685,7 @@ export type Database = {
         Args: { p_document_id: string }
         Returns: number
       }
+      international_payouts_live_enabled: { Args: never; Returns: boolean }
       is_split_participant: {
         Args: { _bill_id: string; _user_id: string }
         Returns: boolean
@@ -2488,6 +2736,16 @@ export type Database = {
           _customer_name: string
           _idempotency_key: string
           _item_code: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      reserve_international_withdrawal: {
+        Args: {
+          _amount_minor: number
+          _beneficiary: Json
+          _idempotency_key: string
+          _route_id: string
           _user_id: string
         }
         Returns: Json

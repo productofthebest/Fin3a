@@ -10,6 +10,10 @@ export const Route = createFileRoute("/api/public/flutterwave-webhook")({
       POST: async ({ request }) => {
         return handleWebhook(request, process.env["FLW_WEBHOOK_HASH"], async notice => {
           if (notice.kind === "transfer") {
+            if (notice.reference.startsWith("F3X-")) {
+              const { processInternationalTransferNotice } = await import("@/lib/international-withdrawal.server");
+              return processInternationalTransferNotice(notice.id, notice.reference);
+            }
             const { processTransferNotice } = await import("@/lib/ngn-withdrawal.server");
             return processTransferNotice(notice.id, notice.reference);
           }

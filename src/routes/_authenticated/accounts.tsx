@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { AccountTransferDialog } from "@/components/account-transfer-dialog";
-import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users, Globe } from "lucide-react";
 
 const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -118,6 +118,7 @@ function Page() {
       <div className="mt-6 flex flex-wrap gap-2">
         <Button onClick={() => setSwapOpen(true)}><ArrowLeftRight className="size-4" />Swap</Button>
         <Button asChild variant="outline"><Link to="/accounts/actions" search={{ action: "deposit" }}><ArrowDownToLine className="size-4" />Deposit</Link></Button>
+        {data.country !== "NG" && <Button asChild variant="outline"><Link to="/accounts/international-withdrawal"><Globe className="size-4" />International withdrawal</Link></Button>}
                 <Button variant="outline" onClick={() => setTransferOpen(true)}><ArrowLeftRight className="size-4" />Transfer</Button>
       </div>
       <AccountTransferDialog open={transferOpen} onOpenChange={setTransferOpen} balances={data.accounts} country={data.country ?? "NG"} />

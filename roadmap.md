@@ -158,8 +158,11 @@ Crypto and payment processing reinstated by owner 3 Nov 2026 (Accounts page with
 - [x] Bill payments live (Nov 6): Bills → Pay bills (Airtime, Data, Electricity, Cable TV, Internet, Tax) loads real Flutterwave billers, optional customer validation, fixed packages or custom amounts, no Fin3a fee, atomic wallet hold (reserve_bill_payment) released on failure, status re-check, payment history. Verified signed-in in preview; build OK. No real bill payment sent yet — needs a small live test after publish.
 
 ## Admin all-fiat holdings (Nov 7)
-- [ ] Apply only 0049 (Admin → Users all-fiat balances), leaving 0048 pending. Blocked: the update tool runs every pending update in order, so 0048 would also run. Owner must choose: apply both, or switch 0048 off first.
+- [x] Read-only Nov 8 inspection confirms 0048 and 0049 already recorded/applied before this task; no Admin/deposit updates applied in this task. Historical missing snapshots and unrelated unlisted files remain unrepaired.
 
 ## International withdrawals (Nov 8)
 - [x] Phase A: pure route rules + beneficiary validators (`international-payout-routes.ts`), all routes off without a merchant verification record; 15 tests pass.
-- [ ] Phases B–E (reservation migration, merchant capability check, server/UI wiring, sandbox + live verification) — awaiting owner approval, fixed-IP relay, merchant enablement and funded non-NGN wallets (0048).
+- [x] Approved Nov 8 preparation: separate international reservation/settlement/review RPCs and immutable minor-unit ledger, admin evidence records, protected locked API, provider-GET webhook reconciliation and bank/mobile-money UI. No sender is exposed; generic corridors remain preliminary, Ghana schema adapter only. NGN files and live row/function fingerprints unchanged.
+- [x] Applied only 0050_international_withdrawal_isolated_foundation through managed migration after isolated PostgreSQL validation (13 tests). Live history/readback confirms new empty tables, reserve/finish permissions and hard-false gate; no backfills or customer funds moved. Existing 0050_allow_international_payout_preflight_rate_limit remains unlisted/unapplied and was not changed.
+- [x] Signed-in desktop/393px direct international page, amount entry, bank/mobile-money switching and disabled recipient/submit verified with no errors/overflow. Nigeria owner has no international Wallet link; non-Nigeria entry unverified. Final full suite 485 passed / 2 safely skipped; relay 17 passed; preview build OK.
+- [ ] Activation remains blocked on global lock OFF, route evidence, fixed-IP/whitelist, provider-schema and funded isolated verification; merge/sync only after all tests pass and platform merge access exists.
