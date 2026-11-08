@@ -155,7 +155,7 @@ function validTransfer(body) {
   if (body.destination_country !== undefined && !payoutCountryMatches(body.destination_country, body.currency)) return false;
   if (body.currency !== "NGN" && !payoutCountryMatches(body.destination_country, body.currency)) return false;
   if (!safeText(body.account_number, 34) || !/^[A-Za-z0-9-]{5,34}$/.test(body.account_number)) return false;
-  if (!safeText(body.beneficiary_name, 120) || !/^F3W-[0-9a-f-]{36}$/.test(body.reference) || !safeText(body.narration || "Fin3a payout", 80)) return false;
+  if (!safeText(body.beneficiary_name, 120) || !/^F3[WX]-[0-9a-f-]{36}$/.test(body.reference) || !safeText(body.narration || "Fin3a payout", 80)) return false;
   if (body.currency === "NGN" && (!/^[0-9]{10}$/.test(body.account_number) || !safeText(body.account_bank, 12))) return false;
   if (["USD", "GBP", "EUR"].includes(body.currency)) return validInternationalMeta(body.currency, body.meta);
   const operator = typeof body.account_bank === "string" ? body.account_bank.toUpperCase() : "";
