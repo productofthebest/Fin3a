@@ -185,16 +185,18 @@ BEGIN
     END IF;
   END IF;
 
+  -- Validate provider amount/currency for every retrieved status, including
+  -- pending. A mismatched pending response must be reviewed, never silently retained.
+  IF _currency IS DISTINCT FROM w.currency OR _amount IS DISTINCT FROM w.payout THEN
+    UPDATE public.international_withdrawals SET status='review',updated_at=now() WHERE id=w.id;
+    RETURN jsonb_build_object('status','review');
+  END IF;
+
   IF _outcome = 'pending' THEN
     RETURN jsonb_build_object('status',w.status);
   END IF;
   IF _outcome NOT IN ('successful','failed') THEN
     RAISE EXCEPTION 'Invalid verified withdrawal outcome';
-  END IF;
-
-  IF _currency IS DISTINCT FROM w.currency OR _amount IS DISTINCT FROM w.payout THEN
-    UPDATE public.international_withdrawals SET status='review',updated_at=now() WHERE id=w.id;
-    RETURN jsonb_build_object('status','review');
   END IF;
 
   IF w.status = _outcome THEN RETURN jsonb_build_object('status',w.status); END IF;
