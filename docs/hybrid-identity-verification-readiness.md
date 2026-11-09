@@ -10,7 +10,10 @@
 - Adds an append-only, user-scoped identity-verification event table for a future trusted verification integration.
 - A verified event requires a provider-supplied legal name, normalized comparison name, provider event reference and verification timestamp.
 - Only the service role can insert provider outcomes. Authenticated users can read only their own status. No client-side or Settings write path can create or modify a verified identity.
-- Events cannot be updated or deleted. Corrections must arrive as a new provider event.
+- Events cannot be updated. Corrections must arrive as a new provider event.
+- Verification events are linked to their owning auth account with `ON DELETE CASCADE`. Deleting an account therefore removes its associated identity-verification evidence instead of being blocked by a restrictive foreign key. This is the deletion exception to the append-only event history.
+- Account deletion must still follow the applicable legal, regulatory and partner retention policy. If a specific record must be retained, the lawful basis, retention period, access restrictions and deletion/anonymisation workflow must be documented before account deletion is processed; do not silently retain identity data indefinitely.
+- The service role has SELECT and INSERT grants only; ordinary application roles are not granted direct DELETE access.
 - This migration does not collect identity documents, call a verification provider, or mark anyone verified.
 
 ## Nigerian bank withdrawal sequence still to implement
