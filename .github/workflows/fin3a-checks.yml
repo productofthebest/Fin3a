@@ -57,11 +57,16 @@ jobs:
           const branch = summarize("/tmp/fin3a-branch-eslint.json");
           console.log("MAIN_BASELINE_LINT", JSON.stringify(baseline));
           console.log("BRANCH_FULL_LINT", JSON.stringify(branch));
-          console.log("LINT_DELTA", JSON.stringify({
+          const delta = {
             errors: branch.errors - baseline.errors,
             warnings: branch.warnings - baseline.warnings,
             filesWithErrors: branch.filesWithErrors - baseline.filesWithErrors,
-          }));
+          };
+          console.log("LINT_DELTA", JSON.stringify(delta));
+          if (delta.errors > 0 || delta.warnings > 0) {
+            console.error("The branch introduces lint findings compared with main.");
+            process.exitCode = 1;
+          }
           const focus = [
             "src/lib/flutterwave.server.ts",
             "src/lib/bills-pay.server.ts",
