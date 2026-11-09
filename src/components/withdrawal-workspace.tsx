@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,23 +12,17 @@ export function WithdrawalWorkspace({ country, currency, available, ngnEnabled, 
   history: { rows: InternationalHistoryRow[]; unavailable: boolean };
 }) {
   const options = withdrawalOptions(country, currency, ngnEnabled);
-  const [method, setMethod] = useState<"bank" | "crypto">(options.defaultMethod);
   const [token, setToken] = useState("USDT");
   const [network, setNetwork] = useState("");
   const [address, setAddress] = useState("");
   const [amount, setAmount] = useState("");
-  const methodCount = Number(options.showBankMethod) + Number(options.showCryptoMethod);
 
   return <div className="space-y-6">
-    {methodCount > 0 && <div className={`grid grid-cols-${methodCount === 2 ? "2" : "1"} gap-2`} role="group" aria-label="Withdrawal method">
-      {options.showBankMethod && <Button variant={method === "bank" ? "default" : "outline"} aria-pressed={method === "bank"} onClick={() => setMethod("bank")}>Bank withdrawal</Button>}
-      {options.showCryptoMethod && <Button variant={method === "crypto" ? "default" : "outline"} aria-pressed={method === "crypto"} onClick={() => setMethod("crypto")}>Crypto withdrawal</Button>}
-    </div>}
-    {method === "bank" && options.showBankMethod ? <section className="space-y-4" aria-label="Bank withdrawal">
+    {options.defaultMethod === "bank" && options.showBankMethod ? <section className="space-y-4" aria-label="Bank withdrawal">
       <h2 className="font-display text-lg font-semibold">{currency} bank withdrawal</h2>
       {options.ngn ? <fieldset disabled={!options.bankEnabled} className="min-w-0"><NgnWithdrawalPanel available={available} /></fieldset>
         : <InternationalWithdrawalPanel />}
-    </section> : method === "crypto" && options.showCryptoMethod ? <section className="space-y-4" aria-label="Crypto withdrawal">
+    </section> : options.defaultMethod === "crypto" && options.showCryptoMethod ? <section className="space-y-4" aria-label="Crypto withdrawal">
       <h2 className="font-display text-lg font-semibold">USD crypto withdrawal</h2>
       <p className="text-xs text-muted-foreground">Test mode · payout submission is disabled.</p>
       <div><Label htmlFor="withdraw-token">Payout asset</Label><Select value={token} onValueChange={setToken}><SelectTrigger id="withdraw-token"><SelectValue /></SelectTrigger><SelectContent>{options.tokens.map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></div>
