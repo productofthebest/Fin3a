@@ -93,11 +93,11 @@ export const payBillFn = createServerFn({ method: "POST" })
       };
     }
     const r = res as { status: string; reference?: string; available?: number };
-    if (r.status === "insufficient") return { ok: false as const, error: "Not enough NGN balance for this payment." };
-    if (r.status === "invalid_amount") return { ok: false as const, error: "Amount must be at least ₦50." };
-    if (r.status === "no_account") return { ok: false as const, error: "You don't have an NGN wallet." };
+    if (r.status === "insufficient") return { ok: false as const, retrySameAttempt: false as const, error: "Not enough NGN balance for this payment." };
+    if (r.status === "invalid_amount") return { ok: false as const, retrySameAttempt: false as const, error: "Amount must be at least ₦50." };
+    if (r.status === "no_account") return { ok: false as const, retrySameAttempt: false as const, error: "You don't have an NGN wallet." };
     if (r.status === "existing") return { ok: true as const, reference: r.reference!, status: "pending" };
-    if (r.status !== "reserved" || !r.reference) return { ok: false as const, error: "Bill payments are unavailable right now." };
+    if (r.status !== "reserved" || !r.reference) return { ok: false as const, retrySameAttempt: false as const, error: "Bill payments are unavailable right now." };
     try {
       const amount = Math.round(data.amount * 100) / 100;
       const t = await payBill({ billerCode: data.billerCode, itemCode: data.itemCode, customer: data.customer, amount, reference: r.reference });
@@ -129,7 +129,7 @@ export const payBillFn = createServerFn({ method: "POST" })
     } catch (e) {
       if (e instanceof ProviderRejected) {
         await supabaseAdmin.rpc("finish_bill_payment", { _reference: r.reference, _provider_tx_id: null as unknown as string, _outcome: "failed", _amount: 0, _currency: "NGN" });
-        return { ok: false as const, error: "The biller declined this payment. Your balance was not charged." };
+        return { ok: false as const, retrySameAttempt: false as const, error: "The biller declined this payment. Your balance was not charged." };
       }
       // Outcome unknown: funds stay reserved until Flutterwave confirms success or failure.
       return { ok: true as const, reference: r.reference, status: "pending" };
