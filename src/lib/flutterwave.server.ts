@@ -274,7 +274,8 @@ export async function findBillStatusByCustomerReference(
   );
   const matches = results
     .flat()
-    .filter((row) =>
+    .filter(
+      (row) =>
         row.customer_reference === customerReference &&
         (!row.country || row.country === "NG"),
     );
