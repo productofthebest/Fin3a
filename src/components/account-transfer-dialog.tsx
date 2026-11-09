@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { lookupRecipient, sendTransfer, type ResolvedParticipant } from "@/lib/share-split.functions";
 import { canTransfer } from "@/lib/account-transfer";
@@ -124,9 +124,8 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
         <Button disabled={busy || !valid} onClick={() => void transfer()}>{busy ? "Sending…" : "Confirm transfer"}</Button>
         <Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
       </> : mode === "fin3a" ? <>
-        {options.length > 1 ? <div className="relative"><Label htmlFor="transfer-currency" className="sr-only">Transfer currency</Label><select id="transfer-currency" aria-label="Transfer currency" value={currency} onChange={event => setCurrency(event.target.value)} className="h-14 w-full appearance-none rounded-xl border border-border bg-background px-4 pr-12 text-lg shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring">{options.map(option => <option key={option} value={option}>{option}</option>)}</select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" /></div> : options.length === 1 ? <div className="rounded-xl border border-border bg-background px-4 py-4 text-lg shadow-sm" aria-label="Transfer currency">{options[0]}</div> : <p role="status" className="text-sm text-muted-foreground">No supported fiat wallet is available for transfer.</p>}
+        <div className="flex items-center justify-between gap-3"><p className="text-sm text-muted-foreground">Available: {money(available)}</p>{options.length > 1 ? <div className="w-36 shrink-0"><Label htmlFor="transfer-currency" className="sr-only">Transfer currency</Label><Select value={currency} onValueChange={setCurrency}><SelectTrigger id="transfer-currency" aria-label="Transfer currency" className="h-10"><SelectValue /></SelectTrigger><SelectContent>{options.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div> : options.length === 1 ? <div className="rounded-md border border-border px-3 py-2 text-sm" aria-label="Transfer currency">{options[0]}</div> : <p role="status" className="text-sm text-muted-foreground">No supported fiat wallet is available for transfer.</p>}</div>
         {!currencyTransferEnabled && <p role="status" className="text-xs text-muted-foreground">{currency} Fin3a-user transfers are not activated yet. The wallet is visible, but sending is disabled until the currency is supported by the secure ledger transfer function.</p>}
-        <p className="text-sm text-muted-foreground">Available: {money(available)}</p>
         <Label htmlFor="transfer-recipient">Fin3a ID, email or phone number</Label>
         <Input id="transfer-recipient" value={identifier} onChange={e => { setIdentifier(e.target.value); setRecipient(null); }} maxLength={254} />
         <Button variant="outline" disabled={busy || identifier.trim().length < 3} onClick={() => void findRecipient()}>{busy ? "Finding…" : "Find user"}</Button>
