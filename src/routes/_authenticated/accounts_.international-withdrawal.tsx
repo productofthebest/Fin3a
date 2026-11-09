@@ -7,7 +7,6 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { getWithdrawalAvailability } from "@/lib/ngn-withdrawal.functions";
 import { RecordCurrencySelect } from "@/components/record-currency-select";
-import { localCurrency } from "@/lib/country-currency";
 import { z } from "zod";
 import { pageMeta } from "@/lib/page-meta";
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -15,12 +14,7 @@ const availability = queryOptions({ queryKey: ["withdrawal", "availability"], qu
 
 export const Route = createFileRoute("/_authenticated/accounts_/international-withdrawal")({
   head: () => pageMeta("Withdraw", "Country-aware bank withdrawal details and withdrawal history. Payout routes remain locked until verified."),
-  validateSearch: z.object({
-    currency: z.string().regex(/^[A-Z]{3}$/).optional(),
-    // Bind a currency choice to the country where it was selected. This prevents
-    // a previous country's USD selection from becoming the next country's default.
-    country: z.string().regex(/^[A-Z]{2}$/).optional(),
-  }),
+  validateSearch: z.object({ currency: z.string().regex(/^[A-Z]{3}$/).optional() }),
   loaderDeps: ({ search }) => search,
   loader: async ({ context }) => { await Promise.all([context.queryClient.ensureQueryData(overview), context.queryClient.ensureQueryData(availability), context.queryClient.ensureQueryData(internationalHistory)]); },
   component: Page,
@@ -31,21 +25,13 @@ function Page() {
   const { data } = useSuspenseQuery(overview);
   const { data: gate } = useSuspenseQuery(availability);
   const { data: history } = useSuspenseQuery(internationalHistory);
-
-  // When the saved country changes, ignore any currency selection made under
-  // the previous country and return to the new country's local wallet. In the
-  // US, localCurrency is USD, so US users correctly see US · USD.
-  const country = data.country ?? "NG";
-  const selectedCurrency = search.country === country
-    ? search.currency
-    : localCurrency(country);
-  const account = data.accounts.find(row => row.currency === selectedCurrency) ?? data.accounts[0];
+  const account = data.accounts.find(row => row.currency === search.currency) ?? data.accounts[0];
   const currency = account?.currency ?? "";
   return <div className="min-h-screen bg-background text-foreground">
     <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6"><Link to="/accounts" className="font-display text-xl font-semibold">Fin<span className="text-primary">3a</span></Link><Button asChild variant="ghost" size="sm"><Link to="/accounts"><ArrowLeft className="size-4" />Wallet</Link></Button></header>
     <main className="mx-auto w-full max-w-md px-4 py-8 sm:px-6"><Wallet className="mb-5 size-8 text-primary" /><h1 className="mb-6 font-display text-3xl font-semibold">Withdraw</h1>
-      <div className="mb-5"><RecordCurrencySelect value={currency} currencies={data.accounts.map(row => row.currency)} onChange={value => navigate({ to: "/accounts/international-withdrawal", search: { currency: value, country } })} /></div>
-      <WithdrawalWorkspace key={`${country}:${currency}`} country={country} currency={currency} available={account?.balance.available ?? 0} ngnEnabled={gate.enabled} history={history} />
+      <div className="mb-5"><RecordCurrencySelect value={currency} currencies={data.accounts.map(row => row.currency)} onChange={value => navigate({ to: "/accounts/international-withdrawal", search: { currency: value } })} /></div>
+      <WithdrawalWorkspace key={`${data.country}:${currency}`} country={data.country} currency={currency} available={account?.balance.available ?? 0} ngnEnabled={gate.enabled} history={history} />
     </main>
   </div>;
 }
