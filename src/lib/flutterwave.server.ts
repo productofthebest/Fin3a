@@ -230,6 +230,18 @@ export type VerifiedBillStatus = z.infer<typeof billHistoryEntrySchema>;
  * The history API is filtered by our unique customer reference; only one exact
  * NGN match is accepted. No match or multiple matches stays unresolved.
  */
+/** Reads a bill's provider status using the Flutterwave tx_ref returned at initiation. */
+export async function getBillStatusByTxRef(txRef: string) {
+  if (!txRef || txRef.length > 200) throw new Error("INVALID_PROVIDER_REFERENCE");
+  const data = await flw<unknown>(`/bills/${encodeURIComponent(txRef)}?verbose=1`);
+  const parsed = billHistoryEntrySchema.safeParse(data);
+  if (!parsed.success) throw new Error("PROVIDER_ERROR");
+  return parsed.data;
+}
+
+/** Recovers a bill when persisting its provider tx_ref failed. Query every terminal status:
+ * Flutterwave's history endpoint defaults to Successful if status is omitted.
+ */
 export async function findBillStatusByCustomerReference(
   customerReference: string,
   fromDate: string,
@@ -237,25 +249,37 @@ export async function findBillStatusByCustomerReference(
 ) {
   if (
     !/^F3B-[0-9a-f-]{36}$/.test(customerReference) ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(toDate)
+    !/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate) ||
+    !/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)
   ) {
     throw new Error("INVALID_BILL_RECOVERY_QUERY");
   }
-  const query = new URLSearchParams({
-    reference: customerReference,
-    country: "NG",
-    from: fromDate,
-    to: toDate,
-    page: "1",
-    limit: "10",
-  });
-  const rows = await flw<unknown>(`/bills/history?${query.toString()}`);
-  const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
-  if (!parsed.success) throw new Error("PROVIDER_ERROR");
-  const matches = parsed.data.filter(
-    (row) => row.customer_reference === customerReference && (!row.country || row.country === "NG"),
+  const statuses = ["Successful", "Failed", "Reversed"] as const;
+  const results = await Promise.all(
+    statuses.map(async (status) => {
+      const query = new URLSearchParams({
+        status,
+        reference: customerReference,
+        country: "NG",
+        from: fromDate,
+        to: toDate,
+        page: "1",
+        limit: "10",
+      });
+      const rows = await flw<unknown>(`/bills/history?${query.toString()}`);
+      const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
+      if (!parsed.success) throw new Error("PROVIDER_ERROR");
+      return parsed.data;
+    }),
   );
-  if (matches.length !== 1) return null;
-  return matches[0];
+  const matches = results
+    .flat()
+    .filter(
+      (row) =>
+        row.customer_reference === customerReference &&
+        (!row.country || row.country === "NG"),
+    );
+  const unique = [...new Map(matches.map((row) => [row.tx_ref, row])).values()];
+  if (unique.length !== 1) return null;
+  return unique[0];
 }
