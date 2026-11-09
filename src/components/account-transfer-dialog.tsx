@@ -35,7 +35,6 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
   const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [localBeneficiaryName, setLocalBeneficiaryName] = useState("");
-  const [localBankName, setLocalBankName] = useState("");
   const [localBankCode, setLocalBankCode] = useState("");
   const [localBanks, setLocalBanks] = useState<{ id: string; code: string; name: string; hasBranches: boolean }[]>([]);
   const [localBranches, setLocalBranches] = useState<{ code: string; name: string }[]>([]);
@@ -146,7 +145,6 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
           <Select value={localBankCode} onValueChange={value => {
             setLocalBankCode(value);
             const selected = localBanks.find(bank => bank.code === value);
-            setLocalBankName(selected?.name ?? "");
             if (selected) void loadLocalBranches(selected.id);
           }}>
             <SelectTrigger id="local-bank-select"><SelectValue placeholder={localBankLoading ? "Loading banks…" : "Select recipient bank"} /></SelectTrigger>
