@@ -25,6 +25,10 @@ export const createNgnWithdrawal = createServerFn({ method: "POST" })
   .inputValidator(input => withdrawalInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    // The current profile model has no verified legal-name/KYC field. A bank
+    // account-name lookup alone cannot prove ownership. Fail closed until Fin3a
+    // can compare the resolved bank holder with a verified identity record.
+    return { ok: false as const, error: "Withdrawals are unavailable until your bank account can be matched to your verified Fin3a identity." };
     // Fail closed before rate counting, provider resolution or any ledger reservation.
     if (!withdrawalsEnabled(process.env)) return { ok: false as const, error: WITHDRAWALS_LOCKED };
     const { data: previous, error: previousError } = await supabase.from("ngn_withdrawals")
