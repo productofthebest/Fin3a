@@ -1,5 +1,5 @@
 // Server-only: applies Flutterwave-verified bill payment outcomes. Never trust request bodies for status/amount.
-import { findBillStatusByCustomerReference, type VerifiedBillStatus } from "./flutterwave.server";
+import { findBillStatusByCustomerReference, getBillStatusByTxRef, type VerifiedBillStatus } from "./flutterwave.server";
 
 function outcome(status: string): "successful" | "failed" | "pending" {
   const s = status.toLowerCase();
@@ -44,7 +44,7 @@ export async function refreshBillPayment(
 ) {
   const from = new Date(Date.parse(createdAt) - 86_400_000).toISOString().slice(0, 10);
   const to = new Date().toISOString().slice(0, 10);
-  const recovered = await findBillStatusByCustomerReference(reference, from, to);
+  const recovered = providerTxId\n    ? await getBillStatusByTxRef(providerTxId)\n    : await findBillStatusByCustomerReference(reference, from, to);
   if (!recovered) return { status: "pending" };
   if (providerTxId && recovered.tx_ref !== providerTxId) {
     throw new Error("PROVIDER_REFERENCE_MISMATCH");
