@@ -15,10 +15,9 @@ import { getBankPayoutCapability } from "@/lib/flutterwave-capabilities";
 export function AccountTransferDialog({ open, onOpenChange, balances, country }: { open: boolean; onOpenChange: (open: boolean) => void; balances: { currency: string; balance: { available: number } }[]; country: string }) {
   const qc = useQueryClient();
   const options = [...new Set(balances.map(a => a.currency))];
-  const local = balances.find(a => a.currency !== "NGN" && a.currency !== "USD")?.currency;
   const [selectedCurrency, setCurrency] = useState<string>(options[0] ?? "USD");
   const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "USD");
-  const currencyTransferEnabled = currency === "NGN" || currency === "USD";
+  const currencyTransferEnabled = options.includes(currency) && /^[A-Z]{3}$/.test(currency);
   const [identifier, setIdentifier] = useState("");
   const [recipient, setRecipient] = useState<ResolvedParticipant | null>(null);
   const [amount, setAmount] = useState("");
@@ -81,7 +80,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
     if (!recipient || !valid || busy) return;
     setBusy(true);
     try {
-      await sendTransfer({ data: { toUserId: recipient.user_id, currency: currency as "NGN" | "USD", amount: Number(amount) } });
+      await sendTransfer({ data: { toUserId: recipient.user_id, currency, amount: Number(amount) } });
       await qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success("Transfer completed.");
       setAmount(""); setRecipient(null); setIdentifier(""); setConfirming(false); onOpenChange(false);
@@ -144,14 +143,13 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
       </> : mode === "fin3a" ? <>
         <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{options.map(c => <Button key={c} variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c}</Button>)}</div>
         {!currencyTransferEnabled && <p role="status" className="text-xs text-muted-foreground">{currency} Fin3a-user transfers are not activated yet. The wallet is visible, but sending is disabled until the currency is supported by the secure ledger transfer function.</p>}
-        {local && <p className="text-xs text-muted-foreground">{local} bank payouts and transfers are being added; provider country coverage alone does not activate them.</p>}
         <p className="text-sm text-muted-foreground">Available: {money(available)}</p>
         <Label htmlFor="transfer-recipient">Fin3a ID, email or phone number</Label>
         <Input id="transfer-recipient" value={identifier} onChange={e => { setIdentifier(e.target.value); setRecipient(null); }} maxLength={254} />
         <Button variant="outline" disabled={busy || identifier.trim().length < 3} onClick={() => void findRecipient()}>{busy ? "Finding…" : "Find user"}</Button>
         <SendToContact disabled={busy} recipients={recipient ? [recipient] : []} onSelect={value => { setIdentifier(value); void findRecipient(value); }} />
         {recipient && <p role="status" className="break-words text-sm">{recipient.display_name ?? "Fin3a user"} · {recipient.fin3a_id}</p>}
-        <Label htmlFor="transfer-amount">Amount ({currency === "NGN" ? "₦" : "$"})</Label>
+        <Label htmlFor="transfer-amount">Amount ({new Intl.NumberFormat("en", { style: "currency", currency, currencyDisplay: "narrowSymbol" }).formatToParts(0).find(part => part.type === "currency")?.value ?? currency})</Label>
         <Input id="transfer-amount" type="number" min="0.01" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
         <Button disabled={busy || !valid} onClick={() => setConfirming(true)}>Review transfer</Button>
       </> : null}
