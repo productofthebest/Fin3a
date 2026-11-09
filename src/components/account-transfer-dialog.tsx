@@ -10,11 +10,13 @@ import { canTransfer } from "@/lib/account-transfer";
 import { getNigerianBanks, verifyBankAccount } from "@/lib/bank-transfer.functions";
 import { createNgnWithdrawal } from "@/lib/ngn-withdrawal.functions";
 import { SendToContact } from "@/components/send-to-contact";
-import { getBankPayoutCapability } from "@/lib/flutterwave-capabilities";
+import { accountCurrencies } from "@/lib/country-currency";
 
 export function AccountTransferDialog({ open, onOpenChange, balances, country }: { open: boolean; onOpenChange: (open: boolean) => void; balances: { currency: string; balance: { available: number } }[]; country: string }) {
   const qc = useQueryClient();
-  const options = [...new Set(balances.map(a => a.currency))];
+  const countryCode = country.trim().toUpperCase();
+  const availableCurrencies = new Set(balances.map(account => account.currency));
+  const options = accountCurrencies(countryCode).filter(currency => availableCurrencies.has(currency));
   const [selectedCurrency, setCurrency] = useState<string>(options[0] ?? "USD");
   const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "USD");
   const currencyTransferEnabled = options.includes(currency) && /^[A-Z]{3}$/.test(currency);
@@ -23,10 +25,8 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [selectedMode, setMode] = useState<"fin3a" | "bank" | "international" | null>(null);
+  const [selectedMode, setMode] = useState<"fin3a" | "bank" | null>(null);
   const mode = selectedMode;
-  const countryCode = country.trim().toUpperCase();
-  const payout = getBankPayoutCapability(countryCode);
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
@@ -90,7 +90,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
 
   return <Dialog open={open} onOpenChange={value => { if (!busy) { setConfirming(false); onOpenChange(value); } }}>
     <DialogContent className="fixed inset-0 left-0 top-0 z-50 flex h-[100dvh] w-screen max-h-[100dvh] max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none border-0 p-4 sm:max-w-none">
-      <DialogHeader><DialogTitle>{confirming ? "Confirm transfer" : "Transfer"}</DialogTitle><DialogDescription>{mode === "bank" ? "Send from your NGN wallet to a Nigerian bank account." : mode === "international" ? "Choose a supported payout route for your country." : "Send to another Fin3a user."}</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>{confirming ? "Confirm transfer" : "Transfer"}</DialogTitle><DialogDescription>{mode === "bank" ? "Send from your NGN wallet to a Nigerian bank account." : "Send to another Fin3a user."}</DialogDescription></DialogHeader>
       {!confirming && <div className="grid grid-cols-2 gap-3" role="group" aria-label="Transfer destination">
         <button type="button" aria-pressed={mode === "fin3a"} onClick={() => setMode("fin3a")} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "fin3a" ? "border-primary bg-primary/5" : "border-border bg-card")}>
           <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">F</span><span className="text-xs text-muted-foreground">{mode === "fin3a" ? "Selected" : "Tap to select"}</span></span>
@@ -100,26 +100,8 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
           <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">₦</span><span className="text-xs text-muted-foreground">{mode === "bank" ? "Selected" : "Tap to select"}</span></span>
           <span className="mt-3 block text-sm font-semibold">NGN Banks</span><span className="mt-1 block text-xs text-muted-foreground">Pay out to Nigerian bank accounts</span>
         </button>}
-        {countryCode !== "NG" && payout && <button type="button" aria-pressed={mode === "international"} onClick={() => setMode("international")} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "international" ? "border-primary bg-primary/5" : "border-border bg-card")}>
-          <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">{payout.currency}</span><span className="text-xs text-muted-foreground">{mode === "international" ? "Selected" : "Tap to select"}</span></span>
-          <span className="mt-3 block text-sm font-semibold">{payout.name} payout</span><span className="mt-1 block text-xs text-muted-foreground">Local bank transfer in {payout.currency}</span>
-        </button>}
       </div>}
-      {mode === "international" && !confirming ? <section className="space-y-3" aria-label="International bank payout">
-        <div>
-          <h3 className="text-base font-semibold">{payout?.name} bank payout</h3>
-          <p className="text-sm text-muted-foreground">Local bank transfer in {payout?.currency}</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="international-bank">Bank</Label>
-          <Input id="international-bank" disabled placeholder="International bank selection coming soon" />
-          <Label htmlFor="international-account">Account number</Label>
-          <Input id="international-account" disabled placeholder="Account details unavailable" />
-          <Label htmlFor="international-amount">Amount ({payout?.currency})</Label>
-          <Input id="international-amount" disabled placeholder="Payout setup pending" />
-        </div>
-        <p role="status" className="text-xs text-muted-foreground">International bank payouts are not enabled for transfers yet. These details are shown for the selected payout route; submitting a payout is currently unavailable.</p>
-      </section> : mode === "bank" && !confirming ? <>
+      {mode === "bank" && !confirming ? <>
         <p className="text-sm text-muted-foreground">Available: {new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(balances.find(a => a.currency === "NGN")?.balance.available ?? 0)}</p>
         <Label htmlFor="bank-name">Bank</Label>
         <Input id="bank-name" list="ng-banks" value={bankName} onChange={e => { setBankName(e.target.value); setAccountName(null); }} onFocus={() => void loadBanks()} maxLength={80} placeholder={banks.length ? "Search your bank" : "Loading banks…"} />
@@ -141,7 +123,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
         <Button disabled={busy || !valid} onClick={() => void transfer()}>{busy ? "Sending…" : "Confirm transfer"}</Button>
         <Button variant="outline" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
       </> : mode === "fin3a" ? <>
-        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{options.map(c => <Button key={c} variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c}</Button>)}</div>
+        {options.length > 1 ? <div className="grid grid-cols-2 gap-2" role="group" aria-label="Transfer currency">{options.map(c => <Button key={c} type="button" variant={currency === c ? "default" : "outline"} aria-pressed={currency === c} onClick={() => setCurrency(c)}>{c}</Button>)}</div> : options.length === 1 ? <div className="grid grid-cols-1"><Button type="button" variant="default" aria-pressed="true" disabled>{options[0]}</Button></div> : <p role="status" className="text-sm text-muted-foreground">No supported fiat wallet is available for transfer.</p>}
         {!currencyTransferEnabled && <p role="status" className="text-xs text-muted-foreground">{currency} Fin3a-user transfers are not activated yet. The wallet is visible, but sending is disabled until the currency is supported by the secure ledger transfer function.</p>}
         <p className="text-sm text-muted-foreground">Available: {money(available)}</p>
         <Label htmlFor="transfer-recipient">Fin3a ID, email or phone number</Label>
