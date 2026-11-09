@@ -1,27 +1,50 @@
 import { describe, expect, it } from "vitest";
 import { withdrawalOptions } from "./withdrawal-options";
 
-describe("country-scoped withdrawal presentation", () => {
-  it("keeps Withdraw visible and selects existing NGN only for Nigeria/NGN", () => {
-    expect(withdrawalOptions("NG", "NGN", false)).toMatchObject({ visible: true, ngn: true, bankEnabled: false });
+describe("country- and currency-scoped withdrawal presentation", () => {
+  it("shows only bank withdrawal for Nigeria's NGN wallet and preserves its feature gate", () => {
+    expect(withdrawalOptions("NG", "NGN", false)).toMatchObject({
+      visible: true, ngn: true, bankEnabled: false, showBankMethod: true, showCryptoMethod: false, defaultMethod: "bank",
+    });
     expect(withdrawalOptions("NG", "NGN", true).bankEnabled).toBe(true);
-    expect(withdrawalOptions("GH", "NGN", true).ngn).toBe(false);
   });
 
-  it("changes local currency without enabling unverified corridors", () => {
-    expect(withdrawalOptions("GH", "GHS", true)).toMatchObject({ currency: "GHS", ngn: false, bankEnabled: false, localBankEnabled: false });
-    expect(withdrawalOptions("GB", "GBP", true)).toMatchObject({ currency: "GBP", bankEnabled: false, localBankEnabled: false });
+  it("shows only bank withdrawal for non-US local-fiat wallets", () => {
+    expect(withdrawalOptions("GH", "GHS", true)).toMatchObject({
+      currency: "GHS", ngn: false, bankEnabled: false, localBankEnabled: false,
+      showBankMethod: true, showCryptoMethod: false, defaultMethod: "bank",
+    });
+    expect(withdrawalOptions("GB", "GBP", true)).toMatchObject({
+      showBankMethod: true, showCryptoMethod: false, defaultMethod: "bank",
+    });
   });
 
-  it("restricts USD bank context to US/USD and requires an explicit merchant route", () => {
-    expect(withdrawalOptions("US", "USD", true)).toMatchObject({ usd: true, bankEnabled: false, localBankEnabled: false });
+  it("shows only crypto withdrawal for non-US USD wallets", () => {
+    for (const [country, currency] of [["NG", "USD"], ["GH", "USD"], ["GB", "USD"], ["EC", "USD"]]) {
+      expect(withdrawalOptions(country, currency, true)).toMatchObject({
+        showBankMethod: false, showCryptoMethod: true, defaultMethod: "crypto",
+      });
+    }
+  });
+
+  it("shows both bank and crypto withdrawal for the US's single USD wallet", () => {
+    expect(withdrawalOptions("US", "USD", true)).toMatchObject({
+      usd: true, showBankMethod: true, showCryptoMethod: true, defaultMethod: "bank",
+      bankEnabled: false, localBankEnabled: false,
+    });
     expect(withdrawalOptions("US", "USD", true, [{ country: "US", currency: "USD", enabled: true }]).localBankEnabled).toBe(true);
-    expect(withdrawalOptions("NG", "USD", true).usd).toBe(false);
-    expect(withdrawalOptions("US", "NGN", true).usd).toBe(false);
-    expect(withdrawalOptions("EC", "USD", true).usd).toBe(false);
   });
 
-  it("enables other local fiat only for an exact, explicitly enabled merchant corridor", () => {
+  it("does not expose methods for a currency that does not belong to the selected country", () => {
+    expect(withdrawalOptions("US", "NGN", true)).toMatchObject({
+      showBankMethod: false, showCryptoMethod: false,
+    });
+    expect(withdrawalOptions("NG", "GHS", true)).toMatchObject({
+      showBankMethod: false, showCryptoMethod: false,
+    });
+  });
+
+  it("requires an exact, explicitly enabled merchant route for non-NGN bank payout readiness", () => {
     const enabled = [{ country: "GH", currency: "GHS", enabled: true as const }];
     expect(withdrawalOptions("GH", "GHS", true, enabled).localBankEnabled).toBe(true);
     expect(withdrawalOptions("GH", "USD", true, enabled).localBankEnabled).toBe(false);
