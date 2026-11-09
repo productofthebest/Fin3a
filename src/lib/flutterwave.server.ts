@@ -249,8 +249,8 @@ export async function findBillStatusByCustomerReference(
 ) {
   if (
     !/^F3B-[0-9a-f-]{36}$/.test(customerReference) ||
-    !/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate) ||
-    !/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)
+    !/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(toDate)
   ) {
     throw new Error("INVALID_BILL_RECOVERY_QUERY");
   }
