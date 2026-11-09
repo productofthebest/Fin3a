@@ -43,13 +43,11 @@ const methodLabel: Record<string, string> = {
 
 function Page() {
   const { data } = useSuspenseQuery(overview);
-  const options = [accountCurrencies(data.country)[0] ?? "NGN"];
-  const [selectedCurrency, setCurrency] = useState<string>(options[0] ?? "NGN");
-  const currency = options.includes(selectedCurrency) ? selectedCurrency : (options[0] ?? "NGN");
+  const currency = accountCurrencies(data.country)[0] ?? "NGN";
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const country = (data.country ?? "NG").toUpperCase();
   const collection = getCollectionCapability(country);
   const collectionMethods = getDepositCollectionMethods(country, currency);
-  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
   const visibleCollectionMethods = country === "NG"
     ? collectionMethods.filter(method => !hiddenNgnDepositMethods.has(method))
@@ -78,7 +76,6 @@ function Page() {
       <div className="mb-7 flex size-12 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary"><ShieldCheck className="size-6" /></div>
       <h1 className="font-display text-3xl font-semibold">Deposit</h1>
       <p className="mt-2 text-sm text-muted-foreground">Choose how you want to add {currency} to your {country} balance.</p>
-      <div className="mb-5 grid grid-cols-2 gap-2" role="group" aria-label="Balance currency">{options.map(v => <Button key={v} variant={currency === v ? "default" : "outline"} aria-pressed={currency === v} onClick={() => setCurrency(v)}>{v} {v === "NGN" ? "₦" : v === "USD" ? "$" : ""}</Button>)}</div>
 
       <section aria-label="Choose deposit method" className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Payment method</h2>
