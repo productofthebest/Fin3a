@@ -35,6 +35,7 @@ jobs:
       - name: Run test suite
         run: bun run test
       - name: Compare full lint against main baseline
+        if: always()
         shell: bash
         run: |
           git fetch origin main
@@ -63,6 +64,7 @@ jobs:
           }));
           NODE
       - name: Lint PR-modified application files (non-format rules)
+        if: always()
         run: >-
           bunx eslint
           src/lib/flutterwave.server.ts
