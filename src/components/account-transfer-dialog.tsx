@@ -132,10 +132,6 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
             <Label htmlFor="local-sort-code">Sort code</Label>
             <Input id="local-sort-code" inputMode="numeric" maxLength={8} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value)} placeholder="00-00-00" />
           </>}
-          {countryCode === "US" && <>
-            <Label htmlFor="local-routing-number">Routing number</Label>
-            <Input id="local-routing-number" inputMode="numeric" maxLength={9} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value.replace(/\\D/g, "").slice(0, 9))} placeholder="9-digit routing number" />
-          </>}
           {(countryCode === "EU" || ["AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"].includes(countryCode)) && <>
             <Label htmlFor="local-iban">IBAN</Label>
             <Input id="local-iban" autoCapitalize="characters" maxLength={34} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value.toUpperCase().replace(/\\s/g, ""))} placeholder="Recipient IBAN" />
