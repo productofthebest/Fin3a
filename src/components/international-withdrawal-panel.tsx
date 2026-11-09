@@ -40,9 +40,21 @@ const BANK_FIELDS: Record<string, Field[]> = {
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
+  TZ: [
+    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
+    { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
+    { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+  ],
+  UG: [
+    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
+    { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
+    { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+  ],
 };
 const SEPA_COUNTRIES = ["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"];
-const BANK_CODE_COUNTRIES = ["CM", "CI", "SN", "MW", "TZ", "UG"];
+const BANK_CODE_COUNTRIES = ["CM", "CI", "SN", "MW"];
 const fieldsFor = (country: string): Field[] => BANK_FIELDS[country] ?? (SEPA_COUNTRIES.includes(country) ? [
   { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
   { name: "iban", label: "IBAN", placeholder: "International bank account number" },
