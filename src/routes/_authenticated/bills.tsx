@@ -45,6 +45,7 @@ function BillPaymentServices() {
   const [confirming, setConfirming] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
   const [finalStatus, setFinalStatus] = useState<string | null>(null);
+  const [checkingReference, setCheckingReference] = useState<string | null>(null);
 
   const category = selected?.id as BillCategory | undefined;
   const { data: billerData, isFetching: billersLoading } = useQuery({
@@ -87,6 +88,25 @@ function BillPaymentServices() {
       toast.success("Payment started. We'll confirm when the biller completes it.");
     } catch { toast.error("Payment could not be started. No money was moved."); setConfirming(false); }
     finally { setBusy(false); }
+  }
+
+  async function refreshHistoryPayment(paymentReference: string) {
+    if (checkingReference) return;
+    setCheckingReference(paymentReference);
+    try {
+      const result = await checkBillPayment({ data: { reference: paymentReference } });
+      await queryClient.invalidateQueries({ queryKey: ["bill-payments"] });
+      if (result.status !== "pending") {
+        await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+        toast.success(result.status === "successful" ? "Bill payment confirmed." : "Bill payment failed; reserved funds were released.");
+      } else {
+        toast.message("The biller has not confirmed this payment yet. Your balance remains reserved.");
+      }
+    } catch {
+      toast.error("Status check failed. Your payment remains pending; please try again.");
+    } finally {
+      setCheckingReference(null);
+    }
   }
 
   async function refresh() {
@@ -181,6 +201,11 @@ function BillPaymentServices() {
                 <span className="min-w-0 flex-1 truncate">{p.billerName} · {p.customer}</span>
                 <span className="tabular-nums">{ngn(p.amount)}</span>
                 <span className={`text-xs ${p.status === "successful" ? "text-primary" : p.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}>{p.status}</span>
+                {p.status === "pending" && (
+                  <Button size="sm" variant="outline" disabled={checkingReference !== null} onClick={() => void refreshHistoryPayment(p.reference)}>
+                    {checkingReference === p.reference ? "Checking…" : "Check status"}
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

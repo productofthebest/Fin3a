@@ -54,4 +54,29 @@ describe("Flutterwave V3 bill payments", () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain("reference=F3B-12345678-1234-1234-1234-123456789012");
     expect(result?.tx_ref).toBe("CF-FLYAPI-202611091200001234");
     expect(result?.status).toBe("Successful");
+  });
+
+  it("does not recover when bill history returns a different merchant reference", async () => {
+    vi.stubEnv("FLW_SECRET_KEY", "test-secret");
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      status: "success",
+      data: [{
+        currency: "NGN",
+        customer_id: "08012345678",
+        amount: "500.00",
+        tx_ref: "CF-FLYAPI-202611091200001234",
+        customer_reference: "F3B-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        status: "Successful",
+        country: "NG",
+      }],
+    }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await findBillStatusByCustomerReference(
+      "F3B-12345678-1234-1234-1234-123456789012",
+      "2026-11-08",
+      "2026-11-09",
+    );
+
+    expect(result).toBeNull();
   });});

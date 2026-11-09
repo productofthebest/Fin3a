@@ -69,6 +69,7 @@ jobs:
           src/lib/bills-pay.server.ts
           src/lib/bills-pay.functions.ts
           src/lib/flutterwave-bills.test.ts
+          src/routes/_authenticated/bills.tsx
           --rule 'prettier/prettier: off'
       - name: Build production application
         if: always()
