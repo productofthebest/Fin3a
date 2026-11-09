@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { AccountTransferDialog } from "@/components/account-transfer-dialog";
-import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users, Globe } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, Share2, Users, Globe } from "lucide-react";
 
 const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -156,13 +156,6 @@ function Page() {
 
       <section className="mt-10">
         <h2 className="font-display text-xl font-semibold">Crypto Addresses</h2>
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-primary" />
-          <p>
-            Always send funds through the exact network shown for each address. Sending through a different network can
-            permanently lose your funds.
-          </p>
-        </div>
         <div ref={walletsRef} className="mt-4 grid items-start gap-4 sm:grid-cols-2">
           {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
               <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
