@@ -35,12 +35,23 @@ export function withdrawalOptions(
       route.currency.trim().toUpperCase() === selectedCurrency,
   );
   const localBankEnabled = isLocalFiatContext && verifiedBankRoute;
+
+  // Non-US users see bank withdrawal on a non-USD local wallet and crypto
+  // withdrawal on their USD wallet. The US has one USD wallet and sees both.
+  // Countries whose local currency is USD (for example Ecuador) follow the
+  // non-US USD-wallet rule and therefore see crypto only.
+  const showBankMethod = isUsUsd || (local !== "USD" && isLocalFiatContext);
+  const showCryptoMethod = selectedCurrency === "USD";
+
   return {
     visible: true,
     ngn: isNigeriaNgn,
     usd: isUsUsd,
     currency: local ?? null,
     localFiat: isLocalFiatContext,
+    showBankMethod,
+    showCryptoMethod,
+    defaultMethod: showBankMethod ? ("bank" as const) : ("crypto" as const),
     // Existing NGN form has its own reviewed implementation and feature gate.
     bankEnabled: isNigeriaNgn && ngnEnabled,
     // For other corridors, exact merchant enablement is mandatory. The frontend
