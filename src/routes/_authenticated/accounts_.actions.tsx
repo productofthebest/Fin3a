@@ -78,7 +78,7 @@ function Page() {
       <p className="mt-2 text-sm text-muted-foreground">Choose how you want to add {currency} to your {country} balance.</p>
 
       <section aria-label="Choose deposit method" className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">Payment method</h2>
+        
         <div className="grid grid-cols-2 gap-3">
           {paymentCards.map(({ id, label, description, Icon }) => {
             const active = selectedMethod === id;
