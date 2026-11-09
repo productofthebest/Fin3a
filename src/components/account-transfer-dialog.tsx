@@ -116,7 +116,6 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
       </div>}
       {mode === "local_bank" && !confirming ? <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Local country transfer recipient details">
         {localBankCapability ? <>
-          <p className="font-medium">Local country transfer · {localBankCapability.name} ({localBankCapability.currency})</p>
           <p className="text-sm text-muted-foreground">Enter the recipient's bank details.</p>
           <Label htmlFor="local-beneficiary-name">Recipient full name</Label>
           <Input id="local-beneficiary-name" autoComplete="name" maxLength={120} value={localBeneficiaryName} onChange={e => setLocalBeneficiaryName(e.target.value)} placeholder="Name on bank account" />
