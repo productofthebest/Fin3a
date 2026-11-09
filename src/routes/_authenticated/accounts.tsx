@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { AccountTransferDialog } from "@/components/account-transfer-dialog";
-import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, AlertTriangle, Share2, Users, Globe } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, Share2, Users, Globe } from "lucide-react";
 
 const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
