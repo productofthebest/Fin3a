@@ -103,16 +103,15 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
           <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">₦</span><span className="text-xs text-muted-foreground">{mode === "bank" ? "Selected" : "Tap to select"}</span></span>
           <span className="mt-3 block text-sm font-semibold">NGN Banks</span><span className="mt-1 block text-xs text-muted-foreground">Pay out to Nigerian bank accounts</span>
         </button>}
-        {localBankCapability && <button type="button" aria-pressed={mode === "local_bank"} onClick={() => setMode("local_bank")} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "local_bank" ? "border-primary bg-primary/5" : "border-border bg-card")}>
-          <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">{localBankCapability.currency}</span><span className="text-xs text-muted-foreground">{mode === "local_bank" ? "Selected" : "Tap to select"}</span></span>
-          <span className="mt-3 block text-sm font-semibold">Local bank transfer</span><span className="mt-1 block text-xs text-muted-foreground">Send to a {localBankCapability.name} bank account</span>
+        {countryCode !== "NG" && <button type="button" aria-pressed={mode === "local_bank"} onClick={() => setMode("local_bank")} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "local_bank" ? "border-primary bg-primary/5" : "border-border bg-card")}>
+          <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">{localBankCapability?.currency ?? "—"}</span><span className="text-xs text-muted-foreground">{mode === "local_bank" ? "Selected" : "Tap to select"}</span></span>
+          <span className="mt-3 block text-sm font-semibold">Flutterwave bank transfer</span><span className="mt-1 block text-xs text-muted-foreground">{localBankCapability ? `${localBankCapability.name} · ${localBankCapability.currency}` : "Unavailable"}</span>
         </button>}
       </div>}
-      {mode === "local_bank" && !confirming ? <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Local bank transfer availability">
-        <p className="font-medium">{localBankCapability?.name} · {localBankCapability?.currency}</p>
-        <p className="text-sm text-muted-foreground">Flutterwave documents bank payouts for this destination. Fin3a has not yet completed production merchant-route approval, settlement verification, country-specific bank-code validation and reconciliation testing for this route.</p>
-        <p className="text-sm text-muted-foreground">Bank details and transfer submission will become available only after those checks are completed. No money can be moved through this option yet.</p>
-        <Button variant="outline" disabled>Local bank transfer not yet enabled</Button>
+      {mode === "local_bank" && !confirming ? <section className="rounded-xl border border-border p-4" aria-label="Flutterwave bank transfer support">
+        {localBankCapability
+          ? <p className="text-sm">{localBankCapability.name} · {localBankCapability.currency} — Flutterwave bank-transfer API support.</p>
+          : <p className="text-sm">Unavailable</p>}
       </section> : null}
       {mode === "bank" && !confirming ? <>
         <p className="text-sm text-muted-foreground">Available: {new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(balances.find(a => a.currency === "NGN")?.balance.available ?? 0)}</p>
