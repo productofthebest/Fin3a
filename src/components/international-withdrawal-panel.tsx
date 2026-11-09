@@ -30,8 +30,9 @@ const BANK_FIELDS: Record<string, Field[]> = {
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
   GH: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
+    { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
   KE: [
@@ -87,7 +88,6 @@ export function InternationalWithdrawalPanel() {
       ))}
       {route && <Button className="w-full" variant="outline" disabled={!complete} onClick={validateDetails}>Check bank details</Button>}
       {route && validationMessage && <p role="status" className="text-sm text-muted-foreground">{validationMessage}</p>}
-      {!route && <p className="text-sm text-muted-foreground">Unavailable</p>}
     </> : <p className="text-sm text-muted-foreground">Unavailable</p>}
     <section className="border-t border-border pt-5" aria-label="Withdrawal history">
       <h2 className="font-display text-lg font-semibold">Recent withdrawals</h2>
