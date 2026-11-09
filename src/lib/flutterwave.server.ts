@@ -148,7 +148,7 @@ const billHistoryEntrySchema = z.object({
   customer_id: z.string().min(1).max(200),
   amount: z.union([
     z.number().finite(),
-    z.string().regex(/^\\d+(?:\\.\\d+)?$/).transform(Number),
+    z.string().regex(/^\d+(?:\.\d+)?$/).transform(Number),
   ]).transform(Number).refine(value => value > 0),
   tx_ref: z.string().min(1).max(200),
   customer_reference: z.string().min(1).max(200),
@@ -163,8 +163,8 @@ export type VerifiedBillStatus = z.infer<typeof billHistoryEntrySchema>;
  */
 export async function findBillStatusByCustomerReference(customerReference: string, fromDate: string, toDate: string) {
   if (!/^F3B-[0-9a-f-]{36}$/.test(customerReference)
-      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate)
-      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)) {
+      || !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)
+      || !/^\d{4}-\d{2}-\d{2}$/.test(toDate)) {
     throw new Error("INVALID_BILL_RECOVERY_QUERY");
   }
   const query = new URLSearchParams({
