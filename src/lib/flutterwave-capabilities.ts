@@ -73,8 +73,6 @@ export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "MW", name: "Malawi", currency: "MWK" },
   { country: "TZ", name: "Tanzania", currency: "TZS" },
   { country: "UG", name: "Uganda", currency: "UGX" },
-  { country: "RW", name: "Rwanda", currency: "RWF" },
-  { country: "EG", name: "Egypt", currency: "EGP" },
   { country: "CM", name: "Cameroon", currency: "XAF" },
   { country: "CI", name: "Côte d’Ivoire", currency: "XOF" },
   { country: "SN", name: "Senegal", currency: "XOF" },
