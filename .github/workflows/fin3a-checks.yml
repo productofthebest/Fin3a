@@ -81,7 +81,7 @@ jobs:
             const find = (rows) => rows.find(row => row.filePath.endsWith("/" + path));
             const before = find(mainRows);
             const after = find(branchRows);
-            const key = message => `${message.ruleId}::${message.message}`;
+            const key = message => `${message.ruleId}::${message.message}::${message.source ?? ""}`;
             const remaining = new Map();
             for (const message of before?.messages ?? []) {
               const value = key(message);
@@ -100,6 +100,7 @@ jobs:
               column: message.column,
               ruleId: message.ruleId,
               message: message.message,
+              source: message.source,
             }));
             focusIntroduced += addedMessages.length;
             console.log("FOCUS_LINT", JSON.stringify({
