@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getInternationalWithdrawalHistory, getInternationalWithdrawalOptions } from "@/lib/international-withdrawal.functions";
 import { findRoute, validateBeneficiary, type BeneficiaryInput } from "@/lib/international-payout-routes";
+import { getBankPayoutCapability } from "@/lib/flutterwave-capabilities";
 
 export const internationalOptions = queryOptions({ queryKey: ["international-withdrawal", "options"], queryFn: () => getInternationalWithdrawalOptions() });
 export const internationalHistory = queryOptions({ queryKey: ["international-withdrawal", "history"], queryFn: () => getInternationalWithdrawalHistory() });
@@ -39,21 +40,28 @@ const BANK_FIELDS: Record<string, Field[]> = {
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
 };
-const fieldsFor = (country: string): Field[] => BANK_FIELDS[country] ?? [
-  { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
+const SEPA_COUNTRIES = ["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"];
+const BANK_CODE_COUNTRIES = ["CM", "CI", "SN", "MW", "TZ", "UG"];
+const fieldsFor = (country: string): Field[] => BANK_FIELDS[country] ?? (SEPA_COUNTRIES.includes(country) ? [
+  { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
   { name: "iban", label: "IBAN", placeholder: "International bank account number" },
   { name: "swiftCode", label: "SWIFT / BIC", placeholder: "Bank identifier code" },
-];
+] : BANK_CODE_COUNTRIES.includes(country) ? [
+  { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+  { name: "bankCode", label: "Bank code", placeholder: "Country-specific bank code" },
+  { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+] : []);
 
 export function InternationalWithdrawalPanel() {
   const { data } = useSuspenseQuery(internationalOptions);
   const { data: history } = useSuspenseQuery(internationalHistory);
+  const capability = getBankPayoutCapability(data.country);
   const route = data.routes.find(r => r.method === "bank");
-  const fields = useMemo(() => fieldsFor(data.country), [data.country]);
+  const fields = useMemo(() => capability ? fieldsFor(data.country) : [], [capability, data.country]);
   const [beneficiary, setBeneficiary] = useState<Partial<Record<FieldName, string>>>({});
   const [validationMessage, setValidationMessage] = useState("");
   const complete = fields.every(field => Boolean(beneficiary[field.name]?.trim()));
-  const currency = route?.currency ?? null;
+  const currency = capability?.currency ?? null;
 
   function validateDetails() {
     if (!route || !currency || !complete) return;
@@ -67,7 +75,7 @@ export function InternationalWithdrawalPanel() {
   }
 
   return <section className="space-y-4" aria-label="Bank details">
-    {route && currency ? <>
+    {capability && currency && fields.length > 0 ? <>
       {fields.map(field => (
         <div key={field.name}>
           <Label htmlFor={`withdraw-${field.name}`}>{field.label}</Label>
@@ -77,9 +85,10 @@ export function InternationalWithdrawalPanel() {
           }} />
         </div>
       ))}
-      <Button className="w-full" variant="outline" disabled={!complete} onClick={validateDetails}>Check bank details</Button>
-      {validationMessage && <p role="status" className="text-sm text-muted-foreground">{validationMessage}</p>}
-    </> : <p className="text-sm text-muted-foreground">Bank detail fields are not configured for this country and currency.</p>}
+      {route && <Button className="w-full" variant="outline" disabled={!complete} onClick={validateDetails}>Check bank details</Button>}
+      {route && validationMessage && <p role="status" className="text-sm text-muted-foreground">{validationMessage}</p>}
+      {!route && <p className="text-sm text-muted-foreground">Unavailable</p>}
+    </> : <p className="text-sm text-muted-foreground">Unavailable</p>}
     <section className="border-t border-border pt-5" aria-label="Withdrawal history">
       <h2 className="font-display text-lg font-semibold">Recent withdrawals</h2>
       {history.unavailable ? <p className="mt-3 text-sm text-muted-foreground">History is temporarily unavailable.</p> : history.rows.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">No withdrawals yet.</p> : <ul className="divide-y divide-border">{history.rows.map(row => <li key={row.reference} className="py-3 text-sm"><div className="flex justify-between gap-3"><span>{row.currency} {(row.amount_minor / 10 ** row.exponent).toFixed(row.exponent)}</span><span>{row.status}</span></div><p className="mt-1 break-all text-xs text-muted-foreground">{row.reference}</p></li>)}</ul>}
