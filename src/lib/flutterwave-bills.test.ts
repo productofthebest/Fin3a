@@ -104,11 +104,13 @@ describe("Flutterwave V3 bill payments", () => {
 
   it("does not recover when bill history returns a different merchant reference", async () => {
     vi.stubEnv("FLW_SECRET_KEY", "test-secret");
-    const fetchMock = vi.fn().mockResolvedValue(
+    const fetchMock = vi.fn().mockImplementation(async () =>
       new Response(
         JSON.stringify({
           status: "success",
-          data: [billHistoryRow({ customer_reference: "F3B-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" })],
+          data: [
+            billHistoryRow({ customer_reference: "F3B-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }),
+          ],
         }),
         { status: 200 },
       ),
