@@ -17,7 +17,6 @@ export function WithdrawalWorkspace({ country, currency, available, ngnEnabled, 
   const methodCount = Number(options.showBankMethod) + Number(options.showCryptoMethod);
 
   return <div className="space-y-6">
-    <p className="text-sm text-muted-foreground">{country} · {currency} wallet</p>
     {methodCount > 0 && <div className={`grid grid-cols-${methodCount === 2 ? "2" : "1"} gap-2`} role="group" aria-label="Withdrawal method">
       {options.showBankMethod && <Button variant={method === "bank" ? "default" : "outline"} aria-pressed={method === "bank"} onClick={() => setMethod("bank")}>Bank withdrawal</Button>}
       {options.showCryptoMethod && <Button variant={method === "crypto" ? "default" : "outline"} aria-pressed={method === "crypto"} onClick={() => setMethod("crypto")}>Crypto withdrawal</Button>}
