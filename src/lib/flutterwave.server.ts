@@ -24,7 +24,7 @@ export async function listNigerianBanks() {
   const data = await flw<{ code: string; name: string }[]>("/banks/NG");
   const seen = new Set<string>();
   return data
-    .filter(b => b.code && b.name && !seen.has(b.code) && seen.add(b.code))
+    .filter((b) => b.code && b.name && !seen.has(b.code) && seen.add(b.code))
     .map(b => ({ code: b.code, name: b.name.trim() }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -274,8 +274,7 @@ export async function findBillStatusByCustomerReference(
   );
   const matches = results
     .flat()
-    .filter(
-      (row) =>
+    .filter((row) =>
         row.customer_reference === customerReference &&
         (!row.country || row.country === "NG"),
     );
