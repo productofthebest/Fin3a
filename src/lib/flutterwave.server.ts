@@ -143,6 +143,20 @@ const billPaySchema = z.object({
 });
 export type BillPayResult = z.infer<typeof billPaySchema>;
 
+const billHistoryEntrySchema = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  customer_id: z.string().min(1).max(200),
+  amount: z.union([
+    z.number().finite(),
+    z.string().regex(/^\\d+(?:\\.\\d+)?$/).transform(Number),
+  ]).transform(Number).refine(value => value > 0),
+  tx_ref: z.string().min(1).max(200),
+  customer_reference: z.string().min(1).max(200),
+  status: z.string().min(1).max(80),
+  country: z.string().max(4).optional(),
+});
+export type VerifiedBillStatus = z.infer<typeof billHistoryEntrySchema>;
+
 /** Looks up a bill by our merchant reference after a DB reference-write failure.
  * The history API is filtered by our unique customer reference; only one exact
  * NGN match is accepted. No match or multiple matches stays unresolved.
