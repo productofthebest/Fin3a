@@ -76,37 +76,42 @@ jobs:
           ];
           const mainRows = JSON.parse(fs.readFileSync("/tmp/fin3a-main-eslint.json", "utf8"));
           const branchRows = JSON.parse(fs.readFileSync("/tmp/fin3a-branch-eslint.json", "utf8"));
+          let focusIntroduced = 0;
           for (const path of focus) {
             const find = (rows) => rows.find(row => row.filePath.endsWith("/" + path));
             const before = find(mainRows);
             const after = find(branchRows);
+            const key = message => `${message.ruleId}::${message.message}`;
+            const remaining = new Map();
+            for (const message of before?.messages ?? []) {
+              const value = key(message);
+              remaining.set(value, (remaining.get(value) ?? 0) + 1);
+            }
+            const addedMessages = (after?.messages ?? []).filter(message => {
+              const value = key(message);
+              const count = remaining.get(value) ?? 0;
+              if (count > 0) {
+                remaining.set(value, count - 1);
+                return false;
+              }
+              return true;
+            }).map(message => ({
+              line: message.line,
+              column: message.column,
+              ruleId: message.ruleId,
+              message: message.message,
+            }));
+            focusIntroduced += addedMessages.length;
             console.log("FOCUS_LINT", JSON.stringify({
               path,
               mainErrors: before?.errorCount ?? 0,
               branchErrors: after?.errorCount ?? 0,
-              addedMessages: (() => {
-                const key = message => `${message.ruleId}::${message.message}`;
-                const remaining = new Map();
-                for (const message of before?.messages ?? []) {
-                  const value = key(message);
-                  remaining.set(value, (remaining.get(value) ?? 0) + 1);
-                }
-                return (after?.messages ?? []).filter(message => {
-                  const value = key(message);
-                  const count = remaining.get(value) ?? 0;
-                  if (count > 0) {
-                    remaining.set(value, count - 1);
-                    return false;
-                  }
-                  return true;
-                }).map(message => ({
-                  line: message.line,
-                  column: message.column,
-                  ruleId: message.ruleId,
-                  message: message.message,
-                }));
-              })(),
+              addedMessages,
             }));
+          }
+          if (focusIntroduced > 0) {
+            console.error("Changed payment files introduce lint findings compared with main.");
+            process.exitCode = 1;
           }
           NODE
       - name: Lint PR-modified application files (non-format rules)

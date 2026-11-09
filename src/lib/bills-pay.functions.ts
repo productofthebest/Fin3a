@@ -27,7 +27,7 @@ export const getBillBillers = createServerFn({ method: "GET" })
     if (cached && Date.now() - cached.at < CACHE_MS) return { billers: cached.rows, error: null as string | null };
     const { getBillCategories } = await import("./flutterwave.server");
     try {
-      const rows = (await getBillCategories(CATEGORY_QUERY[data.category])).map(b => ({
+      const rows = (await getBillCategories(CATEGORY_QUERY[data.category])).map((b) => ({
         billerCode: b.biller_code, itemCode: b.item_code, name: b.name, shortName: b.short_name ?? null, amount: b.amount ?? null, labelName: b.label_name ?? null,
       }));
       billerCache.set(data.category, { at: Date.now(), rows });

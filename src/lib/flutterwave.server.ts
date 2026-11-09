@@ -129,10 +129,13 @@ export async function getBillCategories(query: string) {
   return data.map(x => billerSchema.safeParse(x)).filter(p => p.success).map(p => p.data).filter(b => !b.country || b.country === "NG");
 }
 export async function validateBillCustomer(billerCode: string, itemCode: string, customer: string) {
-  const data = await flw<unknown>(`/billers/${encodeURIComponent(billerCode)}/items/${encodeURIComponent(itemCode)}/validate`, {
-    method: "POST",
-    body: JSON.stringify({ customer, code: itemCode }),
-  });
+  const data = await flw<unknown>(
+    `/billers/${encodeURIComponent(billerCode)}/items/${encodeURIComponent(itemCode)}/validate`,
+    {
+      method: "POST",
+      body: JSON.stringify({ customer, code: itemCode }),
+    },
+  );
   const parsed = z.object({ response_code: z.string().optional(), name: z.string().max(200).nullish() }).safeParse(data);
   return { valid: parsed.success, customerName: parsed.success ? (parsed.data.name ?? null) : null };
 }
