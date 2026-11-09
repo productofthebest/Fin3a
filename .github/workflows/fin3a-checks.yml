@@ -42,4 +42,15 @@ jobs:
           src/lib/fx-quotes.ts
           src/test/fx-quotes.test.ts
           src/test/flutterwave-db.test.ts
+          src/components/withdrawal-workspace.tsx
+          src/lib/withdrawal-options.ts
+          src/lib/withdrawal-options.test.ts
           --rule 'prettier/prettier: off'
+      - name: Check withdrawal file formatting
+        run: >-
+          bunx prettier --check
+          src/components/withdrawal-workspace.tsx
+          src/lib/withdrawal-options.ts
+          src/lib/withdrawal-options.test.ts
+      - name: Build production application
+        run: bun run build
