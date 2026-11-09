@@ -86,14 +86,17 @@ export const payBillFn = createServerFn({ method: "POST" })
     if (r.status === "existing") return { ok: true as const, reference: r.reference!, status: "pending" };
     if (r.status !== "reserved" || !r.reference) return { ok: false as const, error: "Bill payments are unavailable right now." };
     try {
-      const t = await payBill({ billerName: data.billerName, type: data.billerName, customer: data.customer, amount: Math.round(data.amount * 100) / 100, reference: r.reference });
-      if (t?.id) {
-        const { verifyPaymentById } = await import("./flutterwave.server");
-        const { applyBillCharge } = await import("./bills-pay.server");
-        try {
-          const verified = await verifyPaymentById(t.id);
-          await applyBillCharge(verified, r.reference);
-        } catch { /* Outcome unknown: funds stay reserved until verification succeeds. */ }
+      const amount = Math.round(data.amount * 100) / 100;
+      const t = await payBill({ billerCode: data.billerCode, itemCode: data.itemCode, customer: data.customer, amount, reference: r.reference });
+      // Persist Flutterwave's bill tx_ref before polling. If the status endpoint is
+      // temporarily unavailable, the user can safely check again without re-initiating.
+      const { error: referenceError } = await supabaseAdmin.rpc("finish_bill_payment", {
+        _reference: r.reference, _provider_tx_id: t.tx_ref, _outcome: "pending", _amount: amount, _currency: "NGN",
+      });
+      if (referenceError) console.error("bill provider reference could not be stored", referenceError.message);
+      else {
+        const { refreshBillPayment } = await import("./bills-pay.server");
+        await refreshBillPayment(r.reference, t.tx_ref).catch(() => null);
       }
       return { ok: true as const, reference: r.reference, status: "pending" };
     } catch (e) {

@@ -136,25 +136,56 @@ export async function validateBillCustomer(billerCode: string, itemCode: string,
   const parsed = z.object({ response_code: z.string().optional(), name: z.string().max(200).nullish() }).safeParse(data);
   return { valid: parsed.success, customerName: parsed.success ? (parsed.data.name ?? null) : null };
 }
-const billPaySchema = z.object({ id: providerId, tx_ref: z.string().min(1).max(200).nullish(), reference: z.string().min(1).max(200).nullish(), status: z.string().min(1).max(80), amount: money.nullish(), currency: z.string().max(10).nullish() });
+const billPaySchema = z.object({
+  tx_ref: z.string().min(1).max(200),
+  reference: z.string().min(1).max(200).nullish(),
+  amount: z.union([z.number().finite(), z.string().regex(/^\\d+(?:\\.\\d+)?$/).transform(Number)]).optional(),
+});
 export type BillPayResult = z.infer<typeof billPaySchema>;
-/** Pays a bill, debiting the Flutterwave balance. Throws ProviderRejected only on a clear refusal. */
-export async function payBill(input: { billerName: string; type: string; customer: string; amount: number; reference: string }) {
+
+const billStatusSchema = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  customer_id: z.string().min(1).max(200),
+  amount: z.union([z.number().finite(), z.string().regex(/^\\d+(?:\\.\\d+)?$/).transform(Number)]).transform(Number).refine(n => n > 0),
+  tx_ref: z.string().min(1).max(200),
+  customer_reference: z.string().min(1).max(200),
+  status: z.string().min(1).max(80).optional().default("pending"),
+});
+export type VerifiedBillStatus = z.infer<typeof billStatusSchema>;
+
+/** Initiates a bill payment using Flutterwave's biller/item-specific V3 endpoint. */
+export async function payBill(input: { billerCode: string; itemCode: string; customer: string; amount: number; reference: string }) {
   const key = process.env["FLW_SECRET_KEY"];
   if (!key) throw new ProviderRejected("not configured");
-  const res = await fetch(`${BASE}/bills`, {
+  const res = await fetch(`${BASE}/billers/${encodeURIComponent(input.billerCode)}/items/${encodeURIComponent(input.itemCode)}/payment`, {
     method: "POST", signal: AbortSignal.timeout(20_000),
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ country: "NG", customer: input.customer, amount: input.amount, type: input.type, reference: input.reference, biller_name: input.billerName }),
+    body: JSON.stringify({ country: "NG", customer_id: input.customer, amount: input.amount, reference: input.reference }),
   });
   const body = (await res.json().catch(() => null)) as { status?: string; data?: unknown; message?: string } | null;
   if (res.ok && body?.status === "success") {
     const parsed = billPaySchema.safeParse(body.data);
-    return parsed.success ? parsed.data : null;
+    if (parsed.success) return parsed.data;
+    // A malformed success response may still represent a provider-side payment.
+    throw new Error("PROVIDER_UNCERTAIN");
   }
-  if (res.status >= 400 && res.status < 500 && body?.status === "error") {
-    console.error("flw bill rejected", res.status, body.message);
-    throw new ProviderRejected(body.message ?? "rejected");
+  const message = typeof body?.message === "string" ? body.message.toLowerCase() : "";
+  if (res.status >= 400 && res.status < 500 && body?.status === "error"
+      && /invalid customer|invalid phone|invalid biller|invalid item|wrong amount|missing parameter/.test(message)
+      && !/duplicate|already exists/.test(message)) {
+    throw new ProviderRejected("provider rejected bill payment");
   }
+  // Duplicate-reference responses and all ambiguous failures must be reconciled, not released.
   throw new Error("PROVIDER_UNCERTAIN");
+}
+
+/** Retrieves bill status by Flutterwave's returned tx_ref, never by a client-supplied status. */
+export async function getBillStatus(providerReference: string): Promise<VerifiedBillStatus> {
+  if (!providerReference || providerReference.length > 200 || !/^[A-Za-z0-9._:-]+$/.test(providerReference)) {
+    throw new Error("INVALID_PROVIDER_REFERENCE");
+  }
+  const data = await flw<unknown>(`/bills/${encodeURIComponent(providerReference)}?verbose=1`);
+  const parsed = billStatusSchema.safeParse(data);
+  if (!parsed.success || parsed.data.tx_ref !== providerReference) throw new Error("PROVIDER_ERROR");
+  return parsed.data;
 }

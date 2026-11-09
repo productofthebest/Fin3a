@@ -32,14 +32,7 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Run test suite
         run: bun run test
-      - name: Lint integration files
-        run: >-
-          bunx eslint
-          src/lib/flutterwave-capabilities.ts
-          src/lib/flutterwave-webhook.server.ts
-          src/lib/flutterwave-transaction-verification.server.ts
-          src/lib/flutterwave-capabilities.test.ts
-          src/lib/fx-quotes.ts
-          src/test/fx-quotes.test.ts
-          src/test/flutterwave-db.test.ts
-          --rule 'prettier/prettier: off'
+      - name: Run full repository lint
+        run: bun run lint
+      - name: Build production application
+        run: bun run build
