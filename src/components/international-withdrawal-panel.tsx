@@ -67,7 +67,6 @@ export function InternationalWithdrawalPanel() {
   }
 
   return <section className="space-y-4" aria-label="Bank details">
-    <p className="text-xs text-muted-foreground">Test mode · payout submission is disabled.</p>
     {route && currency ? <>
       {fields.map(field => (
         <div key={field.name}>

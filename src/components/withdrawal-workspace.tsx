@@ -33,7 +33,6 @@ export function WithdrawalWorkspace({ country, currency, available, ngnEnabled, 
         : <InternationalWithdrawalPanel />}
     </section> : selectedMethod === "crypto" && options.showCryptoMethod ? <section className="space-y-4" aria-label="Crypto withdrawal">
       <h2 className="font-display text-lg font-semibold">USD crypto withdrawal</h2>
-      <p className="text-xs text-muted-foreground">Test mode · payout submission is disabled.</p>
       <div><Label htmlFor="withdraw-token">Payout asset</Label><Select value={token} onValueChange={setToken}><SelectTrigger id="withdraw-token"><SelectValue /></SelectTrigger><SelectContent>{options.tokens.map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></div>
       <div><Label htmlFor="withdraw-network">Network</Label><Input id="withdraw-network" value={network} onChange={event => setNetwork(event.target.value)} placeholder="Enter network for UI testing" /></div>
       <div><Label htmlFor="withdraw-address">Destination address</Label><Input id="withdraw-address" value={address} onChange={event => setAddress(event.target.value)} placeholder="Wallet address" autoComplete="off" /></div>
