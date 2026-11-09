@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { lookupRecipient, sendTransfer, type ResolvedParticipant } from "@/lib/share-split.functions";
 import { canTransfer } from "@/lib/account-transfer";
-import { getNigerianBanks, verifyBankAccount } from "@/lib/bank-transfer.functions";
+import { getNigerianBanks, getCountryTransferBanks, getCountryBankBranches, verifyBankAccount } from "@/lib/bank-transfer.functions";
 import { createNgnWithdrawal } from "@/lib/ngn-withdrawal.functions";
 import { SendToContact } from "@/components/send-to-contact";
 import { accountCurrencies } from "@/lib/country-currency";
@@ -37,10 +37,33 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
   const [localBeneficiaryName, setLocalBeneficiaryName] = useState("");
   const [localBankName, setLocalBankName] = useState("");
   const [localBankCode, setLocalBankCode] = useState("");
+  const [localBanks, setLocalBanks] = useState<{ id: string; code: string; name: string; hasBranches: boolean }[]>([]);
+  const [localBranches, setLocalBranches] = useState<{ code: string; name: string }[]>([]);
+  const [localBranchRequired, setLocalBranchRequired] = useState(false);
+  const [localBankLoading, setLocalBankLoading] = useState(false);
   const [localBranchCode, setLocalBranchCode] = useState("");
   const [localAccountNumber, setLocalAccountNumber] = useState("");
   const [localRoutingOrIban, setLocalRoutingOrIban] = useState("");
   const bankCode = banks.find(b => b.name.toLowerCase() === bankName.trim().toLowerCase())?.code;
+  async function loadLocalBanks() {
+    if (localBanks.length || localBankLoading || !localBankCapability) return;
+    setLocalBankLoading(true);
+    try {
+      const result = await getCountryTransferBanks({ data: { country: countryCode } });
+      if (result.error) toast.error(result.error); else setLocalBanks(result.banks);
+    } catch { toast.error("Banks could not be loaded for this country."); }
+    finally { setLocalBankLoading(false); }
+  }
+  async function loadLocalBranches(bankId: string) {
+    const selected = localBanks.find(bank => bank.id === bankId);
+    setLocalBranchRequired(Boolean(selected?.hasBranches));
+    setLocalBranchCode(""); setLocalBranches([]);
+    if (!selected?.hasBranches) return;
+    try {
+      const result = await getCountryBankBranches({ data: { country: countryCode, bankId } });
+      if (result.error) toast.error(result.error); else setLocalBranches(result.branches);
+    } catch { toast.error("Branches could not be loaded for this bank."); }
+  }
   async function loadBanks() {
     if (banks.length) return;
     const r = await getNigerianBanks();
@@ -109,35 +132,53 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
           <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">₦</span><span className="text-xs text-muted-foreground">{mode === "bank" ? "Selected" : "Tap to select"}</span></span>
           <span className="mt-3 block text-sm font-semibold">NGN Banks</span><span className="mt-1 block text-xs text-muted-foreground">Pay out to Nigerian bank accounts</span>
         </button>}
-        {countryCode !== "NG" && <button type="button" aria-pressed={mode === "local_bank"} onClick={() => setMode("local_bank")} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "local_bank" ? "border-primary bg-primary/5" : "border-border bg-card")}>
+        {countryCode !== "NG" && <button type="button" aria-pressed={mode === "local_bank"} onClick={() => { setMode("local_bank"); void loadLocalBanks(); }} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "local_bank" ? "border-primary bg-primary/5" : "border-border bg-card")}>
           <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">{localBankCapability?.currency ?? "—"}</span><span className="text-xs text-muted-foreground">{mode === "local_bank" ? "Selected" : "Tap to select"}</span></span>
           <span className="mt-3 block text-sm font-semibold">Local country transfer</span><span className="mt-1 block text-xs text-muted-foreground">{localBankCapability ? `${localBankCapability.name} · ${localBankCapability.currency}` : "Unavailable"}</span>
         </button>}
       </div>}
       {mode === "local_bank" && !confirming ? <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Local country transfer recipient details">
         {localBankCapability ? <>
-          <p className="text-sm text-muted-foreground">Enter the recipient's bank details.</p>
+          <p className="text-sm text-muted-foreground">Send to another person's bank account. Enter the recipient's details exactly as held by their bank.</p>
           <Label htmlFor="local-beneficiary-name">Recipient full name</Label>
-          <Input id="local-beneficiary-name" autoComplete="name" maxLength={120} value={localBeneficiaryName} onChange={e => setLocalBeneficiaryName(e.target.value)} placeholder="Name on bank account" />
-          <Label htmlFor="local-bank-name">Bank name</Label>
-          <Input id="local-bank-name" maxLength={100} value={localBankName} onChange={e => setLocalBankName(e.target.value)} placeholder="Recipient bank" />
-          <Label htmlFor="local-bank-code">Bank code</Label>
-          <Input id="local-bank-code" maxLength={24} value={localBankCode} onChange={e => setLocalBankCode(e.target.value)} placeholder="Country-specific bank code" />
-          {countryCode === "GH" && <>
-            <Label htmlFor="local-branch-code">Branch code (if required by the bank)</Label>
-            <Input id="local-branch-code" maxLength={24} value={localBranchCode} onChange={e => setLocalBranchCode(e.target.value)} placeholder="Branch code" />
-          </>}
+          <Input id="local-beneficiary-name" autoComplete="name" maxLength={120} value={localBeneficiaryName} onChange={e => setLocalBeneficiaryName(e.target.value)} placeholder="Name on recipient bank account" />
+          <Label htmlFor="local-bank-select">Recipient bank</Label>
+          <Select value={localBankCode} onValueChange={value => {
+            setLocalBankCode(value);
+            const selected = localBanks.find(bank => bank.code === value);
+            setLocalBankName(selected?.name ?? "");
+            if (selected) void loadLocalBranches(selected.id);
+          }}>
+            <SelectTrigger id="local-bank-select"><SelectValue placeholder={localBankLoading ? "Loading banks…" : "Select recipient bank"} /></SelectTrigger>
+            <SelectContent>{localBanks.map(bank => <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>)}</SelectContent>
+          </Select>
           {countryCode === "GB" && <>
             <Label htmlFor="local-sort-code">Sort code</Label>
-            <Input id="local-sort-code" inputMode="numeric" maxLength={8} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value)} placeholder="00-00-00" />
+            <Input id="local-sort-code" inputMode="numeric" maxLength={8} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value.replace(/[^0-9-]/g, ""))} placeholder="00-00-00" />
           </>}
-          {(countryCode === "EU" || ["AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"].includes(countryCode)) && <>
+          {(["EU","AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"].includes(countryCode) || ["CM","CI","SN"].includes(countryCode)) && <>
             <Label htmlFor="local-iban">IBAN</Label>
             <Input id="local-iban" autoCapitalize="characters" maxLength={34} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value.toUpperCase().replace(/\\s/g, ""))} placeholder="Recipient IBAN" />
           </>}
-          <Label htmlFor="local-account-number">Account number</Label>
-          <Input id="local-account-number" maxLength={34} value={localAccountNumber} onChange={e => setLocalAccountNumber(e.target.value)} placeholder="Recipient account number" />
-          <p className="text-xs text-muted-foreground">You can enter the recipient details now. Sending remains unavailable until this destination is enabled and verified for your Fin3a account.</p>
+          {["EU","AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"].includes(countryCode) && <>
+            <Label htmlFor="local-swift">SWIFT / BIC</Label>
+            <Input id="local-swift" maxLength={11} autoCapitalize="characters" placeholder="Bank SWIFT / BIC" />
+          </>}
+          <Label htmlFor="local-account-number">{["CM","CI","SN"].includes(countryCode) ? "Local account number (if bank requires it)" : "Account number"}</Label>
+          <Input id="local-account-number" inputMode="numeric" maxLength={34} value={localAccountNumber} onChange={e => setLocalAccountNumber(e.target.value)} placeholder="Recipient account number" />
+          {localBranchRequired && <>
+            <Label htmlFor="local-branch-code">Bank branch</Label>
+            <Select value={localBranchCode} onValueChange={setLocalBranchCode}>
+              <SelectTrigger id="local-branch-code"><SelectValue placeholder="Select bank branch" /></SelectTrigger>
+              <SelectContent>{localBranches.map(branch => <SelectItem key={branch.code} value={branch.code}>{branch.name} · {branch.code}</SelectItem>)}</SelectContent>
+            </Select>
+          </>}
+          {countryCode === "ZA" && <>
+            <Label htmlFor="local-recipient-email">Recipient email</Label><Input id="local-recipient-email" type="email" placeholder="Recipient email" />
+            <Label htmlFor="local-recipient-mobile">Recipient mobile number</Label><Input id="local-recipient-mobile" type="tel" placeholder="Recipient mobile number" />
+            <Label htmlFor="local-recipient-address">Recipient residential address</Label><Input id="local-recipient-address" placeholder="Recipient address" />
+          </>}
+          <p className="text-xs text-muted-foreground">Bank and branch options are loaded from Flutterwave. Transfer submission remains disabled until this destination's merchant route, required metadata, settlement and reconciliation are verified.</p>
           <Button disabled variant="outline">Transfer submission unavailable</Button>
         </> : <p className="text-sm">Unavailable</p>}
       </section> : null}
