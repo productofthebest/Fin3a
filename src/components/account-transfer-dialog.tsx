@@ -34,6 +34,12 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
   const [accountNumber, setAccountNumber] = useState("");
   const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
   const [accountName, setAccountName] = useState<string | null>(null);
+  const [localBeneficiaryName, setLocalBeneficiaryName] = useState("");
+  const [localBankName, setLocalBankName] = useState("");
+  const [localBankCode, setLocalBankCode] = useState("");
+  const [localBranchCode, setLocalBranchCode] = useState("");
+  const [localAccountNumber, setLocalAccountNumber] = useState("");
+  const [localRoutingOrIban, setLocalRoutingOrIban] = useState("");
   const bankCode = banks.find(b => b.name.toLowerCase() === bankName.trim().toLowerCase())?.code;
   async function loadBanks() {
     if (banks.length) return;
@@ -108,18 +114,32 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
           <span className="mt-3 block text-sm font-semibold">Local country transfer</span><span className="mt-1 block text-xs text-muted-foreground">{localBankCapability ? `${localBankCapability.name} · ${localBankCapability.currency}` : "Unavailable"}</span>
         </button>}
       </div>}
-      {mode === "local_bank" && !confirming ? <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Local country transfer details">
+      {mode === "local_bank" && !confirming ? <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Local country transfer recipient details">
         {localBankCapability ? <>
-          <p className="font-medium">Send to a {localBankCapability.name} bank account · {localBankCapability.currency}</p>
-          <p className="text-sm text-muted-foreground">Recipient details required for this destination:</p>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-            {countryCode === "GH" ? <><li>Beneficiary full name</li><li>Bank and bank code</li><li>Branch and branch code</li><li>Account number</li></> :
-             countryCode === "GB" ? <><li>Beneficiary full name</li><li>Bank name</li><li>Sort code</li><li>Account number</li></> :
-             countryCode === "US" ? <><li>Beneficiary full name</li><li>Bank name</li><li>Routing number</li><li>Account number</li></> :
-             countryCode === "EU" || ["AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"].includes(countryCode) ? <><li>Beneficiary full name</li><li>IBAN</li><li>Bank BIC / SWIFT code, where required</li></> :
-             <><li>Beneficiary full name</li><li>Bank and country-specific bank code</li><li>Account number</li></>}
-          </ul>
-          <p className="text-xs text-muted-foreground">Transfer submission will appear when this destination is enabled for your Fin3a account.</p>
+          <p className="font-medium">Local country transfer · {localBankCapability.name} ({localBankCapability.currency})</p>
+          <p className="text-sm text-muted-foreground">Enter the recipient's bank details.</p>
+          <Label htmlFor="local-beneficiary-name">Recipient full name</Label>
+          <Input id="local-beneficiary-name" autoComplete="name" maxLength={120} value={localBeneficiaryName} onChange={e => setLocalBeneficiaryName(e.target.value)} placeholder="Name on bank account" />
+          <Label htmlFor="local-bank-name">Bank name</Label>
+          <Input id="local-bank-name" maxLength={100} value={localBankName} onChange={e => setLocalBankName(e.target.value)} placeholder="Recipient bank" />
+          <Label htmlFor="local-bank-code">Bank code</Label>
+          <Input id="local-bank-code" maxLength={24} value={localBankCode} onChange={e => setLocalBankCode(e.target.value)} placeholder="Country-specific bank code" />
+          {countryCode === "GH" && <>
+            <Label htmlFor="local-branch-code">Branch code (if required by the bank)</Label>
+            <Input id="local-branch-code" maxLength={24} value={localBranchCode} onChange={e => setLocalBranchCode(e.target.value)} placeholder="Branch code" />
+          </>}
+          {countryCode === "GB" && <>
+            <Label htmlFor="local-sort-code">Sort code</Label>
+            <Input id="local-sort-code" inputMode="numeric" maxLength={8} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value)} placeholder="00-00-00" />
+          </>}
+          {(countryCode === "EU" || ["AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"].includes(countryCode)) && <>
+            <Label htmlFor="local-iban">IBAN</Label>
+            <Input id="local-iban" autoCapitalize="characters" maxLength={34} value={localRoutingOrIban} onChange={e => setLocalRoutingOrIban(e.target.value.toUpperCase().replace(/\\s/g, ""))} placeholder="Recipient IBAN" />
+          </>}
+          <Label htmlFor="local-account-number">Account number</Label>
+          <Input id="local-account-number" maxLength={34} value={localAccountNumber} onChange={e => setLocalAccountNumber(e.target.value)} placeholder="Recipient account number" />
+          <p className="text-xs text-muted-foreground">You can enter the recipient details now. Sending remains unavailable until this destination is enabled and verified for your Fin3a account.</p>
+          <Button disabled variant="outline">Transfer submission unavailable</Button>
         </> : <p className="text-sm">Unavailable</p>}
       </section> : null}
       {mode === "bank" && !confirming ? <>
