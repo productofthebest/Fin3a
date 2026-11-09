@@ -1,5 +1,9 @@
 // Server-only: applies Flutterwave-verified bill payment outcomes. Never trust request bodies for status/amount.
-import { findBillStatusByCustomerReference, getBillStatusByTxRef, type VerifiedBillStatus } from "./flutterwave.server";
+import {
+  findBillStatusByCustomerReference,
+  getBillStatusByTxRef,
+  type VerifiedBillStatus,
+} from "./flutterwave.server";
 
 function outcome(status: string): "successful" | "failed" | "pending" {
   const s = status.toLowerCase();
