@@ -45,7 +45,8 @@ export async function refreshBillPayment(
   const from = new Date(Date.parse(createdAt) - 86_400_000).toISOString().slice(0, 10);
   const to = new Date().toISOString().slice(0, 10);
   const recovered = providerTxId
-    ? await getBillStatusByTxRef(providerTxId)\n    : await findBillStatusByCustomerReference(reference, from, to);
+    ? await getBillStatusByTxRef(providerTxId)
+    : await findBillStatusByCustomerReference(reference, from, to);
   if (!recovered) return { status: "pending" };
   if (providerTxId && recovered.tx_ref !== providerTxId) {
     throw new Error("PROVIDER_REFERENCE_MISMATCH");
