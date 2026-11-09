@@ -8,8 +8,11 @@ function outcome(status: string): "successful" | "failed" | "pending" {
   return "pending";
 }
 
-export async function applyBillStatus(status: VerifiedBillStatus, expectedReference: string) {
+export async function applyBillStatus(status: VerifiedBillStatus, expectedReference: string, expectedAmount: number) {
   if (status.customer_reference !== expectedReference) throw new Error("REFERENCE_MISMATCH");
+  if (status.currency !== "NGN" || Math.round(status.amount * 100) !== Math.round(expectedAmount * 100)) {
+    throw new Error("AMOUNT_OR_CURRENCY_MISMATCH");
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.rpc("finish_bill_payment", {
     _reference: expectedReference, _provider_tx_id: status.tx_ref, _outcome: outcome(status.status), _amount: status.amount, _currency: status.currency,
@@ -19,7 +22,27 @@ export async function applyBillStatus(status: VerifiedBillStatus, expectedRefere
 }
 
 /** Re-checks a pending bill payment with Flutterwave. Unknown results leave it pending. */
-export async function refreshBillPayment(reference: string, providerTxId: string | null) {
-  if (!providerTxId) return { status: "pending" };
-  return applyBillStatus(await getBillStatus(providerTxId), reference);
+export async function refreshBillPayment(
+  reference: string,
+  providerTxId: string | null,
+  expectedAmount: number,
+  createdAt: string,
+) {
+  let resolvedTxRef = providerTxId;
+  if (!resolvedTxRef) {
+    // Recovery path for a successful provider call whose tx_ref could not be
+    // persisted locally. Search by our unique merchant reference; never create
+    // another bill payment from this path.
+    const { findBillStatusByCustomerReference } = await import("./flutterwave.server");
+    const from = new Date(Date.parse(createdAt) - 86_400_000).toISOString().slice(0, 10);
+    const to = new Date().toISOString().slice(0, 10);
+    const recovered = await findBillStatusByCustomerReference(reference, from, to);
+    if (!recovered) return { status: "pending" };
+    if (recovered.currency !== "NGN" || Math.round(recovered.amount * 100) !== Math.round(expectedAmount * 100)) {
+      throw new Error("AMOUNT_OR_CURRENCY_MISMATCH");
+    }
+    resolvedTxRef = recovered.tx_ref;
+  }
+  const status = await getBillStatus(resolvedTxRef);
+  return applyBillStatus(status, reference, expectedAmount);
 }

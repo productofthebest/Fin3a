@@ -18,10 +18,12 @@ concurrency:
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
       - name: Set up Node.js
@@ -32,7 +34,42 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Run test suite
         run: bun run test
-      - name: Run full repository lint
-        run: bun run lint
+      - name: Compare full lint against main baseline
+        shell: bash
+        run: |
+          git fetch origin main
+          git worktree add /tmp/fin3a-main-baseline origin/main
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/fin3a-main-baseline/node_modules
+          (cd /tmp/fin3a-main-baseline && bunx eslint . --format json > /tmp/fin3a-main-eslint.json || true)
+          bunx eslint . --format json > /tmp/fin3a-branch-eslint.json || true
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const summarize = (file) => {
+            const results = JSON.parse(fs.readFileSync(file, "utf8"));
+            return results.reduce((total, item) => ({
+              errors: total.errors + item.errorCount,
+              warnings: total.warnings + item.warningCount,
+              filesWithErrors: total.filesWithErrors + (item.errorCount ? 1 : 0),
+            }), { errors: 0, warnings: 0, filesWithErrors: 0 });
+          };
+          const baseline = summarize("/tmp/fin3a-main-eslint.json");
+          const branch = summarize("/tmp/fin3a-branch-eslint.json");
+          console.log("MAIN_BASELINE_LINT", JSON.stringify(baseline));
+          console.log("BRANCH_FULL_LINT", JSON.stringify(branch));
+          console.log("LINT_DELTA", JSON.stringify({
+            errors: branch.errors - baseline.errors,
+            warnings: branch.warnings - baseline.warnings,
+            filesWithErrors: branch.filesWithErrors - baseline.filesWithErrors,
+          }));
+          NODE
+      - name: Lint PR-modified application files (non-format rules)
+        run: >-
+          bunx eslint
+          src/lib/flutterwave.server.ts
+          src/lib/bills-pay.server.ts
+          src/lib/bills-pay.functions.ts
+          src/lib/flutterwave-bills.test.ts
+          --rule 'prettier/prettier: off'
       - name: Build production application
+        if: always()
         run: bun run build

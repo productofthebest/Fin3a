@@ -90,13 +90,27 @@ export const payBillFn = createServerFn({ method: "POST" })
       const t = await payBill({ billerCode: data.billerCode, itemCode: data.itemCode, customer: data.customer, amount, reference: r.reference });
       // Persist Flutterwave's bill tx_ref before polling. If the status endpoint is
       // temporarily unavailable, the user can safely check again without re-initiating.
-      const { error: referenceError } = await supabaseAdmin.rpc("finish_bill_payment", {
-        _reference: r.reference, _provider_tx_id: t.tx_ref, _outcome: "pending", _amount: amount, _currency: "NGN",
-      });
-      if (referenceError) console.error("bill provider reference could not be stored", referenceError.message);
-      else {
+      let referenceSaved = false;
+      for (let attempt = 0; attempt < 3 && !referenceSaved; attempt++) {
+        const { error: referenceError } = await supabaseAdmin.rpc("finish_bill_payment", {
+          _reference: r.reference,
+          _provider_tx_id: t.tx_ref,
+          _outcome: "pending",
+          _amount: amount,
+          _currency: "NGN",
+        });
+        referenceSaved = !referenceError;
+        if (referenceError) {
+          console.error("bill provider reference persistence attempt failed", { attempt: attempt + 1, message: referenceError.message });
+        }
+      }
+      if (referenceSaved) {
         const { refreshBillPayment } = await import("./bills-pay.server");
-        await refreshBillPayment(r.reference, t.tx_ref).catch(() => null);
+        await refreshBillPayment(r.reference, t.tx_ref, amount, new Date().toISOString()).catch(() => null);
+      } else {
+        // Keep the debit reserved. The customer's Check Status action can recover
+        // the provider tx_ref from Flutterwave bill history using this F3B reference.
+        console.error("bill provider reference requires history reconciliation", { reference: r.reference });
       }
       return { ok: true as const, reference: r.reference, status: "pending" };
     } catch (e) {
@@ -113,11 +127,11 @@ export const checkBillPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(input => z.object({ reference: z.string().regex(/^F3B-[0-9a-f-]{36}$/) }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: row } = await context.supabase.from("bill_payments").select("reference, status, provider_tx_id").eq("user_id", context.userId).eq("reference", data.reference).maybeSingle();
+    const { data: row } = await context.supabase.from("bill_payments").select("reference, status, provider_tx_id, amount, created_at").eq("user_id", context.userId).eq("reference", data.reference).maybeSingle();
     if (!row) throw new Error("Payment not found.");
     if (row.status !== "pending") return { status: row.status };
     const { refreshBillPayment } = await import("./bills-pay.server");
-    try { return await refreshBillPayment(row.reference, row.provider_tx_id); }
+    try { return await refreshBillPayment(row.reference, row.provider_tx_id, Number(row.amount), row.created_at); }
     catch { return { status: "pending" }; }
   });
 

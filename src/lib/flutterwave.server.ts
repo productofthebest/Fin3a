@@ -189,3 +189,39 @@ export async function getBillStatus(providerReference: string): Promise<Verified
   if (!parsed.success || parsed.data.tx_ref !== providerReference) throw new Error("PROVIDER_ERROR");
   return parsed.data;
 }
+
+const billHistoryEntrySchema = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  customer_id: z.string().min(1).max(200),
+  amount: z.union([z.number().finite(), z.string().regex(/^\\d+(?:\\.\\d+)?$/).transform(Number)]).transform(Number).refine(n => n > 0),
+  tx_ref: z.string().min(1).max(200),
+  customer_reference: z.string().min(1).max(200),
+  status: z.string().min(1).max(80),
+  country: z.string().max(4).optional(),
+});
+
+/** Looks up a bill by our merchant reference after a DB reference-write failure.
+ * The history API is filtered by our unique customer reference; only one exact
+ * NGN match is accepted. No match or multiple matches stays unresolved.
+ */
+export async function findBillStatusByCustomerReference(customerReference: string, fromDate: string, toDate: string) {
+  if (!/^F3B-[0-9a-f-]{36}$/.test(customerReference)
+      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate)
+      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)) {
+    throw new Error("INVALID_BILL_RECOVERY_QUERY");
+  }
+  const query = new URLSearchParams({
+    reference: customerReference,
+    country: "NG",
+    from: fromDate,
+    to: toDate,
+    page: "1",
+    limit: "10",
+  });
+  const rows = await flw<unknown>(`/bills/history?${query.toString()}`);
+  const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
+  if (!parsed.success) throw new Error("PROVIDER_ERROR");
+  const matches = parsed.data.filter(row => row.customer_reference === customerReference && (!row.country || row.country === "NG"));
+  if (matches.length !== 1) return null;
+  return matches[0];
+}
