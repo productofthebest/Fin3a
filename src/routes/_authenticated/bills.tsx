@@ -45,6 +45,9 @@ function BillPaymentServices() {
   const [confirming, setConfirming] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
   const [finalStatus, setFinalStatus] = useState<string | null>(null);
+  const [checkingReference, setCheckingReference] = useState<string | null>(null);
+  const [paymentIdempotencyKey, setPaymentIdempotencyKey] = useState<string | null>(null);
+  const [paymentAttempted, setPaymentAttempted] = useState(false);
 
   const category = selected?.id as BillCategory | undefined;
   const { data: billerData, isFetching: billersLoading } = useQuery({
@@ -53,134 +56,377 @@ function BillPaymentServices() {
     enabled: Boolean(category),
     staleTime: 6 * 60 * 60 * 1000,
   });
-  const { data: history } = useQuery({ queryKey: ["bill-payments"], queryFn: () => getBillPayments(), staleTime: 15_000 });
+  const { data: history } = useQuery({
+    queryKey: ["bill-payments"],
+    queryFn: () => getBillPayments(),
+    staleTime: 15_000,
+  });
   const billers = billerData?.billers ?? [];
   const value = biller?.amount && biller.amount > 0 ? biller.amount : Number(amount);
   const fixedAmount = Boolean(biller?.amount && biller.amount > 0);
-  const valid = Boolean(biller) && customer.trim().length >= 4 && Number.isFinite(value) && value >= 50 && value <= 5000000;
+  const valid =
+    Boolean(biller) &&
+    customer.trim().length >= 4 &&
+    Number.isFinite(value) &&
+    value >= 50 &&
+    value <= 5000000;
 
   function reset() {
-    setSelected(null); setBiller(null); setCustomer(""); setCustomerName(null); setAmount(""); setConfirming(false); setReference(null); setFinalStatus(null);
+    setSelected(null);
+    setBiller(null);
+    setCustomer("");
+    setCustomerName(null);
+    setAmount("");
+    setConfirming(false);
+    setReference(null);
+    setFinalStatus(null);
+    setPaymentIdempotencyKey(null);
+    setPaymentAttempted(false);
   }
 
   async function validateCustomer() {
     if (!biller || customer.trim().length < 4 || busy) return;
     setBusy(true);
     try {
-      const r = await validateBillCustomerFn({ data: { billerCode: biller.billerCode, itemCode: biller.itemCode, customer: customer.trim() } });
-      if (r.valid) { setCustomerName(r.customerName); if (r.customerName) toast.success(`Confirmed: ${r.customerName}`); else toast.success("Customer confirmed by the biller."); }
-      else toast.error(r.error ?? "We couldn't confirm this customer.");
-    } catch { toast.error("We couldn't confirm this customer. Please try again."); }
-    finally { setBusy(false); }
+      const result = await validateBillCustomerFn({
+        data: {
+          billerCode: biller.billerCode,
+          itemCode: biller.itemCode,
+          customer: customer.trim(),
+        },
+      });
+      if (result.valid) {
+        setCustomerName(result.customerName);
+        if (result.customerName) {
+          toast.success(`Confirmed: ${result.customerName}`);
+        } else {
+          toast.success("Customer confirmed by the biller.");
+        }
+      } else {
+        toast.error(result.error ?? "We couldn't confirm this customer.");
+      }
+    } catch {
+      toast.error("We couldn't confirm this customer. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function pay() {
     if (!biller || !category || !valid || busy) return;
     setBusy(true);
     try {
-      const r = await payBillFn({ data: { category, billerCode: biller.billerCode, billerName: biller.shortName ?? biller.name, itemCode: biller.itemCode, customer: customer.trim(), amount: value, idempotencyKey: crypto.randomUUID() } });
-      if (!r.ok) { toast.error(r.error); setConfirming(false); return; }
-      setReference(r.reference);
+      const idempotencyKey = paymentIdempotencyKey ?? crypto.randomUUID();
+      setPaymentIdempotencyKey(idempotencyKey);
+      setPaymentAttempted(true);
+      const result = await payBillFn({
+        data: {
+          category,
+          billerCode: biller.billerCode,
+          billerName: biller.shortName ?? biller.name,
+          itemCode: biller.itemCode,
+          customer: customer.trim(),
+          amount: value,
+          idempotencyKey,
+        },
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        if (!result.retrySameAttempt) {
+          setConfirming(false);
+          setPaymentIdempotencyKey(null);
+          setPaymentAttempted(false);
+        }
+        return;
+      }
+      setReference(result.reference);
       setConfirming(false);
       await queryClient.invalidateQueries({ queryKey: ["accounts"] });
       await queryClient.invalidateQueries({ queryKey: ["bill-payments"] });
+      setPaymentAttempted(false);
       toast.success("Payment started. We'll confirm when the biller completes it.");
-    } catch { toast.error("Payment could not be started. No money was moved."); setConfirming(false); }
-    finally { setBusy(false); }
+    } catch {
+      // Keep the same idempotency key and confirmation view. A retry reuses the
+      // original reservation instead of creating a second provider payment.
+      setPaymentAttempted(true);
+      await queryClient.invalidateQueries({ queryKey: ["bill-payments"] });
+      await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      toast.error(
+        "We couldn't confirm the response. Keep this payment open and retry or check Bills history before starting another payment.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refreshHistoryPayment(paymentReference: string) {
+    if (checkingReference) return;
+    setCheckingReference(paymentReference);
+    try {
+      const result = await checkBillPayment({ data: { reference: paymentReference } });
+      await queryClient.invalidateQueries({ queryKey: ["bill-payments"] });
+      if (result.status !== "pending") {
+        await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+        toast.success(
+          result.status === "successful"
+            ? "Bill payment confirmed."
+            : "Bill payment failed; reserved funds were released.",
+        );
+      } else {
+        toast.message(
+          "The biller has not confirmed this payment yet. Your balance remains reserved.",
+        );
+      }
+    } catch {
+      toast.error("Status check failed. Your payment remains pending; please try again.");
+    } finally {
+      setCheckingReference(null);
+    }
   }
 
   async function refresh() {
     if (!reference || busy) return;
     setBusy(true);
     try {
-      const r = await checkBillPayment({ data: { reference } });
-      setFinalStatus(r.status);
-      if (r.status !== "pending") {
+      const result = await checkBillPayment({ data: { reference } });
+      setFinalStatus(result.status);
+      if (result.status !== "pending") {
         await queryClient.invalidateQueries({ queryKey: ["accounts"] });
         await queryClient.invalidateQueries({ queryKey: ["bill-payments"] });
       }
-    } catch { toast.error("Status check failed. Please try again."); }
-    finally { setBusy(false); }
+    } catch {
+      toast.error("Status check failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <section className="mt-6" aria-labelledby="bill-payment-heading">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="bill-payment-heading" className="font-display text-xl font-semibold">Pay bills</h2>
-        <span className="text-xs text-muted-foreground">Paid from your NGN wallet · No Fin3a fee</span>
+        <h2 id="bill-payment-heading" className="font-display text-xl font-semibold">
+          Pay bills
+        </h2>
+        <span className="text-xs text-muted-foreground">
+          Paid from your NGN wallet · No Fin3a fee
+        </span>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {PAYMENT_CATEGORIES.map((category) => (
-          <Button key={category.id} variant="outline" className="h-auto min-w-0 flex-col gap-3 whitespace-normal bg-card px-3 py-5" onClick={() => setSelected(category)} aria-label={`Select ${category.name}`}>
-            <category.icon className="text-primary" aria-hidden="true" />
-            <span>{category.name}</span>
+        {PAYMENT_CATEGORIES.map((paymentCategory) => (
+          <Button
+            key={paymentCategory.id}
+            variant="outline"
+            className="h-auto min-w-0 flex-col gap-3 whitespace-normal bg-card px-3 py-5"
+            onClick={() => setSelected(paymentCategory)}
+            aria-label={`Select ${paymentCategory.name}`}
+          >
+            <paymentCategory.icon className="text-primary" aria-hidden="true" />
+            <span>{paymentCategory.name}</span>
           </Button>
         ))}
       </div>
-      <Dialog open={selected !== null} onOpenChange={(open) => { if (!open && !busy) reset(); }}>
+      <Dialog
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open && !busy && !paymentAttempted) reset();
+        }}
+      >
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>{selected?.name} payment</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{selected?.name} payment</DialogTitle>
+          </DialogHeader>
           {reference ? (
             <div className="space-y-4" role="status">
-              <p className="text-sm font-medium">{(finalStatus ?? "pending") === "successful" ? "Payment completed." : (finalStatus ?? "pending") === "failed" ? "The payment failed. Your wallet was not charged." : "Payment in progress. Most bill payments complete within minutes."}</p>
+              <p className="text-sm font-medium">
+                {(finalStatus ?? "pending") === "successful"
+                  ? "Payment completed."
+                  : (finalStatus ?? "pending") === "failed"
+                    ? "The payment failed. Your wallet was not charged."
+                    : "Payment in progress. Most bill payments complete within minutes."}
+              </p>
               {(finalStatus ?? "pending") === "pending" ? (
-                <Button variant="outline" className="w-full" disabled={busy} onClick={() => void refresh()}>{busy ? "Checking…" : "Check status"}</Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={busy}
+                  onClick={() => void refresh()}
+                >
+                  {busy ? "Checking…" : "Check status"}
+                </Button>
               ) : (
-                <Button variant="outline" className="w-full" onClick={reset}>Done</Button>
+                <Button variant="outline" className="w-full" onClick={reset}>
+                  Done
+                </Button>
               )}
             </div>
           ) : confirming && biller ? (
             <div className="space-y-4">
               <dl className="space-y-3 text-sm">
-                <div><dt className="text-muted-foreground">Biller</dt><dd className="break-words">{biller.name}</dd></div>
-                <div><dt className="text-muted-foreground">Customer</dt><dd className="break-words">{customerName ? `${customerName} · ` : ""}{customer}</dd></div>
-                <div><dt className="text-muted-foreground">Amount</dt><dd className="font-semibold">{ngn(value)}</dd></div>
-                <div><dt className="text-muted-foreground">Fin3a fee</dt><dd>{ngn(0)}</dd></div>
+                <div>
+                  <dt className="text-muted-foreground">Biller</dt>
+                  <dd className="break-words">{biller.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Customer</dt>
+                  <dd className="break-words">
+                    {customerName ? `${customerName} · ` : ""}
+                    {customer}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Amount</dt>
+                  <dd className="font-semibold">{ngn(value)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Fin3a fee</dt>
+                  <dd>{ngn(0)}</dd>
+                </div>
               </dl>
-              <Button className="w-full" disabled={busy} onClick={() => void pay()}>{busy ? "Paying…" : "Confirm payment"}</Button>
-              <Button variant="outline" className="w-full" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
+              <Button className="w-full" disabled={busy} onClick={() => void pay()}>
+                {busy ? "Paying…" : "Confirm payment"}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={busy || paymentAttempted}
+                onClick={() => {
+                  setPaymentIdempotencyKey(null);
+                  setConfirming(false);
+                }}
+              >
+                Back
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
               {billersLoading && <p className="text-sm text-muted-foreground">Loading providers…</p>}
-              {billerData?.error && <p role="alert" className="text-sm text-destructive">{billerData.error}</p>}
+              {billerData?.error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {billerData.error}
+                </p>
+              )}
               <div>
                 <Label htmlFor="bill-biller">Provider</Label>
-                <Input id="bill-biller" list="bill-billers" value={biller?.name ?? ""} onChange={e => { const match = billers.find(b => b.name === e.target.value); setBiller(match ?? null); setCustomerName(null); if (match?.amount) setAmount(String(match.amount)); }} placeholder={billers.length ? "Search provider" : "Loading providers…"} />
-                <datalist id="bill-billers">{billers.map(b => <option key={`${b.billerCode}:${b.itemCode}`} value={b.name} />)}</datalist>
+                <Input
+                  id="bill-biller"
+                  list="bill-billers"
+                  value={biller?.name ?? ""}
+                  onChange={(event) => {
+                    const match = billers.find((bill) => bill.name === event.target.value);
+                    setBiller(match ?? null);
+                    setCustomerName(null);
+                    if (match?.amount) setAmount(String(match.amount));
+                  }}
+                  placeholder={billers.length ? "Search provider" : "Loading providers…"}
+                />
+                <datalist id="bill-billers">
+                  {billers.map((bill) => (
+                    <option key={`${bill.billerCode}:${bill.itemCode}`} value={bill.name} />
+                  ))}
+                </datalist>
               </div>
               <div>
-                <Label htmlFor="bill-customer">{biller?.labelName ?? "Customer ID / phone / meter number"}</Label>
-                <Input id="bill-customer" value={customer} onChange={e => { setCustomer(e.target.value.trim()); setCustomerName(null); }} maxLength={120} />
+                <Label htmlFor="bill-customer">
+                  {biller?.labelName ?? "Customer ID / phone / meter number"}
+                </Label>
+                <Input
+                  id="bill-customer"
+                  value={customer}
+                  onChange={(event) => {
+                    setCustomer(event.target.value.trim());
+                    setCustomerName(null);
+                  }}
+                  maxLength={120}
+                />
               </div>
               {biller && customer.trim().length >= 4 && !customerName && (
-                <Button variant="outline" disabled={busy} onClick={() => void validateCustomer()}>{busy ? "Checking…" : "Confirm customer"}</Button>
+                <Button variant="outline" disabled={busy} onClick={() => void validateCustomer()}>
+                  {busy ? "Checking…" : "Confirm customer"}
+                </Button>
               )}
-              {customerName && <p role="status" className="break-words text-sm font-medium">{customerName}</p>}
+              {customerName && (
+                <p role="status" className="break-words text-sm font-medium">
+                  {customerName}
+                </p>
+              )}
               {!fixedAmount && (
                 <div>
                   <Label htmlFor="bill-amount">Amount (₦)</Label>
-                  <Input id="bill-amount" type="number" min="50" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
+                  <Input
+                    id="bill-amount"
+                    type="number"
+                    min="50"
+                    step="0.01"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                  />
                 </div>
               )}
-              {fixedAmount && biller && <p className="text-sm text-muted-foreground">Fixed package: {ngn(value)}</p>}
-              <p className="text-xs text-muted-foreground">Paid from your NGN wallet. No Fin3a fee. Your balance is held only until the biller confirms.</p>
-              <DialogFooter><Button className="w-full" disabled={busy || !valid} onClick={() => setConfirming(true)}>Review payment</Button></DialogFooter>
+              {fixedAmount && biller && (
+                <p className="text-sm text-muted-foreground">Fixed package: {ngn(value)}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Paid from your NGN wallet. No Fin3a fee. Your balance is held only until the biller
+                confirms.
+              </p>
+              <DialogFooter>
+                <Button
+                  className="w-full"
+                  disabled={busy || !valid}
+                  onClick={() => {
+                    setPaymentIdempotencyKey(crypto.randomUUID());
+                    setPaymentAttempted(false);
+                    setConfirming(true);
+                  }}
+                >
+                  Review payment
+                </Button>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>
       </Dialog>
       <section className="mt-8 border-t border-border pt-6" aria-labelledby="bill-history-heading">
-        <h2 id="bill-history-heading" className="font-display text-xl font-semibold">Bills history</h2>
+        <h2 id="bill-history-heading" className="font-display text-xl font-semibold">
+          Bills history
+        </h2>
         {!history?.length ? (
-          <p className="mt-3 text-sm text-muted-foreground">No wallet bill payments yet. Recurring bill records below are not confirmed wallet payments.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            No wallet bill payments yet. Recurring bill records below are not confirmed wallet
+            payments.
+          </p>
         ) : (
           <ul className="mt-3 divide-y divide-border text-sm">
-            {history.map(p => (
-              <li key={p.reference} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span className="min-w-0 flex-1 truncate">{p.billerName} · {p.customer}</span>
-                <span className="tabular-nums">{ngn(p.amount)}</span>
-                <span className={`text-xs ${p.status === "successful" ? "text-primary" : p.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}>{p.status}</span>
+            {history.map((payment) => (
+              <li
+                key={payment.reference}
+                className="flex flex-wrap items-center justify-between gap-2 py-2"
+              >
+                <span className="min-w-0 flex-1 truncate">
+                  {payment.billerName} · {payment.customer}
+                </span>
+                <span className="tabular-nums">{ngn(payment.amount)}</span>
+                <span
+                  className={`text-xs ${
+                    payment.status === "successful"
+                      ? "text-primary"
+                      : payment.status === "failed"
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                  }`}
+                >
+                  {payment.status}
+                </span>
+                {payment.status === "pending" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={checkingReference !== null}
+                    onClick={() => void refreshHistoryPayment(payment.reference)}
+                  >
+                    {checkingReference === payment.reference ? "Checking…" : "Check status"}
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

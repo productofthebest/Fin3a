@@ -24,7 +24,7 @@ export async function listNigerianBanks() {
   const data = await flw<{ code: string; name: string }[]>("/banks/NG");
   const seen = new Set<string>();
   return data
-    .filter(b => b.code && b.name && !seen.has(b.code) && seen.add(b.code))
+    .filter((b) => b.code && b.name && !seen.has(b.code) && seen.add(b.code))
     .map(b => ({ code: b.code, name: b.name.trim() }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -129,32 +129,156 @@ export async function getBillCategories(query: string) {
   return data.map(x => billerSchema.safeParse(x)).filter(p => p.success).map(p => p.data).filter(b => !b.country || b.country === "NG");
 }
 export async function validateBillCustomer(billerCode: string, itemCode: string, customer: string) {
-  const data = await flw<unknown>(`/billers/${encodeURIComponent(billerCode)}/items/${encodeURIComponent(itemCode)}/validate`, {
-    method: "POST",
-    body: JSON.stringify({ customer, code: itemCode }),
-  });
+  const data = await flw<unknown>(
+    `/billers/${encodeURIComponent(billerCode)}/items/${encodeURIComponent(itemCode)}/validate`,
+    {
+      method: "POST",
+      body: JSON.stringify({ customer, code: itemCode }),
+    },
+  );
   const parsed = z.object({ response_code: z.string().optional(), name: z.string().max(200).nullish() }).safeParse(data);
   return { valid: parsed.success, customerName: parsed.success ? (parsed.data.name ?? null) : null };
 }
-const billPaySchema = z.object({ id: providerId, tx_ref: z.string().min(1).max(200).nullish(), reference: z.string().min(1).max(200).nullish(), status: z.string().min(1).max(80), amount: money.nullish(), currency: z.string().max(10).nullish() });
+const billPaySchema = z.object({
+  tx_ref: z.string().min(1).max(200),
+  reference: z.string().min(1).max(200).nullish(),
+  amount: z
+    .union([
+      z.number().finite(),
+      z
+        .string()
+        .regex(/^\d+(?:\.\d+)?$/)
+        .transform(Number),
+    ])
+    .optional(),
+});
 export type BillPayResult = z.infer<typeof billPaySchema>;
-/** Pays a bill, debiting the Flutterwave balance. Throws ProviderRejected only on a clear refusal. */
-export async function payBill(input: { billerName: string; type: string; customer: string; amount: number; reference: string }) {
+
+/** Initiates a bill payment using Flutterwave's biller/item-specific V3 endpoint. */
+export async function payBill(input: {
+  billerCode: string;
+  itemCode: string;
+  customer: string;
+  amount: number;
+  reference: string;
+}) {
   const key = process.env["FLW_SECRET_KEY"];
   if (!key) throw new ProviderRejected("not configured");
-  const res = await fetch(`${BASE}/bills`, {
-    method: "POST", signal: AbortSignal.timeout(20_000),
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ country: "NG", customer: input.customer, amount: input.amount, type: input.type, reference: input.reference, biller_name: input.billerName }),
-  });
-  const body = (await res.json().catch(() => null)) as { status?: string; data?: unknown; message?: string } | null;
+  const res = await fetch(
+    `${BASE}/billers/${encodeURIComponent(input.billerCode)}/items/${encodeURIComponent(input.itemCode)}/payment`,
+    {
+      method: "POST",
+      signal: AbortSignal.timeout(20_000),
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        country: "NG",
+        customer_id: input.customer,
+        amount: input.amount,
+        reference: input.reference,
+      }),
+    },
+  );
+  const body = (await res.json().catch(() => null)) as {
+    status?: string;
+    data?: unknown;
+    message?: string;
+  } | null;
   if (res.ok && body?.status === "success") {
     const parsed = billPaySchema.safeParse(body.data);
-    return parsed.success ? parsed.data : null;
+    if (parsed.success) return parsed.data;
+    throw new Error("PROVIDER_UNCERTAIN");
   }
-  if (res.status >= 400 && res.status < 500 && body?.status === "error") {
-    console.error("flw bill rejected", res.status, body.message);
-    throw new ProviderRejected(body.message ?? "rejected");
+  const message = typeof body?.message === "string" ? body.message.toLowerCase() : "";
+  if (
+    res.status >= 400 &&
+    res.status < 500 &&
+    body?.status === "error" &&
+    /invalid customer|invalid phone|invalid biller|invalid item|wrong amount|missing parameter/.test(
+      message,
+    ) &&
+    !/duplicate|already exists/.test(message)
+  ) {
+    throw new ProviderRejected("provider rejected bill payment");
   }
   throw new Error("PROVIDER_UNCERTAIN");
+}
+
+const billHistoryEntrySchema = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  customer_id: z.string().min(1).max(200),
+  amount: z
+    .union([
+      z.number().finite(),
+      z
+        .string()
+        .regex(/^\d+(?:\.\d+)?$/)
+        .transform(Number),
+    ])
+    .transform(Number)
+    .refine((value) => value > 0),
+  tx_ref: z.string().min(1).max(200),
+  customer_reference: z.string().min(1).max(200),
+  status: z.string().min(1).max(80),
+  country: z.string().max(4).optional(),
+});
+export type VerifiedBillStatus = z.infer<typeof billHistoryEntrySchema>;
+
+/** Looks up a bill by our merchant reference after a DB reference-write failure.
+ * The history API is filtered by our unique customer reference; only one exact
+ * NGN match is accepted. No match or multiple matches stays unresolved.
+ */
+/** Reads a bill's provider status using the Flutterwave tx_ref returned at initiation. */
+export async function getBillStatusByTxRef(txRef: string) {
+  if (!txRef || txRef.length > 200) throw new Error("INVALID_PROVIDER_REFERENCE");
+  const data = await flw<unknown>(`/bills/${encodeURIComponent(txRef)}?verbose=1`);
+  const parsed = billHistoryEntrySchema.safeParse(data);
+  if (!parsed.success) throw new Error("PROVIDER_ERROR");
+  return parsed.data;
+}
+
+/** Recovers a bill when persisting its provider tx_ref failed. Query every terminal status:
+ * Flutterwave's history endpoint defaults to Successful if status is omitted.
+ */
+export async function findBillStatusByCustomerReference(
+  customerReference: string,
+  fromDate: string,
+  toDate: string,
+) {
+  if (
+    !/^F3B-[0-9a-f-]{36}$/.test(customerReference) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(toDate)
+  ) {
+    throw new Error("INVALID_BILL_RECOVERY_QUERY");
+  }
+  const statuses = ["Successful", "Failed", "Reversed"] as const;
+  const results = await Promise.all(
+    statuses.map(async (status) => {
+      const query = new URLSearchParams({
+        status,
+        reference: customerReference,
+        country: "NG",
+        from: fromDate,
+        to: toDate,
+        page: "1",
+        limit: "10",
+      });
+      const rows = await flw<unknown>(`/bills/history?${query.toString()}`);
+      const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
+      if (!parsed.success) throw new Error("PROVIDER_ERROR");
+      return parsed.data;
+    }),
+  );
+  const matches = results
+    .flat()
+    .filter(
+      (row) =>
+        row.customer_reference === customerReference && (!row.country || row.country === "NG"),
+    );
+  const unique = [...new Map(matches.map((row) => [row.tx_ref, row])).values()];
+  if (unique.length !== 1) return null;
+  return unique[0];
 }
