@@ -45,7 +45,6 @@ export const FLUTTERWAVE_COLLECTIONS = [
 /** Bank payout coverage is separate from collection coverage. */
 export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "NG", name: "Nigeria", currency: "NGN" },
-  { country: "US", name: "United States", currency: "USD" },
   { country: "GB", name: "United Kingdom", currency: "GBP" },
   { country: "EU", name: "SEPA countries", currency: "EUR" },
   { country: "AT", name: "Austria", currency: "EUR" },
@@ -76,7 +75,9 @@ export const FLUTTERWAVE_BANK_PAYOUTS = [
   { country: "CM", name: "Cameroon", currency: "XAF" },
   { country: "CI", name: "Côte d’Ivoire", currency: "XOF" },
   { country: "SN", name: "Senegal", currency: "XOF" },
+  { country: "SL", name: "Sierra Leone", currency: "SLL" },
   { country: "ZA", name: "South Africa", currency: "ZAR" },
+  { country: "ZM", name: "Zambia", currency: "ZMW" },
 ] as const;
 
 /** FX trading is a separate, merchant-enabled Flutterwave product, not transfer-rate lookup. */
