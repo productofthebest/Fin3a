@@ -23,9 +23,14 @@ export function WithdrawalWorkspace({ country, currency, available, ngnEnabled, 
   const selectedMethod = showUsMethodSwitch ? method : options.defaultMethod;
 
   return <div className="space-y-6">
-    {showUsMethodSwitch && <div className="grid grid-cols-2 gap-2" role="group" aria-label="Withdrawal method">
-      <Button type="button" variant={selectedMethod === "bank" ? "default" : "outline"} aria-pressed={selectedMethod === "bank"} onClick={() => setMethod("bank")}>USD</Button>
-      <Button type="button" variant={selectedMethod === "crypto" ? "default" : "outline"} aria-pressed={selectedMethod === "crypto"} onClick={() => setMethod("crypto")}>Crypto</Button>
+    {showUsMethodSwitch && <div className="w-40">
+      <Select value={selectedMethod === "crypto" ? "crypto" : "USD"} onValueChange={value => setMethod(value === "crypto" ? "crypto" : "bank")}>
+        <SelectTrigger aria-label="Withdrawal currency or method"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="USD">USD</SelectItem>
+          <SelectItem value="crypto">Crypto</SelectItem>
+        </SelectContent>
+      </Select>
     </div>}
     {selectedMethod === "bank" && options.showBankMethod ? <section className="space-y-4" aria-label="Bank withdrawal">
       <h2 className="font-display text-lg font-semibold">{currency} bank withdrawal</h2>
