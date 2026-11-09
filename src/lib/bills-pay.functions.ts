@@ -73,14 +73,11 @@ export const payBillFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: allowed, error: limitErr } = await supabase.rpc(
-      "consume_rate_limit",
-      {
-        _bucket: "bill_payment",
-        _limit: 10,
-        _window_seconds: 3600,
-      },
-    );
+    const { data: allowed, error: limitErr } = await supabase.rpc("consume_rate_limit", {
+      _bucket: "bill_payment",
+      _limit: 10,
+      _window_seconds: 3600,
+    });
     if (limitErr || allowed === false) {
       return {
         ok: false as const,
@@ -91,20 +88,17 @@ export const payBillFn = createServerFn({ method: "POST" })
     }
     const { payBill, ProviderRejected } = await import("./flutterwave.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: res, error } = await supabaseAdmin.rpc(
-      "reserve_bill_payment",
-      {
-        _user_id: userId,
-        _idempotency_key: data.idempotencyKey,
-        _amount: Math.round(data.amount * 100) / 100,
-        _category: data.category,
-        _biller_code: data.billerCode,
-        _biller_name: data.billerName,
-        _item_code: data.itemCode,
-        _customer: data.customer,
-        _customer_name: null as unknown as string,
-      },
-    );
+    const { data: res, error } = await supabaseAdmin.rpc("reserve_bill_payment", {
+      _user_id: userId,
+      _idempotency_key: data.idempotencyKey,
+      _amount: Math.round(data.amount * 100) / 100,
+      _category: data.category,
+      _biller_code: data.billerCode,
+      _biller_name: data.billerName,
+      _item_code: data.itemCode,
+      _customer: data.customer,
+      _customer_name: null as unknown as string,
+    });
     if (error) {
       console.error("bill reserve outcome is uncertain", error.message);
       return {
@@ -159,16 +153,13 @@ export const payBillFn = createServerFn({ method: "POST" })
       // temporarily unavailable, the user can safely check again without re-initiating.
       let referenceSaved = false;
       for (let attempt = 0; attempt < 3 && !referenceSaved; attempt++) {
-        const { error: referenceError } = await supabaseAdmin.rpc(
-          "finish_bill_payment",
-          {
-            _reference: r.reference,
-            _provider_tx_id: t.tx_ref,
-            _outcome: "pending",
-            _amount: amount,
-            _currency: "NGN",
-          },
-        );
+        const { error: referenceError } = await supabaseAdmin.rpc("finish_bill_payment", {
+          _reference: r.reference,
+          _provider_tx_id: t.tx_ref,
+          _outcome: "pending",
+          _amount: amount,
+          _currency: "NGN",
+        });
         referenceSaved = !referenceError;
         if (referenceError) {
           console.error("bill provider reference persistence attempt failed", {
@@ -179,12 +170,9 @@ export const payBillFn = createServerFn({ method: "POST" })
       }
       if (referenceSaved) {
         const { refreshBillPayment } = await import("./bills-pay.server");
-        await refreshBillPayment(
-          r.reference,
-          t.tx_ref,
-          amount,
-          new Date().toISOString(),
-        ).catch(() => null);
+        await refreshBillPayment(r.reference, t.tx_ref, amount, new Date().toISOString()).catch(
+          () => null,
+        );
       } else {
         // Keep the debit reserved. The customer's Check Status action can recover
         // the provider tx_ref from Flutterwave bill history using this F3B reference.

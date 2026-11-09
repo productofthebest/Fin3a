@@ -188,8 +188,7 @@ export async function payBill(input: {
     if (parsed.success) return parsed.data;
     throw new Error("PROVIDER_UNCERTAIN");
   }
-  const message =
-    typeof body?.message === "string" ? body.message.toLowerCase() : "";
+  const message = typeof body?.message === "string" ? body.message.toLowerCase() : "";
   if (
     res.status >= 400 &&
     res.status < 500 &&
@@ -251,11 +250,7 @@ export async function findBillStatusByCustomerReference(
   const rows = await flw<unknown>(`/bills/history?${query.toString()}`);
   const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
   if (!parsed.success) throw new Error("PROVIDER_ERROR");
-  const matches = parsed.data.filter(
-    (row) =>
-      row.customer_reference === customerReference &&
-      (!row.country || row.country === "NG"),
-  );
+  const matches = parsed.data.filter((row) => row.customer_reference === customerReference && (!row.country || row.country === "NG"));
   if (matches.length !== 1) return null;
   return matches[0];
 }

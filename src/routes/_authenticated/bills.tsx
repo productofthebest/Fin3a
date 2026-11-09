@@ -36,9 +36,7 @@ const PAYMENT_CATEGORIES = [
 
 function BillPaymentServices() {
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState<(typeof PAYMENT_CATEGORIES)[number] | null>(
-    null,
-  );
+  const [selected, setSelected] = useState<(typeof PAYMENT_CATEGORIES)[number] | null>(null);
   const [biller, setBiller] = useState<BillBillerView | null>(null);
   const [customer, setCustomer] = useState("");
   const [customerName, setCustomerName] = useState<string | null>(null);
@@ -48,9 +46,7 @@ function BillPaymentServices() {
   const [reference, setReference] = useState<string | null>(null);
   const [finalStatus, setFinalStatus] = useState<string | null>(null);
   const [checkingReference, setCheckingReference] = useState<string | null>(null);
-  const [paymentIdempotencyKey, setPaymentIdempotencyKey] = useState<string | null>(
-    null,
-  );
+  const [paymentIdempotencyKey, setPaymentIdempotencyKey] = useState<string | null>(null);
   const [paymentAttempted, setPaymentAttempted] = useState(false);
 
   const category = selected?.id as BillCategory | undefined;
@@ -208,10 +204,7 @@ function BillPaymentServices() {
   return (
     <section className="mt-6" aria-labelledby="bill-payment-heading">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2
-          id="bill-payment-heading"
-          className="font-display text-xl font-semibold"
-        >
+        <h2 id="bill-payment-heading" className="font-display text-xl font-semibold">
           Pay bills
         </h2>
         <span className="text-xs text-muted-foreground">
@@ -261,11 +254,7 @@ function BillPaymentServices() {
                   {busy ? "Checking…" : "Check status"}
                 </Button>
               ) : (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={reset}
-                >
+                <Button variant="outline" className="w-full" onClick={reset}>
                   Done
                 </Button>
               )}
@@ -293,11 +282,7 @@ function BillPaymentServices() {
                   <dd>{ngn(0)}</dd>
                 </div>
               </dl>
-              <Button
-                className="w-full"
-                disabled={busy}
-                onClick={() => void pay()}
-              >
+              <Button className="w-full" disabled={busy} onClick={() => void pay()}>
                 {busy ? "Paying…" : "Confirm payment"}
               </Button>
               <Button
@@ -314,11 +299,7 @@ function BillPaymentServices() {
             </div>
           ) : (
             <div className="space-y-4">
-              {billersLoading && (
-                <p className="text-sm text-muted-foreground">
-                  Loading providers…
-                </p>
-              )}
+              {billersLoading && <p className="text-sm text-muted-foreground">Loading providers…</p>}
               {billerData?.error && (
                 <p role="alert" className="text-sm text-destructive">
                   {billerData.error}
@@ -331,23 +312,16 @@ function BillPaymentServices() {
                   list="bill-billers"
                   value={biller?.name ?? ""}
                   onChange={(event) => {
-                    const match = billers.find(
-                      (bill) => bill.name === event.target.value,
-                    );
+                    const match = billers.find((bill) => bill.name === event.target.value);
                     setBiller(match ?? null);
                     setCustomerName(null);
                     if (match?.amount) setAmount(String(match.amount));
                   }}
-                  placeholder={
-                    billers.length ? "Search provider" : "Loading providers…"
-                  }
+                  placeholder={billers.length ? "Search provider" : "Loading providers…"}
                 />
                 <datalist id="bill-billers">
                   {billers.map((bill) => (
-                    <option
-                      key={`${bill.billerCode}:${bill.itemCode}`}
-                      value={bill.name}
-                    />
+                    <option key={`${bill.billerCode}:${bill.itemCode}`} value={bill.name} />
                   ))}
                 </datalist>
               </div>
@@ -366,19 +340,12 @@ function BillPaymentServices() {
                 />
               </div>
               {biller && customer.trim().length >= 4 && !customerName && (
-                <Button
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => void validateCustomer()}
-                >
+                <Button variant="outline" disabled={busy} onClick={() => void validateCustomer()}>
                   {busy ? "Checking…" : "Confirm customer"}
                 </Button>
               )}
               {customerName && (
-                <p
-                  role="status"
-                  className="break-words text-sm font-medium"
-                >
+                <p role="status" className="break-words text-sm font-medium">
                   {customerName}
                 </p>
               )}
@@ -396,13 +363,11 @@ function BillPaymentServices() {
                 </div>
               )}
               {fixedAmount && biller && (
-                <p className="text-sm text-muted-foreground">
-                  Fixed package: {ngn(value)}
-                </p>
+                <p className="text-sm text-muted-foreground">Fixed package: {ngn(value)}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Paid from your NGN wallet. No Fin3a fee. Your balance is held
-                only until the biller confirms.
+                Paid from your NGN wallet. No Fin3a fee. Your balance is held only until the biller
+                confirms.
               </p>
               <DialogFooter>
                 <Button
@@ -421,20 +386,14 @@ function BillPaymentServices() {
           )}
         </DialogContent>
       </Dialog>
-      <section
-        className="mt-8 border-t border-border pt-6"
-        aria-labelledby="bill-history-heading"
-      >
-        <h2
-          id="bill-history-heading"
-          className="font-display text-xl font-semibold"
-        >
+      <section className="mt-8 border-t border-border pt-6" aria-labelledby="bill-history-heading">
+        <h2 id="bill-history-heading" className="font-display text-xl font-semibold">
           Bills history
         </h2>
         {!history?.length ? (
           <p className="mt-3 text-sm text-muted-foreground">
-            No wallet bill payments yet. Recurring bill records below are not
-            confirmed wallet payments.
+            No wallet bill payments yet. Recurring bill records below are not confirmed wallet
+            payments.
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-border text-sm">
@@ -463,13 +422,9 @@ function BillPaymentServices() {
                     size="sm"
                     variant="outline"
                     disabled={checkingReference !== null}
-                    onClick={() =>
-                      void refreshHistoryPayment(payment.reference)
-                    }
+                    onClick={() => void refreshHistoryPayment(payment.reference)}
                   >
-                    {checkingReference === payment.reference
-                      ? "Checking…"
-                      : "Check status"}
+                    {checkingReference === payment.reference ? "Checking…" : "Check status"}
                   </Button>
                 )}
               </li>
