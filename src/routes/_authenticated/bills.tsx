@@ -150,7 +150,7 @@ function BillPaymentServices() {
           </Button>
         ))}
       </div>
-      <Dialog open={selected !== null} onOpenChange={(open) => { if (!open && !busy) reset(); }}>
+      <Dialog open={selected !== null} onOpenChange={(open) => { if (!open && !busy && !paymentAttempted) reset(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>{selected?.name} payment</DialogTitle></DialogHeader>
           {reference ? (
