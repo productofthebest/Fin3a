@@ -143,6 +143,56 @@ const billPaySchema = z.object({
 });
 export type BillPayResult = z.infer<typeof billPaySchema>;
 
+/** Initiates a bill payment using Flutterwave's biller/item-specific V3 endpoint. */
+export async function payBill(input: {
+  billerCode: string;
+  itemCode: string;
+  customer: string;
+  amount: number;
+  reference: string;
+}) {
+  const key = process.env["FLW_SECRET_KEY"];
+  if (!key) throw new ProviderRejected("not configured");
+  const res = await fetch(
+    `${BASE}/billers/${encodeURIComponent(input.billerCode)}/items/${encodeURIComponent(input.itemCode)}/payment`,
+    {
+      method: "POST",
+      signal: AbortSignal.timeout(20_000),
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        country: "NG",
+        customer_id: input.customer,
+        amount: input.amount,
+        reference: input.reference,
+      }),
+    },
+  );
+  const body = (await res.json().catch(() => null)) as {
+    status?: string;
+    data?: unknown;
+    message?: string;
+  } | null;
+  if (res.ok && body?.status === "success") {
+    const parsed = billPaySchema.safeParse(body.data);
+    if (parsed.success) return parsed.data;
+    throw new Error("PROVIDER_UNCERTAIN");
+  }
+  const message = typeof body?.message === "string" ? body.message.toLowerCase() : "";
+  if (
+    res.status >= 400 &&
+    res.status < 500 &&
+    body?.status === "error" &&
+    /invalid customer|invalid phone|invalid biller|invalid item|wrong amount|missing parameter/.test(message) &&
+    !/duplicate|already exists/.test(message)
+  ) {
+    throw new ProviderRejected("provider rejected bill payment");
+  }
+  throw new Error("PROVIDER_UNCERTAIN");
+}
+
 const billHistoryEntrySchema = z.object({
   currency: z.string().regex(/^[A-Z]{3}$/),
   customer_id: z.string().min(1).max(200),
