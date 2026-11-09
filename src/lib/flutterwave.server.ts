@@ -276,8 +276,7 @@ export async function findBillStatusByCustomerReference(
     .flat()
     .filter(
       (row) =>
-        row.customer_reference === customerReference &&
-        (!row.country || row.country === "NG"),
+        row.customer_reference === customerReference && (!row.country || row.country === "NG"),
     );
   const unique = [...new Map(matches.map((row) => [row.tx_ref, row])).values()];
   if (unique.length !== 1) return null;
