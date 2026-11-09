@@ -211,10 +211,16 @@ export type VerifiedBillStatus = z.infer<typeof billHistoryEntrySchema>;
  * The history API is filtered by our unique customer reference; only one exact
  * NGN match is accepted. No match or multiple matches stays unresolved.
  */
-export async function findBillStatusByCustomerReference(customerReference: string, fromDate: string, toDate: string) {
-  if (!/^F3B-[0-9a-f-]{36}$/.test(customerReference)
-      || !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)
-      || !/^\d{4}-\d{2}-\d{2}$/.test(toDate)) {
+export async function findBillStatusByCustomerReference(
+  customerReference: string,
+  fromDate: string,
+  toDate: string,
+) {
+  if (
+    !/^F3B-[0-9a-f-]{36}$/.test(customerReference) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(toDate)
+  ) {
     throw new Error("INVALID_BILL_RECOVERY_QUERY");
   }
   const query = new URLSearchParams({
@@ -228,7 +234,9 @@ export async function findBillStatusByCustomerReference(customerReference: strin
   const rows = await flw<unknown>(`/bills/history?${query.toString()}`);
   const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
   if (!parsed.success) throw new Error("PROVIDER_ERROR");
-  const matches = parsed.data.filter(row => row.customer_reference === customerReference && (!row.country || row.country === "NG"));
+  const matches = parsed.data.filter(
+    (row) => row.customer_reference === customerReference && (!row.country || row.country === "NG"),
+  );
   if (matches.length !== 1) return null;
   return matches[0];
 }

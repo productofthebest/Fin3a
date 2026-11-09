@@ -8,16 +8,30 @@ function outcome(status: string): "successful" | "failed" | "pending" {
   return "pending";
 }
 
-export async function applyBillStatus(status: VerifiedBillStatus, expectedReference: string, expectedAmount: number) {
+export async function applyBillStatus(
+  status: VerifiedBillStatus,
+  expectedReference: string,
+  expectedAmount: number,
+) {
   if (status.customer_reference !== expectedReference) throw new Error("REFERENCE_MISMATCH");
-  if (status.currency !== "NGN" || Math.round(status.amount * 100) !== Math.round(expectedAmount * 100)) {
+  if (
+    status.currency !== "NGN" ||
+    Math.round(status.amount * 100) !== Math.round(expectedAmount * 100)
+  ) {
     throw new Error("AMOUNT_OR_CURRENCY_MISMATCH");
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.rpc("finish_bill_payment", {
-    _reference: expectedReference, _provider_tx_id: status.tx_ref, _outcome: outcome(status.status), _amount: status.amount, _currency: status.currency,
+    _reference: expectedReference,
+    _provider_tx_id: status.tx_ref,
+    _outcome: outcome(status.status),
+    _amount: status.amount,
+    _currency: status.currency,
   });
-  if (error) { console.error("finish_bill_payment failed", error.message); throw new Error("SETTLE_FAILED"); }
+  if (error) {
+    console.error("finish_bill_payment failed", error.message);
+    throw new Error("SETTLE_FAILED");
+  }
   return data as { status: string };
 }
 

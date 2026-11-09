@@ -33,9 +33,7 @@ describe("Flutterwave V3 bill payments", () => {
       reference: "F3B-12345678-1234-1234-1234-123456789012",
     });
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain(
-      "/billers/BIL099/items/AT099/payment",
-    );
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/billers/BIL099/items/AT099/payment");
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({
       country: "NG",
       customer_id: "08012345678",

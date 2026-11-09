@@ -79,12 +79,28 @@ jobs:
               path,
               mainErrors: before?.errorCount ?? 0,
               branchErrors: after?.errorCount ?? 0,
-              branchMessages: (after?.messages ?? []).map(message => ({
-                line: message.line,
-                column: message.column,
-                ruleId: message.ruleId,
-                message: message.message,
-              })),
+              addedMessages: (() => {
+                const key = message => `${message.ruleId}::${message.message}`;
+                const remaining = new Map();
+                for (const message of before?.messages ?? []) {
+                  const value = key(message);
+                  remaining.set(value, (remaining.get(value) ?? 0) + 1);
+                }
+                return (after?.messages ?? []).filter(message => {
+                  const value = key(message);
+                  const count = remaining.get(value) ?? 0;
+                  if (count > 0) {
+                    remaining.set(value, count - 1);
+                    return false;
+                  }
+                  return true;
+                }).map(message => ({
+                  line: message.line,
+                  column: message.column,
+                  ruleId: message.ruleId,
+                  message: message.message,
+                }));
+              })(),
             }));
           }
           NODE
