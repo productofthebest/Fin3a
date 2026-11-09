@@ -46,6 +46,8 @@ function BillPaymentServices() {
   const [reference, setReference] = useState<string | null>(null);
   const [finalStatus, setFinalStatus] = useState<string | null>(null);
   const [checkingReference, setCheckingReference] = useState<string | null>(null);
+  const [paymentIdempotencyKey, setPaymentIdempotencyKey] = useState<string | null>(null);
+  const [paymentAttempted, setPaymentAttempted] = useState(false);
 
   const category = selected?.id as BillCategory | undefined;
   const { data: billerData, isFetching: billersLoading } = useQuery({
@@ -61,7 +63,7 @@ function BillPaymentServices() {
   const valid = Boolean(biller) && customer.trim().length >= 4 && Number.isFinite(value) && value >= 50 && value <= 5000000;
 
   function reset() {
-    setSelected(null); setBiller(null); setCustomer(""); setCustomerName(null); setAmount(""); setConfirming(false); setReference(null); setFinalStatus(null);
+    setSelected(null); setBiller(null); setCustomer(""); setCustomerName(null); setAmount(""); setConfirming(false); setReference(null); setFinalStatus(null); setPaymentIdempotencyKey(null); setPaymentAttempted(false);
   }
 
   async function validateCustomer() {
@@ -79,14 +81,25 @@ function BillPaymentServices() {
     if (!biller || !category || !valid || busy) return;
     setBusy(true);
     try {
-      const r = await payBillFn({ data: { category, billerCode: biller.billerCode, billerName: biller.shortName ?? biller.name, itemCode: biller.itemCode, customer: customer.trim(), amount: value, idempotencyKey: crypto.randomUUID() } });
-      if (!r.ok) { toast.error(r.error); setConfirming(false); return; }
+      const idempotencyKey = paymentIdempotencyKey ?? crypto.randomUUID();
+      setPaymentIdempotencyKey(idempotencyKey);
+      setPaymentAttempted(true);
+      const r = await payBillFn({ data: { category, billerCode: biller.billerCode, billerName: biller.shortName ?? biller.name, itemCode: biller.itemCode, customer: customer.trim(), amount: value, idempotencyKey } });
+      if (!r.ok) { toast.error(r.error); setConfirming(false); setPaymentIdempotencyKey(null); setPaymentAttempted(false); return; }
       setReference(r.reference);
       setConfirming(false);
       await queryClient.invalidateQueries({ queryKey: ["accounts"] });
       await queryClient.invalidateQueries({ queryKey: ["bill-payments"] });
+      setPaymentAttempted(false);
       toast.success("Payment started. We'll confirm when the biller completes it.");
-    } catch { toast.error("Payment could not be started. No money was moved."); setConfirming(false); }
+    } catch {
+      // Keep the same idempotency key and confirmation view. A retry reuses the
+      // original reservation instead of creating a second provider payment.
+      setPaymentAttempted(true);
+      await queryClient.invalidateQueries({ queryKey: ["bill-payments"] });
+      await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      toast.error("We couldn't confirm the response. Keep this payment open and retry or check Bills history before starting another payment.");
+    }
     finally { setBusy(false); }
   }
 
@@ -158,7 +171,7 @@ function BillPaymentServices() {
                 <div><dt className="text-muted-foreground">Fin3a fee</dt><dd>{ngn(0)}</dd></div>
               </dl>
               <Button className="w-full" disabled={busy} onClick={() => void pay()}>{busy ? "Paying…" : "Confirm payment"}</Button>
-              <Button variant="outline" className="w-full" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
+              <Button variant="outline" className="w-full" disabled={busy || paymentAttempted} onClick={() => { setPaymentIdempotencyKey(null); setConfirming(false); }}>Back</Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -185,7 +198,7 @@ function BillPaymentServices() {
               )}
               {fixedAmount && biller && <p className="text-sm text-muted-foreground">Fixed package: {ngn(value)}</p>}
               <p className="text-xs text-muted-foreground">Paid from your NGN wallet. No Fin3a fee. Your balance is held only until the biller confirms.</p>
-              <DialogFooter><Button className="w-full" disabled={busy || !valid} onClick={() => setConfirming(true)}>Review payment</Button></DialogFooter>
+              <DialogFooter><Button className="w-full" disabled={busy || !valid} onClick={() => { setPaymentIdempotencyKey(crypto.randomUUID()); setPaymentAttempted(false); setConfirming(true); }}>Review payment</Button></DialogFooter>
             </div>
           )}
         </DialogContent>
