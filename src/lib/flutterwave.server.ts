@@ -139,7 +139,15 @@ export async function validateBillCustomer(billerCode: string, itemCode: string,
 const billPaySchema = z.object({
   tx_ref: z.string().min(1).max(200),
   reference: z.string().min(1).max(200).nullish(),
-  amount: z.union([z.number().finite(), z.string().regex(/^\d+(?:\.\d+)?$/).transform(Number)]).optional(),
+  amount: z
+    .union([
+      z.number().finite(),
+      z
+        .string()
+        .regex(/^\\d+(?:\\.\\d+)?$/)
+        .transform(Number),
+    ])
+    .optional(),
 });
 export type BillPayResult = z.infer<typeof billPaySchema>;
 
@@ -180,12 +188,15 @@ export async function payBill(input: {
     if (parsed.success) return parsed.data;
     throw new Error("PROVIDER_UNCERTAIN");
   }
-  const message = typeof body?.message === "string" ? body.message.toLowerCase() : "";
+  const message =
+    typeof body?.message === "string" ? body.message.toLowerCase() : "";
   if (
     res.status >= 400 &&
     res.status < 500 &&
     body?.status === "error" &&
-    /invalid customer|invalid phone|invalid biller|invalid item|wrong amount|missing parameter/.test(message) &&
+    /invalid customer|invalid phone|invalid biller|invalid item|wrong amount|missing parameter/.test(
+      message,
+    ) &&
     !/duplicate|already exists/.test(message)
   ) {
     throw new ProviderRejected("provider rejected bill payment");
@@ -196,10 +207,16 @@ export async function payBill(input: {
 const billHistoryEntrySchema = z.object({
   currency: z.string().regex(/^[A-Z]{3}$/),
   customer_id: z.string().min(1).max(200),
-  amount: z.union([
-    z.number().finite(),
-    z.string().regex(/^\d+(?:\.\d+)?$/).transform(Number),
-  ]).transform(Number).refine(value => value > 0),
+  amount: z
+    .union([
+      z.number().finite(),
+      z
+        .string()
+        .regex(/^\\d+(?:\\.\\d+)?$/)
+        .transform(Number),
+    ])
+    .transform(Number)
+    .refine((value) => value > 0),
   tx_ref: z.string().min(1).max(200),
   customer_reference: z.string().min(1).max(200),
   status: z.string().min(1).max(80),
@@ -218,8 +235,8 @@ export async function findBillStatusByCustomerReference(
 ) {
   if (
     !/^F3B-[0-9a-f-]{36}$/.test(customerReference) ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(toDate)
+    !/^\\d{4}-\\d{2}-\\d{2}$/.test(fromDate) ||
+    !/^\\d{4}-\\d{2}-\\d{2}$/.test(toDate)
   ) {
     throw new Error("INVALID_BILL_RECOVERY_QUERY");
   }
@@ -235,7 +252,9 @@ export async function findBillStatusByCustomerReference(
   const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
   if (!parsed.success) throw new Error("PROVIDER_ERROR");
   const matches = parsed.data.filter(
-    (row) => row.customer_reference === customerReference && (!row.country || row.country === "NG"),
+    (row) =>
+      row.customer_reference === customerReference &&
+      (!row.country || row.country === "NG"),
   );
   if (matches.length !== 1) return null;
   return matches[0];
