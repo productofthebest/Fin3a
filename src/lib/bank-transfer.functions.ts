@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getBankPayoutCapability } from "@/lib/flutterwave-capabilities";
 
 export const getNigerianBanks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -27,5 +28,31 @@ export const verifyBankAccount = createServerFn({ method: "POST" })
       return { found: true as const, accountName: r.accountName };
     } catch {
       return { found: false as const, error: "We couldn't confirm this account. Check the bank and number." };
+    }
+  });
+
+const countryCodeSchema = z.string().regex(/^[A-Z]{2}$/).refine(country => country !== "NG" && Boolean(getBankPayoutCapability(country)));
+
+export const getCountryTransferBanks = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(input => z.object({ country: countryCodeSchema }).parse(input))
+  .handler(async ({ data }) => {
+    const { listTransferBanks } = await import("./flutterwave.server");
+    try {
+      return { banks: await listTransferBanks(data.country), error: null as string | null };
+    } catch {
+      return { banks: [] as { id: string; code: string; name: string; hasBranches: boolean }[], error: "Banks could not be loaded for this destination." };
+    }
+  });
+
+export const getCountryBankBranches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(input => z.object({ country: countryCodeSchema, bankId: z.string().trim().min(1).max(32).regex(/^[A-Za-z0-9_-]+$/) }).parse(input))
+  .handler(async ({ data }) => {
+    const { listTransferBankBranches } = await import("./flutterwave.server");
+    try {
+      return { branches: await listTransferBankBranches(data.country, data.bankId), error: null as string | null };
+    } catch {
+      return { branches: [] as { code: string; name: string }[], error: "Branches could not be loaded for this bank." };
     }
   });
