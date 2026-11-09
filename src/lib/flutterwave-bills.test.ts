@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getBillStatus, payBill } from "./flutterwave.server";
+import { findBillStatusByCustomerReference, payBill } from "./flutterwave.server";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -28,23 +28,30 @@ describe("Flutterwave V3 bill payments", () => {
     expect(result.tx_ref).toBe("CF-FLYAPI-202611091200001234");
   });
 
-  it("retrieves status by provider tx_ref and returns the customer's reference for matching", async () => {
+  it("recovers a provider tx_ref from bill history using the merchant reference", async () => {
     vi.stubEnv("FLW_SECRET_KEY", "test-secret");
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       status: "success",
-      data: {
-        currency: "NGN", customer_id: "08012345678", amount: "500.00",
+      data: [{
+        currency: "NGN",
+        customer_id: "08012345678",
+        amount: "500.00",
         tx_ref: "CF-FLYAPI-202611091200001234",
         customer_reference: "F3B-12345678-1234-1234-1234-123456789012",
-        status: "successful",
-      },
+        status: "Successful",
+        country: "NG",
+      }],
     }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await getBillStatus("CF-FLYAPI-202611091200001234");
+    const result = await findBillStatusByCustomerReference(
+      "F3B-12345678-1234-1234-1234-123456789012",
+      "2026-11-08",
+      "2026-11-09",
+    );
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain("/bills/CF-FLYAPI-202611091200001234?verbose=1");
-    expect(result.customer_reference).toBe("F3B-12345678-1234-1234-1234-123456789012");
-    expect(result.status).toBe("successful");
-  });
-});
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/bills/history?");
+    expect(String(fetchMock.mock.calls[0][0])).toContain("reference=F3B-12345678-1234-1234-1234-123456789012");
+    expect(result?.tx_ref).toBe("CF-FLYAPI-202611091200001234");
+    expect(result?.status).toBe("Successful");
+  });});

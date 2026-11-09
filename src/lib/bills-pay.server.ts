@@ -1,5 +1,5 @@
 // Server-only: applies Flutterwave-verified bill payment outcomes. Never trust request bodies for status/amount.
-import { getBillStatus, type VerifiedBillStatus } from "./flutterwave.server";
+import { findBillStatusByCustomerReference, type VerifiedBillStatus } from "./flutterwave.server";
 
 function outcome(status: string): "successful" | "failed" | "pending" {
   const s = status.toLowerCase();
@@ -28,21 +28,12 @@ export async function refreshBillPayment(
   expectedAmount: number,
   createdAt: string,
 ) {
-  let resolvedTxRef = providerTxId;
-  if (!resolvedTxRef) {
-    // Recovery path for a successful provider call whose tx_ref could not be
-    // persisted locally. Search by our unique merchant reference; never create
-    // another bill payment from this path.
-    const { findBillStatusByCustomerReference } = await import("./flutterwave.server");
-    const from = new Date(Date.parse(createdAt) - 86_400_000).toISOString().slice(0, 10);
-    const to = new Date().toISOString().slice(0, 10);
-    const recovered = await findBillStatusByCustomerReference(reference, from, to);
-    if (!recovered) return { status: "pending" };
-    if (recovered.currency !== "NGN" || Math.round(recovered.amount * 100) !== Math.round(expectedAmount * 100)) {
-      throw new Error("AMOUNT_OR_CURRENCY_MISMATCH");
-    }
-    resolvedTxRef = recovered.tx_ref;
+  const from = new Date(Date.parse(createdAt) - 86_400_000).toISOString().slice(0, 10);
+  const to = new Date().toISOString().slice(0, 10);
+  const recovered = await findBillStatusByCustomerReference(reference, from, to);
+  if (!recovered) return { status: "pending" };
+  if (providerTxId && recovered.tx_ref !== providerTxId) {
+    throw new Error("PROVIDER_REFERENCE_MISMATCH");
   }
-  const status = await getBillStatus(resolvedTxRef);
-  return applyBillStatus(status, reference, expectedAmount);
+  return applyBillStatus(recovered, reference, expectedAmount);
 }
