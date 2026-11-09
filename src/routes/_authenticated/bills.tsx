@@ -85,7 +85,15 @@ function BillPaymentServices() {
       setPaymentIdempotencyKey(idempotencyKey);
       setPaymentAttempted(true);
       const r = await payBillFn({ data: { category, billerCode: biller.billerCode, billerName: biller.shortName ?? biller.name, itemCode: biller.itemCode, customer: customer.trim(), amount: value, idempotencyKey } });
-      if (!r.ok) { toast.error(r.error); setConfirming(false); setPaymentIdempotencyKey(null); setPaymentAttempted(false); return; }
+      if (!r.ok) {
+        toast.error(r.error);
+        if (!r.retrySameAttempt) {
+          setConfirming(false);
+          setPaymentIdempotencyKey(null);
+          setPaymentAttempted(false);
+        }
+        return;
+      }
       setReference(r.reference);
       setConfirming(false);
       await queryClient.invalidateQueries({ queryKey: ["accounts"] });

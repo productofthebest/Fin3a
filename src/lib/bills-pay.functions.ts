@@ -70,7 +70,13 @@ export const payBillFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: allowed, error: limitErr } = await supabase.rpc("consume_rate_limit", { _bucket: "bill_payment", _limit: 10, _window_seconds: 3600 });
-    if (limitErr || allowed === false) return { ok: false as const, error: "Too many bill payments. Try again later." };
+    if (limitErr || allowed === false) {
+      return {
+        ok: false as const,
+        retrySameAttempt: true as const,
+        error: "Too many bill payment attempts. Retry this same payment later or check Bills history.",
+      };
+    }
     const { payBill, ProviderRejected } = await import("./flutterwave.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: res, error } = await supabaseAdmin.rpc("reserve_bill_payment", {
@@ -78,7 +84,14 @@ export const payBillFn = createServerFn({ method: "POST" })
       _category: data.category, _biller_code: data.billerCode, _biller_name: data.billerName, _item_code: data.itemCode,
       _customer: data.customer, _customer_name: null as unknown as string,
     });
-    if (error) { console.error("bill reserve failed", error.message); return { ok: false as const, error: "Payment could not be started. No money was moved." }; }
+    if (error) {
+      console.error("bill reserve outcome is uncertain", error.message);
+      return {
+        ok: false as const,
+        retrySameAttempt: true as const,
+        error: "We couldn't confirm whether this payment was reserved. Retry this same payment; don't start another one.",
+      };
+    }
     const r = res as { status: string; reference?: string; available?: number };
     if (r.status === "insufficient") return { ok: false as const, error: "Not enough NGN balance for this payment." };
     if (r.status === "invalid_amount") return { ok: false as const, error: "Amount must be at least ₦50." };
