@@ -23,11 +23,12 @@
 7. Keep NGN withdrawal creation locked until the above checks and independent review pass.
 
 ## International payout corridor policy
-- Fin3a may offer only the countries, currencies, payout methods and beneficiary types explicitly enabled for TOP FLOOR LIMITED in its Flutterwave merchant dashboard and confirmed by current provider/merchant evidence.
-- A country appearing in generic Flutterwave API documentation is not proof that this merchant account is approved for that corridor.
-- Every enabled corridor must have an explicit server-side allowlist entry and validated country-specific schema, currency, bank/payment method, limits, fees/FX disclosure, beneficiary checks, settlement and reconciliation tests.
-- Countries/currencies/methods absent from the merchant-approved allowlist must remain unavailable. Never fall back to a global international-withdrawals switch or infer approval from a neighbouring country.
-- The exact dashboard-approved corridor list has not yet been supplied to or independently verified by the implementation team. Do not populate guessed countries or enable any international route until the list and evidence are recorded.
+- Fin3a may offer only the countries, currencies, payout methods and beneficiary types explicitly enabled for TOP FLOOR LIMITED for **outbound transfers/payouts**, confirmed by current provider/merchant evidence.
+- Do not treat Flutterwave's **Payment Methods** settings as proof of outbound payout approval. The supplied screenshots show inbound/customer payment configuration: Bank Transfer—Nigeria enabled; Bank Transfer—Ghana requests access; Pay With Bank—Nigeria and UK/EU enabled; Pay With Bank—South Africa requests access; Mobile Money—Ghana, Rwanda and Uganda enabled. Apple Pay, eNaira, USSD and NQR are also shown as enabled payment methods. These are recorded as payment-acceptance settings only, not as withdrawal corridors.
+- A country appearing in generic Flutterwave API documentation, or in the Payment Methods screen, is not proof that this merchant account is approved to send payouts there.
+- Every enabled outbound corridor must have an explicit server-side allowlist entry and validated country-specific schema, currency, bank/payment method, limits, fees/FX disclosure, beneficiary checks, settlement and reconciliation tests.
+- Countries/currencies/methods absent from the merchant-approved payout allowlist must remain unavailable. Never fall back to a global international-withdrawals switch or infer approval from inbound payment methods.
+- The exact outbound payout country/currency/method list has not yet been supplied or independently verified. Obtain the Flutterwave Transfers/Payouts dashboard evidence or written merchant confirmation before populating the allowlist or enabling any international route.
 - International withdrawals remain locked until non-NGN reservations are integrated with every balance-consuming path and corridor-specific provider settlement/reversal tests pass.
 
 ## Deliberately not enabled
