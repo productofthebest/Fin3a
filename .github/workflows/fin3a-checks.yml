@@ -62,6 +62,31 @@ jobs:
             warnings: branch.warnings - baseline.warnings,
             filesWithErrors: branch.filesWithErrors - baseline.filesWithErrors,
           }));
+          const focus = [
+            "src/lib/flutterwave.server.ts",
+            "src/lib/bills-pay.server.ts",
+            "src/lib/bills-pay.functions.ts",
+            "src/lib/flutterwave-bills.test.ts",
+            "src/routes/_authenticated/bills.tsx",
+          ];
+          const mainRows = JSON.parse(fs.readFileSync("/tmp/fin3a-main-eslint.json", "utf8"));
+          const branchRows = JSON.parse(fs.readFileSync("/tmp/fin3a-branch-eslint.json", "utf8"));
+          for (const path of focus) {
+            const find = (rows) => rows.find(row => row.filePath.endsWith("/" + path));
+            const before = find(mainRows);
+            const after = find(branchRows);
+            console.log("FOCUS_LINT", JSON.stringify({
+              path,
+              mainErrors: before?.errorCount ?? 0,
+              branchErrors: after?.errorCount ?? 0,
+              branchMessages: (after?.messages ?? []).map(message => ({
+                line: message.line,
+                column: message.column,
+                ruleId: message.ruleId,
+                message: message.message,
+              })),
+            }));
+          }
           NODE
       - name: Lint PR-modified application files (non-format rules)
         if: always()
