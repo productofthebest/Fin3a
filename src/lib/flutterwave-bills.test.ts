@@ -1,9 +1,24 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { findBillStatusByCustomerReference, payBill } from "./flutterwave.server";
+import {
+  findBillStatusByCustomerReference,
+  getBillStatusByTxRef,
+  payBill,
+} from "./flutterwave.server";
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+});
+
+const billHistoryRow = (overrides: Record<string, unknown> = {}) => ({
+  currency: "NGN",
+  customer_id: "08012345678",
+  amount: "500.00",
+  tx_ref: "CF-FLYAPI-202611091200001234",
+  customer_reference: "F3B-12345678-1234-1234-1234-123456789012",
+  status: "Successful",
+  country: "NG",
+  ...overrides,
 });
 
 describe("Flutterwave V3 bill payments", () => {
@@ -43,27 +58,35 @@ describe("Flutterwave V3 bill payments", () => {
     expect(result.tx_ref).toBe("CF-FLYAPI-202611091200001234");
   });
 
-  it("recovers a provider tx_ref from bill history using the merchant reference", async () => {
+  it("checks the direct bill status endpoint when a provider tx_ref is saved", async () => {
     vi.stubEnv("FLW_SECRET_KEY", "test-secret");
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
           status: "success",
-          data: [
-            {
-              currency: "NGN",
-              customer_id: "08012345678",
-              amount: "500.00",
-              tx_ref: "CF-FLYAPI-202611091200001234",
-              customer_reference: "F3B-12345678-1234-1234-1234-123456789012",
-              status: "Successful",
-              country: "NG",
-            },
-          ],
+          data: billHistoryRow({ status: "Failed" }),
         }),
         { status: 200 },
       ),
     );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getBillStatusByTxRef("CF-FLYAPI-202611091200001234");
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain(
+      "/bills/CF-FLYAPI-202611091200001234?verbose=1",
+    );
+    expect(result.status).toBe("Failed");
+  });
+
+  it("recovers failed and reversed outcomes instead of relying on history's successful default", async () => {
+    vi.stubEnv("FLW_SECRET_KEY", "test-secret");
+    const fetchMock = vi.fn().mockImplementation(async (input: string | URL) => {
+      const url = new URL(String(input));
+      const status = url.searchParams.get("status");
+      const rows = status === "Failed" ? [billHistoryRow({ status: "Failed" })] : [];
+      return new Response(JSON.stringify({ status: "success", data: rows }), { status: 200 });
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await findBillStatusByCustomerReference(
@@ -72,12 +95,11 @@ describe("Flutterwave V3 bill payments", () => {
       "2026-11-09",
     );
 
-    expect(String(fetchMock.mock.calls[0][0])).toContain("/bills/history?");
-    expect(String(fetchMock.mock.calls[0][0])).toContain(
-      "reference=F3B-12345678-1234-1234-1234-123456789012",
-    );
-    expect(result?.tx_ref).toBe("CF-FLYAPI-202611091200001234");
-    expect(result?.status).toBe("Successful");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(
+      fetchMock.mock.calls.map(([url]) => new URL(String(url)).searchParams.get("status")),
+    ).toEqual(["Successful", "Failed", "Reversed"]);
+    expect(result?.status).toBe("Failed");
   });
 
   it("does not recover when bill history returns a different merchant reference", async () => {
@@ -86,17 +108,7 @@ describe("Flutterwave V3 bill payments", () => {
       new Response(
         JSON.stringify({
           status: "success",
-          data: [
-            {
-              currency: "NGN",
-              customer_id: "08012345678",
-              amount: "500.00",
-              tx_ref: "CF-FLYAPI-202611091200001234",
-              customer_reference: "F3B-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-              status: "Successful",
-              country: "NG",
-            },
-          ],
+          data: [billHistoryRow({ customer_reference: "F3B-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" })],
         }),
         { status: 200 },
       ),
@@ -110,5 +122,6 @@ describe("Flutterwave V3 bill payments", () => {
     );
 
     expect(result).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
