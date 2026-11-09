@@ -89,7 +89,8 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
         <div><dt className="text-muted-foreground">Fin3a fee</dt><dd>{ngn(FEE)}</dd></div>
         <div><dt className="text-muted-foreground">Your bank receives</dt><dd className="font-semibold">{ngn(value - FEE)}</dd></div>
       </dl>
-      <Button className="w-full" disabled={busy} onClick={() => void submit()}>{busy ? "Sending…" : "Confirm withdrawal"}</Button>
+      <p className="text-xs text-muted-foreground">Withdrawals are limited to your own verified bank account. Fin3a's verified legal-name matching is not yet available, so submission is disabled.</p>
+      <Button className="w-full" disabled>Withdrawal unavailable pending identity verification</Button>
       <Button variant="outline" className="w-full" disabled={busy} onClick={() => setConfirming(false)}>Back</Button>
     </div>;
   }
@@ -111,7 +112,8 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
       <Input id="wd-amount" type="number" min="100" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
     </div>
     <p className="text-xs text-muted-foreground">Fee: ₦50, deducted from the payout. Your bank receives {ngn(valid ? value - FEE : 0)}. The account name is confirmed before any money moves.</p>
-    <Button className="w-full" disabled={busy || !valid || !accountName} onClick={() => setConfirming(true)}>Review withdrawal</Button>
+    <p className="text-xs text-muted-foreground">Withdrawals are only for a bank account belonging to you. Third-party beneficiary accounts are not allowed. Submission remains unavailable until Fin3a can compare the bank account holder with your verified identity.</p>
+    <Button className="w-full" disabled>Withdrawal unavailable pending identity verification</Button>
     <RecentWithdrawals rows={recent ?? []} />
   </div>;
 }
