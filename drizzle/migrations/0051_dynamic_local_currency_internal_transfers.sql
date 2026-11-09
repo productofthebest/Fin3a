@@ -30,6 +30,12 @@ BEGIN
     RETURN _transfer_id;
   END IF;
 
+  INSERT INTO public.accounts (user_id, currency) VALUES (_to_user, _currency)
+  ON CONFLICT (user_id, currency) DO NOTHING RETURNING id INTO _to_account;
+  IF _to_account IS NULL THEN
+    SELECT id INTO _to_account FROM public.accounts WHERE user_id = _to_user AND currency = _currency;
+  END IF;
+
   -- Require a real sender wallet in the exact currency. Recipient receives the
   -- same currency; this operation never performs an FX conversion.
   SELECT id INTO _from_account FROM public.accounts
@@ -37,12 +43,6 @@ BEGIN
   FOR UPDATE;
   IF _from_account IS NULL THEN
     RAISE EXCEPTION 'Sender account not found';
-  END IF;
-
-  INSERT INTO public.accounts (user_id, currency) VALUES (_to_user, _currency)
-  ON CONFLICT (user_id, currency) DO NOTHING RETURNING id INTO _to_account;
-  IF _to_account IS NULL THEN
-    SELECT id INTO _to_account FROM public.accounts WHERE user_id = _to_user AND currency = _currency;
   END IF;
 
   SELECT COALESCE(SUM(CASE WHEN kind IN ('deposit','transfer_in') THEN amount ELSE -amount END), 0)
