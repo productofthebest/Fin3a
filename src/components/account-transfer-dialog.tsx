@@ -105,13 +105,22 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
         </button>}
         {countryCode !== "NG" && <button type="button" aria-pressed={mode === "local_bank"} onClick={() => setMode("local_bank")} className={"flex min-h-28 flex-col items-start justify-between rounded-xl border p-4 text-left transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " + (mode === "local_bank" ? "border-primary bg-primary/5" : "border-border bg-card")}>
           <span className="flex w-full items-center justify-between"><span className="text-lg font-semibold text-primary">{localBankCapability?.currency ?? "—"}</span><span className="text-xs text-muted-foreground">{mode === "local_bank" ? "Selected" : "Tap to select"}</span></span>
-          <span className="mt-3 block text-sm font-semibold">Flutterwave bank transfer</span><span className="mt-1 block text-xs text-muted-foreground">{localBankCapability ? `${localBankCapability.name} · ${localBankCapability.currency}` : "Unavailable"}</span>
+          <span className="mt-3 block text-sm font-semibold">Local country transfer</span><span className="mt-1 block text-xs text-muted-foreground">{localBankCapability ? `${localBankCapability.name} · ${localBankCapability.currency}` : "Unavailable"}</span>
         </button>}
       </div>}
-      {mode === "local_bank" && !confirming ? <section className="rounded-xl border border-border p-4" aria-label="Flutterwave bank transfer support">
-        {localBankCapability
-          ? <p className="text-sm">{localBankCapability.name} · {localBankCapability.currency} — Flutterwave bank-transfer API support.</p>
-          : <p className="text-sm">Unavailable</p>}
+      {mode === "local_bank" && !confirming ? <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Local country transfer details">
+        {localBankCapability ? <>
+          <p className="font-medium">Send to a {localBankCapability.name} bank account · {localBankCapability.currency}</p>
+          <p className="text-sm text-muted-foreground">Recipient details required for this destination:</p>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+            {countryCode === "GH" ? <><li>Beneficiary full name</li><li>Bank and bank code</li><li>Branch and branch code</li><li>Account number</li></> :
+             countryCode === "GB" ? <><li>Beneficiary full name</li><li>Bank name</li><li>Sort code</li><li>Account number</li></> :
+             countryCode === "US" ? <><li>Beneficiary full name</li><li>Bank name</li><li>Routing number</li><li>Account number</li></> :
+             countryCode === "EU" || ["AT","BE","CY","DE","EE","ES","FI","FR","GR","HR","IE","IT","LT","LU","LV","MT","NL","PT","SI","SK"].includes(countryCode) ? <><li>Beneficiary full name</li><li>IBAN</li><li>Bank BIC / SWIFT code, where required</li></> :
+             <><li>Beneficiary full name</li><li>Bank and country-specific bank code</li><li>Account number</li></>}
+          </ul>
+          <p className="text-xs text-muted-foreground">Transfer submission will appear when this destination is enabled for your Fin3a account.</p>
+        </> : <p className="text-sm">Unavailable</p>}
       </section> : null}
       {mode === "bank" && !confirming ? <>
         <p className="text-sm text-muted-foreground">Available: {new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(balances.find(a => a.currency === "NGN")?.balance.available ?? 0)}</p>
