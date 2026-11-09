@@ -139,14 +139,14 @@ export async function validateBillCustomer(billerCode: string, itemCode: string,
 const billPaySchema = z.object({
   tx_ref: z.string().min(1).max(200),
   reference: z.string().min(1).max(200).nullish(),
-  amount: z.union([z.number().finite(), z.string().regex(/^\\d+(?:\\.\\d+)?$/).transform(Number)]).optional(),
+  amount: z.union([z.number().finite(), z.string().regex(/^\d+(?:\.\d+)?$/).transform(Number)]).optional(),
 });
 export type BillPayResult = z.infer<typeof billPaySchema>;
 
 const billStatusSchema = z.object({
   currency: z.string().regex(/^[A-Z]{3}$/),
   customer_id: z.string().min(1).max(200),
-  amount: z.union([z.number().finite(), z.string().regex(/^\\d+(?:\\.\\d+)?$/).transform(Number)]).transform(Number).refine(n => n > 0),
+  amount: z.union([z.number().finite(), z.string().regex(/^\d+(?:\.\d+)?$/).transform(Number)]).transform(Number).refine(n => n > 0),
   tx_ref: z.string().min(1).max(200),
   customer_reference: z.string().min(1).max(200),
   status: z.string().min(1).max(80).optional().default("pending"),
