@@ -57,15 +57,20 @@ const BANK_FIELDS: Record<string, Field[]> = {
   ],
 };
 const SEPA_COUNTRIES = ["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"];
-const BANK_CODE_COUNTRIES = ["CM", "CI", "SN", "MW"];
-const fieldsFor = (country: string): Field[] => BANK_FIELDS[country] ?? (SEPA_COUNTRIES.includes(country) ? [
+const BANK_CODE_COUNTRIES = ["MW"];
+const fieldsFor = (country: string): Field[] => BANK_FIELDS[country] ?? (["CM", "CI", "SN"].includes(country) ? [
+  { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+  { name: "iban", label: "IBAN", placeholder: "Country-specific recipient IBAN" },
+  { name: "accountNumber", label: "Local account number (only if required by the bank)", placeholder: "Recipient account number" },
+] : SEPA_COUNTRIES.includes(country) ? [
   { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
   { name: "iban", label: "IBAN", placeholder: "International bank account number" },
   { name: "swiftCode", label: "SWIFT / BIC", placeholder: "Bank identifier code" },
 ] : BANK_CODE_COUNTRIES.includes(country) ? [
-  { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
-  { name: "bankCode", label: "Bank code", placeholder: "Country-specific bank code" },
-  { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+  { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+  { name: "bankCode", label: "Bank code", placeholder: "Flutterwave bank code" },
+  { name: "branchCode", label: "Branch code (when required by the bank)", placeholder: "Bank branch code" },
+  { name: "accountNumber", label: "Your bank account number", placeholder: "Your own account number", inputMode: "numeric" },
 ] : []);
 
 export function InternationalWithdrawalPanel() {
