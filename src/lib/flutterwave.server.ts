@@ -250,7 +250,11 @@ export async function findBillStatusByCustomerReference(
   const rows = await flw<unknown>(`/bills/history?${query.toString()}`);
   const parsed = z.array(billHistoryEntrySchema).safeParse(rows);
   if (!parsed.success) throw new Error("PROVIDER_ERROR");
-  const matches = parsed.data.filter((row) => row.customer_reference === customerReference && (!row.country || row.country === "NG"));
+  const matches = parsed.data.filter(
+    (row) =>
+      row.customer_reference === customerReference &&
+      (!row.country || row.country === "NG"),
+  );
   if (matches.length !== 1) return null;
   return matches[0];
 }
