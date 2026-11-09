@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,63 +6,73 @@ import { Label } from "@/components/ui/label";
 import { getInternationalWithdrawalHistory, getInternationalWithdrawalOptions } from "@/lib/international-withdrawal.functions";
 import { findRoute, validateBeneficiary, type BeneficiaryInput } from "@/lib/international-payout-routes";
 import { getBankPayoutCapability } from "@/lib/flutterwave-capabilities";
+import { getCountryTransferBanks, getCountryBankBranches } from "@/lib/bank-transfer.functions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const internationalOptions = queryOptions({ queryKey: ["international-withdrawal", "options"], queryFn: () => getInternationalWithdrawalOptions() });
 export const internationalHistory = queryOptions({ queryKey: ["international-withdrawal", "history"], queryFn: () => getInternationalWithdrawalHistory() });
 
-type FieldName = "accountName" | "accountNumber" | "routingNumber" | "address" | "sortCode" | "branchCode" | "bankCode" | "iban" | "swiftCode";
+type FieldName = "accountName" | "accountNumber" | "routingNumber" | "address" | "sortCode" | "branchCode" | "bankCode" | "iban" | "swiftCode" | "email" | "mobileNumber";
 type Field = { name: FieldName; label: string; placeholder: string; inputMode?: "text" | "numeric" };
 const BANK_FIELDS: Record<string, Field[]> = {
   US: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "routingNumber", label: "ABA routing number", placeholder: "9 digits", inputMode: "numeric" },
     { name: "accountNumber", label: "Bank account number", placeholder: "Account number", inputMode: "numeric" },
     { name: "address", label: "Beneficiary address", placeholder: "Street address" },
   ],
   GB: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "sortCode", label: "Sort code", placeholder: "6 digits", inputMode: "numeric" },
     { name: "accountNumber", label: "Account number", placeholder: "8 digits", inputMode: "numeric" },
   ],
   ZA: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
-    { name: "branchCode", label: "Branch code", placeholder: "6 digits", inputMode: "numeric" },
-    { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+    { name: "bankCode", label: "Bank code", placeholder: "Select the bank code" },
+    { name: "accountNumber", label: "Your bank account number", placeholder: "Your own account number", inputMode: "numeric" },
+    { name: "email", label: "Your email address", placeholder: "Email address" },
+    { name: "mobileNumber", label: "Your mobile number", placeholder: "Mobile number" },
+    { name: "address", label: "Your residential address", placeholder: "Residential address" },
   ],
   GH: [
-    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
     { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
   KE: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
-    { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
-    { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+    { name: "bankCode", label: "Bank code", placeholder: "Flutterwave bank code" },
+    { name: "accountNumber", label: "Your bank account number", placeholder: "Your own account number", inputMode: "numeric" },
   ],
   TZ: [
-    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
     { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
   UG: [
-    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
     { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
 };
 const SEPA_COUNTRIES = ["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"];
-const BANK_CODE_COUNTRIES = ["CM", "CI", "SN", "MW"];
-const fieldsFor = (country: string): Field[] => BANK_FIELDS[country] ?? (SEPA_COUNTRIES.includes(country) ? [
+const BANK_CODE_COUNTRIES = ["MW"];
+const fieldsFor = (country: string): Field[] => BANK_FIELDS[country] ?? (["CM", "CI", "SN"].includes(country) ? [
+  { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+  { name: "iban", label: "IBAN", placeholder: "Country-specific recipient IBAN" },
+  { name: "accountNumber", label: "Local account number (only if required by the bank)", placeholder: "Recipient account number" },
+] : SEPA_COUNTRIES.includes(country) ? [
   { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
   { name: "iban", label: "IBAN", placeholder: "International bank account number" },
   { name: "swiftCode", label: "SWIFT / BIC", placeholder: "Bank identifier code" },
 ] : BANK_CODE_COUNTRIES.includes(country) ? [
-  { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
-  { name: "bankCode", label: "Bank code", placeholder: "Country-specific bank code" },
-  { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+  { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+  { name: "bankCode", label: "Bank code", placeholder: "Flutterwave bank code" },
+  { name: "branchCode", label: "Branch code (when required by the bank)", placeholder: "Bank branch code" },
+  { name: "accountNumber", label: "Your bank account number", placeholder: "Your own account number", inputMode: "numeric" },
 ] : []);
 
 export function InternationalWithdrawalPanel() {
@@ -73,7 +83,21 @@ export function InternationalWithdrawalPanel() {
   const fields = useMemo(() => capability ? fieldsFor(data.country) : [], [capability, data.country]);
   const [beneficiary, setBeneficiary] = useState<Partial<Record<FieldName, string>>>({});
   const [validationMessage, setValidationMessage] = useState("");
-  const complete = fields.every(field => Boolean(beneficiary[field.name]?.trim()));
+  const [banks, setBanks] = useState<{ id: string; code: string; name: string; hasBranches: boolean }[]>([]);
+  const [branches, setBranches] = useState<{ code: string; name: string }[]>([]);
+  const [bankHasBranches, setBankHasBranches] = useState(false);
+  const [bankLoadError, setBankLoadError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    if (!capability || data.country === "NG") return;
+    void getCountryTransferBanks({ data: { country: data.country } }).then(result => {
+      if (!active) return;
+      if (result.error) setBankLoadError(true); else setBanks(result.banks);
+    }).catch(() => { if (active) setBankLoadError(true); });
+    return () => { active = false; };
+  }, [capability, data.country]);
+  const visibleFields = fields.filter(field => field.name !== "branchCode" || bankHasBranches);
+  const complete = visibleFields.every(field => Boolean(beneficiary[field.name]?.trim())) && (!fields.some(field => field.name === "bankCode") || banks.some(bank => bank.code === beneficiary.bankCode));
   const currency = capability?.currency ?? null;
 
   function validateDetails() {
@@ -89,13 +113,36 @@ export function InternationalWithdrawalPanel() {
 
   return <section className="space-y-4" aria-label="Bank details">
     {capability && currency && fields.length > 0 ? <>
-      {fields.map(field => (
+      <p className="text-sm text-muted-foreground">Withdrawals are only to a bank account belonging to you. Third-party beneficiary accounts are not accepted. The account holder must match your verified Fin3a identity. Submission remains locked until identity-name matching and the destination route are verified.</p>
+      {bankLoadError && <p role="status" className="text-sm text-muted-foreground">Bank list unavailable. Please try again later.</p>}
+      {visibleFields.map(field => (
         <div key={field.name}>
           <Label htmlFor={`withdraw-${field.name}`}>{field.label}</Label>
-          <Input id={`withdraw-${field.name}`} inputMode={field.inputMode ?? "text"} autoComplete="off" value={beneficiary[field.name] ?? ""} placeholder={field.placeholder} onChange={event => {
+          {field.name === "bankCode" ? <Select value={beneficiary.bankCode ?? ""} onValueChange={value => {
+            const selected = banks.find(bank => bank.code === value);
+            setBankHasBranches(Boolean(selected?.hasBranches));
+            setBranches([]);
+            setBeneficiary(current => ({ ...current, bankCode: value, branchCode: "" }));
+            if (selected?.hasBranches) {
+              void getCountryBankBranches({ data: { country: data.country, bankId: selected.id } }).then(result => {
+                if (result.error) setValidationMessage(result.error);
+                else setBranches(result.branches);
+              }).catch(() => setValidationMessage("Bank branches could not be loaded."));
+            }
+            setValidationMessage("");
+          }}>
+            <SelectTrigger id={`withdraw-${field.name}`}><SelectValue placeholder={banks.length ? "Select your bank" : "Loading banks…"} /></SelectTrigger>
+            <SelectContent>{banks.map(bank => <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>)}</SelectContent>
+          </Select> : field.name === "branchCode" ? <Select value={beneficiary.branchCode ?? ""} onValueChange={value => {
+            setBeneficiary(current => ({ ...current, branchCode: value }));
+            setValidationMessage("");
+          }}>
+            <SelectTrigger id={`withdraw-${field.name}`}><SelectValue placeholder="Select your bank branch" /></SelectTrigger>
+            <SelectContent>{branches.map(branch => <SelectItem key={branch.code} value={branch.code}>{branch.name}</SelectItem>)}</SelectContent>
+          </Select> : <Input id={`withdraw-${field.name}`} inputMode={field.inputMode ?? "text"} autoComplete="off" value={beneficiary[field.name] ?? ""} placeholder={field.placeholder} onChange={event => {
             setBeneficiary(current => ({ ...current, [field.name]: event.target.value }));
             setValidationMessage("");
-          }} />
+          }} />}
         </div>
       ))}
       {route && <Button className="w-full" variant="outline" disabled={!complete} onClick={validateDetails}>Check bank details</Button>}

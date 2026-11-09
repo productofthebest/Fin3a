@@ -29,6 +29,36 @@ export async function listNigerianBanks() {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+
+export async function listTransferBanks(country: string) {
+  const code = country.trim().toUpperCase();
+  const data = await flw<{ id?: string | number; code?: string; name?: string; has_branches?: boolean }[]>(`/banks/${encodeURIComponent(code)}?include_provider_type=1`);
+  const seen = new Set<string>();
+  return data.filter(bank => {
+    const bankCode = String(bank.code ?? "");
+    return bankCode && bank.name && !seen.has(bankCode) && seen.add(bankCode);
+  }).map(bank => ({
+    id: String(bank.id ?? bank.code),
+    code: String(bank.code),
+    name: String(bank.name).trim(),
+    hasBranches: bank.has_branches === true,
+  })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function listTransferBankBranches(country: string, bankId: string) {
+  const code = country.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code) || !/^[A-Za-z0-9_-]{1,32}$/.test(bankId)) throw new Error("INVALID_BANK");
+  const data = await flw<{ branch_code?: string; code?: string; name?: string }[]>(`/banks/${encodeURIComponent(bankId)}/branches?country=${encodeURIComponent(code)}`);
+  const seen = new Set<string>();
+  return data.filter(branch => {
+    const branchCode = String(branch.branch_code ?? branch.code ?? "");
+    return branchCode && !seen.has(branchCode) && seen.add(branchCode);
+  }).map(branch => ({
+    code: String(branch.branch_code ?? branch.code),
+    name: String(branch.name ?? branch.branch_code ?? branch.code),
+  })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export async function resolveBankAccount(accountNumber: string, bankCode: string) {
   const data = await flw<{ account_name: string; account_number: string }>("/accounts/resolve", {
     method: "POST",
