@@ -10,44 +10,47 @@ import { getBankPayoutCapability } from "@/lib/flutterwave-capabilities";
 export const internationalOptions = queryOptions({ queryKey: ["international-withdrawal", "options"], queryFn: () => getInternationalWithdrawalOptions() });
 export const internationalHistory = queryOptions({ queryKey: ["international-withdrawal", "history"], queryFn: () => getInternationalWithdrawalHistory() });
 
-type FieldName = "accountName" | "accountNumber" | "routingNumber" | "address" | "sortCode" | "branchCode" | "bankCode" | "iban" | "swiftCode";
+type FieldName = "accountName" | "accountNumber" | "routingNumber" | "address" | "sortCode" | "branchCode" | "bankCode" | "iban" | "swiftCode" | "email" | "mobileNumber";
 type Field = { name: FieldName; label: string; placeholder: string; inputMode?: "text" | "numeric" };
 const BANK_FIELDS: Record<string, Field[]> = {
   US: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "routingNumber", label: "ABA routing number", placeholder: "9 digits", inputMode: "numeric" },
     { name: "accountNumber", label: "Bank account number", placeholder: "Account number", inputMode: "numeric" },
     { name: "address", label: "Beneficiary address", placeholder: "Street address" },
   ],
   GB: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "sortCode", label: "Sort code", placeholder: "6 digits", inputMode: "numeric" },
     { name: "accountNumber", label: "Account number", placeholder: "8 digits", inputMode: "numeric" },
   ],
   ZA: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
-    { name: "branchCode", label: "Branch code", placeholder: "6 digits", inputMode: "numeric" },
-    { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+    { name: "bankCode", label: "Bank code", placeholder: "Select the bank code" },
+    { name: "accountNumber", label: "Your bank account number", placeholder: "Your own account number", inputMode: "numeric" },
+    { name: "email", label: "Your email address", placeholder: "Email address" },
+    { name: "mobileNumber", label: "Your mobile number", placeholder: "Mobile number" },
+    { name: "address", label: "Your residential address", placeholder: "Residential address" },
   ],
   GH: [
-    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
     { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
   KE: [
-    { name: "accountName", label: "Account holder name", placeholder: "Full legal name" },
-    { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
-    { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
+    { name: "bankCode", label: "Bank code", placeholder: "Flutterwave bank code" },
+    { name: "accountNumber", label: "Your bank account number", placeholder: "Your own account number", inputMode: "numeric" },
   ],
   TZ: [
-    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
     { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
   ],
   UG: [
-    { name: "accountName", label: "Beneficiary full name", placeholder: "Full legal name" },
+    { name: "accountName", label: "Your full legal name", placeholder: "Must match your verified Fin3a identity" },
     { name: "bankCode", label: "Bank code", placeholder: "Provider bank code" },
     { name: "branchCode", label: "Branch code", placeholder: "Recipient bank branch code" },
     { name: "accountNumber", label: "Account number", placeholder: "Bank account number", inputMode: "numeric" },
@@ -89,6 +92,7 @@ export function InternationalWithdrawalPanel() {
 
   return <section className="space-y-4" aria-label="Bank details">
     {capability && currency && fields.length > 0 ? <>
+      <p className="text-sm text-muted-foreground">Withdrawals are only to a bank account belonging to you. Third-party beneficiary accounts are not accepted. The account holder must match your verified Fin3a identity. Submission remains locked until identity-name matching and the destination route are verified.</p>
       {fields.map(field => (
         <div key={field.name}>
           <Label htmlFor={`withdraw-${field.name}`}>{field.label}</Label>
