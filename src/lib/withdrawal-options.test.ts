@@ -20,7 +20,7 @@ describe("country- and currency-scoped withdrawal presentation", () => {
   });
 
   it("shows only crypto withdrawal for non-US USD wallets", () => {
-    for (const [country, currency] of [["NG", "USD"], ["GH", "USD"], ["GB", "USD"], ["EC", "USD"]] as const) {
+    for (const [country, currency] of [["NG", "USD"], ["GH", "USD"], ["GB", "USD"], ["EC", "USD"]]) {
       expect(withdrawalOptions(country, currency, true)).toMatchObject({
         showBankMethod: false, showCryptoMethod: true, defaultMethod: "crypto",
       });
