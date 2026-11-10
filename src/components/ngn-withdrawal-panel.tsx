@@ -47,8 +47,9 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
     setBusy(true);
     try {
       const r = await createNgnWithdrawal({ data: { amount: value, bankCode, bankName: bankName.trim(), accountNumber, idempotencyKey: crypto.randomUUID() } });
-      if (!r.ok) { toast.error(r.error); setConfirming(false); return; }
-      setReference(r.reference);
+      const ref = "reference" in r && typeof r.reference === "string" ? r.reference : null;
+      if (!r.ok || !ref) { toast.error(r.error); setConfirming(false); return; }
+      setReference(ref);
       setConfirming(false);
       await qc.invalidateQueries({ queryKey: ["accounts"] });
       await qc.invalidateQueries({ queryKey: ["ngn-withdrawals"] });
