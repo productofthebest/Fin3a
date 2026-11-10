@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssistantComposerSizeReference } from "@/components/assistant-composer-frame";
 import { AccountTransferDialog } from "@/components/account-transfer-dialog";
-import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, Share2, Users, Globe } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, Copy, QrCode, Share2, Users, Globe, Eye, EyeOff, Clock3, Layers3 } from "lucide-react";
 
 const accountsQuery = () =>
   queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -33,6 +33,7 @@ function Page() {
   const availableSwapPairs = swapLocal
     ? [{ from: swapLocal, to: "USD" }, { from: "USD", to: swapLocal }].filter(pair => supportsFlutterwaveFxPair(pair.from, pair.to))
     : [];
+  const [hiddenBalances, setHiddenBalances] = useState<Record<string, boolean>>({});
   const [swapOpen, setSwapOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [swapAmount, setSwapAmount] = useState("");
@@ -60,31 +61,69 @@ function Page() {
       <p className="mt-2 text-sm text-muted-foreground">Your local currency and USD balances, transfers, activity and crypto receiving addresses</p>
 
       <div className="mt-6 grid gap-4">
-        {data.accounts.map((account) => (
-          <div key={account.id} className="grid min-w-0">
-          <div className="col-start-1 row-start-1"><AssistantComposerSizeReference /></div>
-          <section className="col-start-1 row-start-1 min-w-0 rounded-[22px] border border-border bg-card px-4 py-4 shadow-sm sm:px-5" aria-label={`${account.currency} balance card`}>
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-sm font-semibold">{account.currency} Wallet</h2>
-              <span className="rounded-md bg-secondary px-2 py-1 text-xs text-muted-foreground">{sym(account.currency)}</span>
+        {data.accounts.map((account) => {
+          const balanceHidden = Boolean(hiddenBalances[account.id]);
+          const masked = "••••••";
+          return (
+            <div key={account.id} className="grid min-w-0">
+              <div className="col-start-1 row-start-1"><AssistantComposerSizeReference /></div>
+              <section
+                className="relative isolate col-start-1 row-start-1 min-w-0 overflow-hidden rounded-[26px] border border-violet-100 bg-white px-5 py-5 text-slate-950 shadow-[0_10px_28px_rgba(91,48,150,0.10)] sm:px-6 sm:py-5"
+                aria-label={`${account.currency} balance card`}
+              >
+                <div aria-hidden="true" className="pointer-events-none absolute -right-12 top-14 h-32 w-64 rounded-full bg-gradient-to-l from-violet-200/75 via-violet-100/45 to-transparent blur-2xl" />
+                <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-10 h-28 w-72 -rotate-12 rounded-[100%] border-t border-violet-100 bg-gradient-to-l from-violet-100/75 via-violet-50/45 to-transparent" />
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="font-display text-base font-semibold tracking-tight">{account.currency} Wallet</h2>
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-base font-semibold text-violet-800">
+                      {sym(account.currency)}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="break-all font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                      {balanceHidden ? masked : fmt(account.currency, account.balance.available)}
+                    </p>
+                    <button
+                      type="button"
+                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                      aria-label={balanceHidden ? "Show balance" : "Hide balance"}
+                      aria-pressed={balanceHidden}
+                      onClick={() => setHiddenBalances(current => ({ ...current, [account.id]: !current[account.id] }))}
+                    >
+                      {balanceHidden ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                    </button>
+                    <p className="text-sm text-slate-500">Available balance</p>
+                  </div>
+                  <div className="mt-5 grid grid-cols-2 gap-3 border-t border-violet-100 pt-4">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700">
+                        <Clock3 className="size-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-500">Pending Balance</p>
+                        <p className="break-all text-sm font-semibold text-slate-950">
+                          {balanceHidden ? masked : fmt(account.currency, account.balance.pending)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex min-w-0 items-center gap-2.5 border-l border-violet-100 pl-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700">
+                        <Layers3 className="size-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs text-slate-500">Total Balance</p>
+                        <p className="break-all text-sm font-semibold text-slate-950">
+                          {balanceHidden ? masked : fmt(account.currency, account.balance.total)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
             </div>
-            <div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
-            <p className="break-all font-display text-xl font-bold">{fmt(account.currency, account.balance.available)}</p>
-            <p className="text-[11px] text-muted-foreground">Available balance</p>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-[11px]">
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1.5">
-                <p className="text-muted-foreground">Pending Balance</p>
-                <p className="break-all font-medium">{fmt(account.currency, account.balance.pending)}</p>
-              </div>
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 rounded-lg border border-border/70 px-2 py-1.5">
-                <p className="text-muted-foreground">Total Balance</p>
-                <p className="break-all font-medium">{fmt(account.currency, account.balance.total)}</p>
-              </div>
-            </div>
-          </section>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
