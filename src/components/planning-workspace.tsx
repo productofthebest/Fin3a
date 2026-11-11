@@ -35,11 +35,11 @@ export function PlanningWorkspace({data,view}:{data:Overview;view:"planning"|"go
    </div>
    <form className="mt-5" onSubmit={e=>submit(e,async()=>{await goalFn({data:{currency:data.currency,...goal,target_amount:Number(goal.target_amount),contribution_amount:Number(goal.contribution_amount)}});setGoal({...goal,name:"",target_amount:""});})}>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-     <div><Label htmlFor="goal-name">What are you saving for?</Label><Input id="goal-name" placeholder="e.g. Emergency fund, new car" required value={goal.name} onChange={e=>setGoal({...goal,name:e.target.value})} className="mt-2"/></div>
-     <Numeric id="goal-target" label={`Target amount (${data.currency})`} value={goal.target_amount} onChange={v=>setGoal({...goal,target_amount:v})} min={0.01}/>
-     <div><Label htmlFor="goal-date">When do you need it?</Label><Input id="goal-date" type="date" required min={data.today} value={goal.target_date} onChange={e=>setGoal({...goal,target_date:e.target.value})} className="mt-2"/></div>
+     <div><Label htmlFor="goal-name">Goal name</Label><Input id="goal-name" placeholder="e.g. Emergency fund, new car" required value={goal.name} onChange={e=>setGoal({...goal,name:e.target.value})} className="mt-2"/></div>
+     <Numeric id="goal-target" label={`Target (${data.currency})`} value={goal.target_amount} onChange={v=>setGoal({...goal,target_amount:v})} min={0.01}/>
+     <div><Label htmlFor="goal-date">Target date</Label><Input id="goal-date" type="date" required min={data.today} value={goal.target_date} onChange={e=>setGoal({...goal,target_date:e.target.value})} className="mt-2"/></div>
      <div><Label>How often will you contribute?</Label><Select value={goal.frequency} onValueChange={v=>setGoal({...goal,frequency:v as ContributionFrequency})}><SelectTrigger aria-label="Contribution frequency" className="mt-2"><SelectValue/></SelectTrigger><SelectContent>{["weekly","monthly","quarterly","yearly"].map(f=><SelectItem key={f} value={f}>{f.charAt(0).toUpperCase()+f.slice(1)}</SelectItem>)}</SelectContent></Select></div>
-     <Numeric id="goal-contribution" label={`Planned contribution (${data.currency})`} value={goal.contribution_amount} onChange={v=>setGoal({...goal,contribution_amount:v})}/>
+     <Numeric id="goal-contribution" label="Planned contribution per interval" value={goal.contribution_amount} onChange={v=>setGoal({...goal,contribution_amount:v})}/>
     </div>
     <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-muted-foreground">Your goal is a tracker. Creating it does not move money or create an automatic debit.</p><Button type="submit" disabled={busy}>Create goal</Button></div>
    </form>
