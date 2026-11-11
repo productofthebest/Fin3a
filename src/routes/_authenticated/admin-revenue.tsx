@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AdminShell } from "@/components/admin-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,7 +44,7 @@ function RevenuePage() {
     <p className="mt-4 border-l-2 border-primary pl-3 text-sm text-muted-foreground">Breet and Flutterwave are not connected. No provider charges or deposits are enabled. Revenue below is recorded evidence only; financial verification is pending.</p>
     <section className="mt-6 flex flex-wrap items-end gap-3">
       <Picker label="Currency" value={currency} set={setCurrency} choices={[["NGN","₦"],["USD","$"]]}/><Picker label="Period" value={selectedPeriod} set={preset} choices={[["custom","Custom"],["today","Today"],["7","Last 7 days"],["30","Last 30 days"],["month","This month"],["last-month","Last month"]]}/>
-      <div><Label htmlFor="revenue-from">From (UTC)</Label><Input id="revenue-from" type="date" value={from} onChange={e=>setFrom(e.target.value)} /></div><div><Label htmlFor="revenue-to">To (UTC)</Label><Input id="revenue-to" type="date" value={to} onChange={e=>setTo(e.target.value)} /></div><Button disabled={!from || !to || from>to || refresh.isPending} onClick={()=>refresh.mutate()}>Apply dates</Button>
+      <div><Label htmlFor="revenue-from">From (UTC)</Label><DatePicker id="revenue-from" value={from} onChange={setFrom} /></div><div><Label htmlFor="revenue-to">To (UTC)</Label><DatePicker id="revenue-to" value={to} onChange={setTo} /></div><Button disabled={!from || !to || from>to || refresh.isPending} onClick={()=>refresh.mutate()}>Apply dates</Button>
       <Picker label="Service" value={service} set={setService} choices={[["all","All services"],...servicesForCurrency(currency)]}/><Picker label="Provider" value={provider} set={setProvider} choices={[["all","All providers"],...[...new Set(report.quotes.map(q=>q.provider))].map(p=>[p,p]) ]}/>
     </section>
     <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[["Gross revenue",summary?.gross],["Net revenue",summary?.net],["Transaction volume",summary?.volume],["Provider commissions",summary?.commissions],["Provider / network charges",summary?.charges],["Refunded revenue",summary?.refunds],["Pending revenue",summary?.pending],["Settled revenue",summary?.settled]].map(([label,value])=><div key={label} className="rounded-lg border border-border bg-card p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 text-xl font-semibold tabular-nums">{currency === "NGN" ? "₦" : "$"} {value ?? "—"}</p></div>)}</div>
