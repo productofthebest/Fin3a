@@ -15,6 +15,7 @@ import { RecordCurrencySelect } from "@/components/record-currency-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -156,8 +157,8 @@ function ActivityPage() {
             ))}
           </SelectContent>
         </Select>
-        <Input type="date" value={from} max={to || undefined} onChange={(e) => resetPage(setFrom)(e.target.value)} className="w-40" aria-label="From date" />
-        <Input type="date" value={to} min={from || undefined} onChange={(e) => resetPage(setTo)(e.target.value)} className="w-40" aria-label="To date" />
+        <DatePicker value={from} max={to || undefined} onChange={(value) => resetPage(setFrom)(value)} className="w-40" aria-label="From date" />
+        <DatePicker value={to} min={from || undefined} onChange={(value) => resetPage(setTo)(value)} className="w-40" aria-label="To date" />
         {hasFilters ? (
           <Button variant="ghost" size="sm" onClick={() => { setCurrency("all"); setType("all"); setStatus("all"); setSearch(""); setCategoryId("all"); setFrom(""); setTo(""); setPage(1); }}>Clear</Button>
         ) : null}

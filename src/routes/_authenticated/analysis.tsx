@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { ForecastSimulator } from "@/components/forecast-simulator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { analysisSearch, getAnalysis } from "@/lib/analysis.functions";
@@ -70,8 +71,8 @@ function AnalysisPage() {
     <div className="mt-6 flex flex-wrap items-end gap-3">
       <RecordCurrencySelect value={data.currency} currencies={data.currencies} onChange={currency => update({ currency })} />
       <div><Label>Period</Label><Select value={filters.period} onValueChange={value => update({ period: value as AnalysisFilters["period"], start: value === "custom" ? data.range.start : undefined })}><SelectTrigger aria-label="Period" className="mt-2 w-40"><SelectValue/></SelectTrigger><SelectContent>{(["week","month","quarter","year","custom"] as const).map(p => <SelectItem key={p} value={p}>{({ week: "Weekly", month: "Monthly", quarter: "Quarterly", year: "Annual", custom: "Custom" })[p]}</SelectItem>)}</SelectContent></Select></div>
-      {filters.period === "custom" && <div><Label htmlFor="analysis-start">From</Label><Input id="analysis-start" className="mt-2 w-44" type="date" value={dates.start} max={dates.end} onChange={e => setDates(prev => ({ ...prev, start: e.target.value }))}/></div>}
-      <div><Label htmlFor="analysis-end">Through</Label><Input id="analysis-end" className="mt-2 w-44" type="date" value={dates.end} min={filters.period === "custom" ? dates.start : undefined} max={data.today} onChange={e => setDates(prev => ({ ...prev, end: e.target.value }))}/></div>
+      {filters.period === "custom" && <div><Label htmlFor="analysis-start">From</Label><DatePicker id="analysis-start" className="mt-2 w-44" value={dates.start} max={dates.end} onChange={value => setDates(prev => ({ ...prev, start: value }))}/></div>}
+      <div><Label htmlFor="analysis-end">Through</Label><DatePicker id="analysis-end" className="mt-2 w-44" value={dates.end} min={filters.period === "custom" ? dates.start : undefined} max={data.today} onChange={value => setDates(prev => ({ ...prev, end: value }))}/></div>
       <Button variant="outline" disabled={!dates.end || dates.end > data.today || (filters.period === "custom" && (!dates.start || dates.start > dates.end))} onClick={() => update({ start: filters.period === "custom" ? dates.start : undefined, end: dates.end })}>Apply dates</Button>
       <div><Label>Compare with</Label><Select value={filters.comparison} onValueChange={value => update({ comparison: value as AnalysisFilters["comparison"] })}><SelectTrigger aria-label="Compare with" className="mt-2 w-56"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="previous">Previous equal-length period</SelectItem><SelectItem value="year">Same dates last year</SelectItem></SelectContent></Select></div>
     </div>

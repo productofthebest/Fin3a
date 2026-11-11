@@ -6,6 +6,7 @@ import type {getPlanning} from "@/lib/planning.functions";
 vi.stubGlobal("ResizeObserver",class{observe(){} unobserve(){} disconnect(){}});
 const mocked=vi.hoisted(()=>({balance:vi.fn(async()=>({saved:true})),scenario:vi.fn(async()=>({saved:true})),goal:vi.fn(async()=>({saved:true})),other:vi.fn(async()=>({saved:true}))}));
 vi.mock("@tanstack/react-start",()=>({useServerFn:(fn:unknown)=>fn}));
+vi.mock("@/components/ui/date-picker",()=>({DatePicker:({id,value,defaultValue,onChange,...props}:{id?:string;value?:string;defaultValue?:string;onChange?:(value:string)=>void;[key:string]:unknown})=><input id={id} type="date" value={value??defaultValue??""} onChange={e=>onChange?.(e.target.value)} {...props}/> }));
 vi.mock("@/lib/planning.functions",()=>({saveConfirmedBalance:mocked.balance,saveScenario:mocked.scenario,saveGoal:mocked.goal,saveCommitment:mocked.other,settleCommitment:mocked.other,recordGoalProgress:mocked.other,evaluatePurchase:mocked.other,deletePlanningItem:mocked.other}));
 vi.mock("recharts",()=>({ResponsiveContainer:()=>null,LineChart:()=>null,Line:()=>null,XAxis:()=>null,Tooltip:()=>null,CartesianGrid:()=>null}));
 function overview():Awaited<ReturnType<typeof getPlanning>>{return{today:"2026-10-31",currencies:["NGN","USD"],currency:"NGN",balance:null,balances:[],commitments:[],goals:[],progress:[],scenarios:[],projection:{ready:false,reason:"Confirm balance",history:{completeMonths:[],income:null,spending:null}},insights:{insights:[],period:"2026-09",comparison:"2026-08",assumptions:[]}};}

@@ -10,6 +10,7 @@ import { QrScanner } from "@/components/qr-scanner";
 import { parseScannedQr } from "@/lib/qr-payments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -203,7 +204,7 @@ function Page() {
             </div>
           <div>
             <Label htmlFor="sb-deadline">Payment deadline (optional)</Label>
-            <Input id="sb-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} min={today} />
+            <DatePicker id="sb-deadline" value={deadline} onChange={setDeadline} min={today} />
           </div>
           <div>
             <Label>Split mode</Label>
