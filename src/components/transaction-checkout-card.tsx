@@ -34,6 +34,7 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
       ["Status", statusLabel],
       ["Date & time", date],
       ["Transaction type", transaction.kind.replaceAll("_", " ")],
+      ...(transaction.deletable ? [["Source", "Imported transaction"] as [string, string]] : []),
       ...(transaction.reference ? [["Reference", transaction.reference] as [string, string]] : []),
       ...(transaction.detail ? [["Details", transaction.detail] as [string, string]] : []),
       ...(transaction.category ? [["Category", transaction.category.name] as [string, string]] : []),
@@ -74,6 +75,7 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
             <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Transaction</span><span className="max-w-[65%] text-right font-medium">{transaction.title}</span></div>
             <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Date & time</span><span className="text-right font-medium">{date}</span></div>
             <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Type</span><span className="text-right font-medium capitalize">{transaction.kind.replaceAll("_", " ")}</span></div>
+            {transaction.deletable ? <div className="flex items-center justify-between gap-4 text-sm"><span className="text-muted-foreground">Source</span><span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Imported</span></div> : null}
             {transaction.reference ? <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Reference</span><span className="max-w-[65%] break-all text-right font-medium">{transaction.reference}</span></div> : null}
             {transaction.detail ? <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Details</span><span className="max-w-[65%] text-right font-medium">{transaction.detail}</span></div> : null}
             {transaction.category ? <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Category</span><span className="text-right font-medium">{transaction.category.name}</span></div> : null}
