@@ -178,7 +178,7 @@ function ActivityPage() {
         ) : (
           <ul className="divide-y divide-border">
             {transactions.map((tx) => (
-              <li key={tx.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={tx.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:flex-nowrap">
                 <TransactionIcon kind={tx.kind} direction={tx.direction} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
@@ -192,32 +192,34 @@ function ActivityPage() {
                   {tx.reference ? <p className="truncate text-xs text-muted-foreground" title={tx.reference}>{tx.reference}</p> : null}
                   {tx.detail ? <p className="text-xs text-muted-foreground">{tx.detail}</p> : null}
                 </div>
-                <Button variant="outline" size="sm" className="shrink-0" onClick={() => setCheckoutTarget(tx)}>
-                  View receipt
-                </Button>
+                <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+                  <span
+                    className={cn(
+                      "whitespace-nowrap text-sm font-semibold tabular-nums",
+                      tx.direction === "in" && "text-positive",
+                    )}
+                  >
+                    {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
+                  </span>
+                  <Button variant="outline" size="sm" className="shrink-0" onClick={() => setCheckoutTarget(tx)}>
+                    View receipt
+                  </Button>
+                  {tx.deletable && tx.recordId ? <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Delete imported record"
+                    title="Delete imported record"
+                    disabled={deleteMut.isPending}
+                    onClick={() => setDeleteTarget(tx)}
+                  >
+                    <Trash2 className="size-4 text-muted-foreground" />
+                  </Button> : null}
+                </div>
                 {tx.status === "pending" ? (
                   <Badge variant="secondary" className="hidden sm:inline-flex">
                     Pending
                   </Badge>
                 ) : null}
-                <span
-                  className={cn(
-                    "text-sm font-medium tabular-nums",
-                    tx.direction === "in" && "text-positive",
-                  )}
-                >
-                  {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
-                </span>
-                {tx.deletable && tx.recordId ? <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Delete imported record"
-                  title="Delete imported record"
-                  disabled={deleteMut.isPending}
-                  onClick={() => setDeleteTarget(tx)}
-                >
-                  <Trash2 className="size-4 text-muted-foreground" />
-                </Button> : null}
               </li>
             ))}
           </ul>
