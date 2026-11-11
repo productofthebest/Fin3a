@@ -38,7 +38,7 @@ export function PlanningWorkspace({data,view}:{data:Overview;view:"planning"|"go
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
      <div><Label htmlFor="goal-name">Goal name</Label><Input id="goal-name" placeholder="e.g. Emergency fund, new car" required value={goal.name} onChange={e=>setGoal({...goal,name:e.target.value})} className="mt-2"/></div>
      <Numeric id="goal-target" label={`Target (${data.currency})`} value={goal.target_amount} onChange={v=>setGoal({...goal,target_amount:v})} min={0.01}/>
-     <div><Label htmlFor="goal-date">Target date</Label><DatePicker id="goal-date" required min={data.today} value={goal.target_date} onChange={value=>setGoal({...goal,target_date:value})} className="mt-2"/></div>
+     <div><Label htmlFor="goal-date">Target date</Label><DatePicker id="goal-date" required min={data.today} value={goal.target_date} onChange={value=>setGoal({...goal,target_date:value})} className="mt-2 bg-transparent"/></div>
      <div><Label>How often will you contribute?</Label><Select value={goal.frequency} onValueChange={v=>setGoal({...goal,frequency:v as ContributionFrequency})}><SelectTrigger aria-label="Contribution frequency" className="mt-2"><SelectValue/></SelectTrigger><SelectContent>{["weekly","monthly","quarterly","yearly"].map(f=><SelectItem key={f} value={f}>{f.charAt(0).toUpperCase()+f.slice(1)}</SelectItem>)}</SelectContent></Select></div>
      <Numeric id="goal-contribution" label="Planned contribution per interval" value={goal.contribution_amount} onChange={v=>setGoal({...goal,contribution_amount:v})}/>
     </div>
