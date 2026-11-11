@@ -11,7 +11,7 @@ import {
   Tooltip,
   XAxis,
 } from "recharts";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Wallet, Clock3, TrendingUp, TrendingDown, Tags, type LucideIcon } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { dashboardQuery, settingsQuery } from "@/lib/queries";
@@ -51,17 +51,36 @@ function ChartTooltip({ currency, active, payload, label }: any) {
   );
 }
 
-function SummaryCard({ label, value, className }: { label: string; value: string; className?: string }) {
+function SummaryCard({ label, value, icon: Icon, tone, detail, className }: { label: string; value: string; icon: LucideIcon; tone: "neutral" | "warning" | "positive" | "spending"; detail: string; className?: string }) {
+  const tones = {
+    neutral: "bg-muted text-foreground",
+    warning: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    positive: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    spending: "bg-primary/10 text-primary",
+  };
   return (
-    <Card>
-      <CardContent className="p-5">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className={`mt-2 font-display text-2xl font-semibold tracking-tight ${className ?? ""}`}>
-          {value}
-        </p>
+    <Card className="h-full overflow-hidden border-border/80 shadow-sm transition-shadow hover:shadow-md">
+      <CardContent className="flex h-full min-h-[142px] flex-col justify-between gap-5 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.09em] text-muted-foreground">{label}</p>
+          <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}>
+            <Icon className="size-[19px]" strokeWidth={1.9} />
+          </span>
+        </div>
+        <div className="min-w-0">
+          <p className={`break-words font-display text-2xl font-semibold tracking-tight sm:text-[1.7rem] ${className ?? ""}`}>{value}</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">{detail}</p>
+        </div>
       </CardContent>
     </Card>
   );
+}
+
+function ActivityCategoryIcon({ name, fallback }: { name: string; fallback: string }) {
+  if (name.trim().toLowerCase() === "uncategorized") {
+    return <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/60 text-foreground"><Tags className="size-[18px]" strokeWidth={1.8}/></span>;
+  }
+  return <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/60 text-foreground text-lg">{fallback}</span>;
 }
 
 function DashboardPage() {
@@ -111,14 +130,10 @@ function DashboardPage() {
 
       <div className="mt-4"><RecordCurrencySelect value={currency} currencies={data.currencies} onChange={currency => navigate({ to: "/spending", search: { offset, currency } })} /></div>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="Recorded net cash flow" value={formatMoney(data.availableFunds, currency)} />
-        <SummaryCard label="Pending" value={formatMoney(data.pendingAmount, currency)} />
-        <SummaryCard
-          label="Income this month"
-          value={formatMoney(selected.income, currency)}
-          className="text-positive"
-        />
-        <SummaryCard label="Spending this month" value={formatMoney(selected.spending, currency)} />
+        <SummaryCard label="Recorded net cash flow" value={formatMoney(data.availableFunds, currency)} icon={Wallet} tone="neutral" detail="Lifetime completed records · Not a bank balance"/>
+        <SummaryCard label="Pending expenses" value={formatMoney(data.pendingAmount, currency)} icon={Clock3} tone="warning" detail="Awaiting completion or clearance"/>
+        <SummaryCard label="Income this month" value={formatMoney(selected.income, currency)} icon={TrendingUp} tone="positive" detail={selectedName} className="text-positive"/>
+        <SummaryCard label="Spending this month" value={formatMoney(selected.spending, currency)} icon={TrendingDown} tone="spending" detail={selectedName}/>
       </div>
 
       <p className="mt-3 text-xs text-muted-foreground">
@@ -205,7 +220,7 @@ function DashboardPage() {
             ) : (
               data.categoryBreakdown.map((c) => (
                 <div key={c.name} className="flex items-start gap-3">
-                  <span className="text-lg leading-none">{c.icon}</span>
+                  <ActivityCategoryIcon name={c.name} fallback={c.icon}/>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2 text-sm">
                       <span className="truncate">{c.name}</span>
