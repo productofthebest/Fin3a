@@ -33,7 +33,7 @@ export function WithdrawalWorkspace({ country, currency, available, ngnEnabled, 
     </div>}
     {selectedMethod === "bank" && options.showBankMethod ? <section className="space-y-4" aria-label="Bank withdrawal">
       <h2 className="font-display text-lg font-semibold">{currency} bank withdrawal</h2>
-      {options.ngn ? <fieldset disabled={!options.bankEnabled} className="min-w-0"><NgnWithdrawalPanel available={available} /></fieldset>
+      {options.ngn ? <div className="min-w-0"><NgnWithdrawalPanel available={available} /></div>
         : <InternationalWithdrawalPanel />}
     </section> : selectedMethod === "crypto" && options.showCryptoMethod ? <section className="space-y-4" aria-label="Crypto withdrawal">
       <h2 className="font-display text-lg font-semibold">USD crypto withdrawal</h2>
