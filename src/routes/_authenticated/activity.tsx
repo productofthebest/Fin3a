@@ -192,21 +192,11 @@ function ActivityPage() {
                   {tx.reference ? <p className="truncate text-xs text-muted-foreground" title={tx.reference}>{tx.reference}</p> : null}
                   {tx.detail ? <p className="text-xs text-muted-foreground">{tx.detail}</p> : null}
                 </div>
-                <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-                  <span
-                    className={cn(
-                      "whitespace-nowrap text-sm font-semibold tabular-nums",
-                      tx.direction === "in" && "text-positive",
-                    )}
-                  >
-                    {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
-                  </span>
-                  <Button variant="outline" size="sm" className="shrink-0" onClick={() => setCheckoutTarget(tx)}>
-                    View receipt
-                  </Button>
+                <div className="ml-auto flex shrink-0 items-center justify-end gap-2 sm:gap-3">
                   {tx.deletable && tx.recordId ? <Button
                     variant="ghost"
                     size="icon"
+                    className="size-9 shrink-0"
                     aria-label="Delete imported record"
                     title="Delete imported record"
                     disabled={deleteMut.isPending}
@@ -214,6 +204,12 @@ function ActivityPage() {
                   >
                     <Trash2 className="size-4 text-muted-foreground" />
                   </Button> : null}
+                  <span className={cn("whitespace-nowrap text-sm font-semibold tabular-nums", tx.direction === "in" && "text-positive")}>
+                    {tx.amount === null ? "Open amount" : <>{tx.direction === "in" ? "+" : tx.direction === "out" ? "−" : ""}{recordMoney(tx.amount, tx.currency)}</>}
+                  </span>
+                  <Button variant="outline" size="sm" className="shrink-0 whitespace-nowrap" onClick={() => setCheckoutTarget(tx)}>
+                    View receipt
+                  </Button>
                 </div>
                 {tx.status === "pending" ? (
                   <Badge variant="secondary" className="hidden sm:inline-flex">
