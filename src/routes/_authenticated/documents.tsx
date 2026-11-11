@@ -24,6 +24,7 @@ import { formatMoney } from "@/lib/fin3a";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { validateDocumentContent } from "@/lib/document-security";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CLASSIFICATIONS, draftImportEligible } from "@/lib/document-rules";
@@ -228,7 +229,7 @@ function DraftReview({ documentId, doc, currency, categories, scannerActive, onD
           {drafts.length ? "No pending lines; imported and rejected records retain their review status." : "No transactions to review."}</p>}
         {pending.map((d) => (
           <div key={d.id} className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-2 xl:grid-cols-3 sm:items-center">
-            <Input type="date" defaultValue={d.txn_date ?? ""} onBlur={(e) => e.target.value !== (d.txn_date ?? "") && save.mutate({ id: d.id, txn_date: e.target.value || null })} />
+            <DatePicker defaultValue={d.txn_date ?? ""} onChange={(value) => value !== (d.txn_date ?? "") && save.mutate({ id: d.id, txn_date: value || null })} />
             <div>
               <Input defaultValue={d.merchant ?? d.description ?? ""} placeholder="Description"
                 onBlur={(e) => e.target.value !== (d.merchant ?? d.description ?? "") && save.mutate({ id: d.id, merchant: e.target.value || null })} />
