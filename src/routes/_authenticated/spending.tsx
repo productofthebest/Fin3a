@@ -143,67 +143,101 @@ function DashboardPage() {
           : ""}
       </p>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="font-display text-xl">Cash flow</CardTitle>
+      <div className="mt-5 grid gap-4 lg:grid-cols-5">
+        <Card className="group overflow-hidden border-border/80 shadow-sm transition-shadow hover:shadow-md lg:col-span-3">
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-2">
+            <div>
+              <CardTitle className="font-display text-xl tracking-tight">Cash flow</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">Income compared with spending · Recent months</p>
+            </div>
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Wallet className="size-5" strokeWidth={1.8}/>
+            </span>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={months} barCategoryGap="30%">
-                <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="0" />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-                />
-                <Tooltip content={<ChartTooltip currency={currency} />} cursor={{ fill: "var(--muted)", opacity: 0.35 }} />
-                <Bar dataKey="income" name="Income" fill="var(--primary)" radius={[6, 6, 0, 0]} maxBarSize={16} />
-                <Bar dataKey="spending" name="Spending" fill="var(--secondary)" stroke="var(--border)" radius={[6, 6, 0, 0]} maxBarSize={16} />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="pt-3">
+            <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+              <span className="inline-flex items-center gap-2 text-muted-foreground"><span className="size-2.5 rounded-sm bg-primary"/>Income</span>
+              <span className="inline-flex items-center gap-2 text-muted-foreground"><span className="size-2.5 rounded-sm bg-secondary ring-1 ring-border"/>Spending</span>
+            </div>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={months} barCategoryGap="28%" margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 5" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tickMargin={10}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                  />
+                  <Tooltip content={<ChartTooltip currency={currency} />} cursor={{ fill: "var(--muted)", opacity: 0.45 }} />
+                  <Bar dataKey="income" name="Income" fill="var(--primary)" radius={[5, 5, 2, 2]} maxBarSize={22} />
+                  <Bar dataKey="spending" name="Spending" fill="var(--secondary)" stroke="var(--border)" radius={[5, 5, 2, 2]} maxBarSize={22} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="font-display text-xl">Net spending</CardTitle>
+        <Card className="relative overflow-hidden border-border/80 shadow-sm transition-shadow hover:shadow-md lg:col-span-2">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/80 via-primary/30 to-transparent"/>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-1">
+            <div>
+              <CardTitle className="font-display text-xl tracking-tight">Net spending</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">{selectedName}</p>
+            </div>
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <TrendingDown className="size-5" strokeWidth={1.8}/>
+            </span>
           </CardHeader>
-          <CardContent>
-            <p className="font-display text-3xl font-semibold tracking-tight">
-              {formatMoney(selected.spending, currency)}
-            </p>
-            <p className={`mt-1 text-sm ${net >= 0 ? "text-positive" : "text-negative"}`}>
-              {net >= 0 ? "Under" : "Over"} income by {formatMoney(Math.abs(net), currency)}
-            </p>
+          <CardContent className="pt-3">
+            <div className="rounded-xl bg-muted/50 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">Total spending</p>
+              <p className="mt-1 break-words font-display text-3xl font-semibold tracking-tight">{formatMoney(selected.spending, currency)}</p>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${net >= 0 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-destructive/10 text-destructive"}`}>
+                  {net >= 0 ? "Below income" : "Above income"}
+                </span>
+                <span className={`text-xs font-semibold tabular-nums ${net >= 0 ? "text-positive" : "text-negative"}`}>
+                  {formatMoney(Math.abs(net), currency)} {net >= 0 ? "left over" : "over"}
+                </span>
+              </div>
+            </div>
             <div className="mt-4">
-              <ResponsiveContainer width="100%" height={120}>
-                <AreaChart data={data.dailySpending}>
-                  <defs>
-                    <linearGradient id="netFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="day"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    ticks={[1, 8, 15, 22]}
-                  />
-                  <Tooltip content={<ChartTooltip currency={currency} />} />
-                  <Area
-                    type="monotone"
-                    dataKey="cumulative"
-                    name="Spent so far"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    fill="url(#netFill)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-muted-foreground">Spending through the month</p>
+                <p className="text-[11px] text-muted-foreground">Daily cumulative</p>
+              </div>
+              <div className="h-[112px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data.dailySpending} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="netFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.01} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="day"
+                      axisLine={false}
+                      tickLine={false}
+                      tickMargin={8}
+                      tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                      ticks={[1, 8, 15, 22]}
+                    />
+                    <Tooltip content={<ChartTooltip currency={currency} />} />
+                    <Area
+                      type="monotone"
+                      dataKey="cumulative"
+                      name="Spent so far"
+                      stroke="var(--primary)"
+                      strokeWidth={2.5}
+                      fill="url(#netFill)"
+                      activeDot={{ r: 4, strokeWidth: 0 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>
