@@ -5,6 +5,7 @@ const PORT = Number(process.env.PORT || 8080);
 const TOKEN = process.env.RELAY_SHARED_TOKEN || "";
 const FLW_SECRET_KEY = process.env.FLW_SECRET_KEY || "";
 const PAYMENT_REDIRECT_URL = process.env.PAYMENT_REDIRECT_URL || "";
+const GOOGLE_PAY_ENABLED = process.env.FLW_GOOGLE_PAY_ENABLED === "true";
 const ALLOWED_SOURCE_IPS = new Set((process.env.RELAY_ALLOWED_SOURCE_IPS || "").split(",").map(x => x.trim()).filter(Boolean));
 const MAX_BODY_BYTES = 16 * 1024;
 const FLW_ORIGIN = "https://api.flutterwave.com/v3";
@@ -171,6 +172,7 @@ function validPayment(body) {
   const options = PAYMENT_OPTIONS[country]?.[currency];
   const checkoutMethod = body.checkout_method;
   return Boolean(options) && ["card", "apple_pay", "google_pay"].includes(checkoutMethod)
+    && (checkoutMethod !== "google_pay" || GOOGLE_PAY_ENABLED)
     && safeText(body.tx_ref, 100)
     && typeof body.customer === "object" && body.customer !== null && !Array.isArray(body.customer)
     && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.customer.email || "")
