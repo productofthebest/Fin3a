@@ -141,17 +141,22 @@ test("accepts supported country/currency pairs for card checkout", async () => {
   }
 });
 
-test("Apple Pay and Google Pay use merchant dashboard methods, not invented payment_options values", async () => {
-  for (const checkout_method of ["apple_pay", "google_pay"]) {
-    const r = await fetch(base + "/v1/flutterwave/payments", {
-      method: "POST", headers: { ...auth, "content-type": "application/json" },
-      body: JSON.stringify({ tx_ref: "F3I-12345678-1234-1234-1234-123456789012", amount: 100, currency: "USD", country: "US", checkout_method, customer: { email: "test@example.com", name: "Test User" } }),
-    });
-    assert.equal(r.status, 200);
-    const payload = await r.json();
-    assert.equal(payload.data.received.tx_ref, "F3I-12345678-1234-1234-1234-123456789012");
-    assert.equal(Object.hasOwn(payload.data.received, "payment_options"), false);
-  }
+test("Apple Pay uses the merchant dashboard method without invented payment_options values", async () => {
+  const r = await fetch(base + "/v1/flutterwave/payments", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ tx_ref: "F3I-12345678-1234-1234-1234-123456789012", amount: 100, currency: "USD", country: "US", checkout_method: "apple_pay", customer: { email: "test@example.com", name: "Test User" } }),
+  });
+  assert.equal(r.status, 200);
+  const payload = await r.json();
+  assert.equal(payload.data.received.tx_ref, "F3I-12345678-1234-1234-1234-123456789012");
+  assert.equal(Object.hasOwn(payload.data.received, "payment_options"), false);
+});
+test("Google Pay is rejected until the merchant feature flag is explicitly enabled", async () => {
+  const r = await fetch(base + "/v1/flutterwave/payments", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ tx_ref: "F3I-12345678-1234-1234-1234-123456789012", amount: 100, currency: "USD", country: "US", checkout_method: "google_pay", customer: { email: "test@example.com", name: "Test User" } }),
+  });
+  assert.equal(r.status, 400);
 });
 test("card checkout keeps its explicit country/currency payment options", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
