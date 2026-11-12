@@ -42,24 +42,9 @@ function Page() {
   const selectedSwapPair = availableSwapPairs.find(pair => pair.from === requestedSwapFrom) ?? availableSwapPairs[0] ?? null;
   const swapFrom = selectedSwapPair?.from ?? (swapLocal ?? "USD");
   const swapTo = selectedSwapPair?.to ?? "USD";
-  const splitRef = useRef<HTMLAnchorElement>(null);
-  const walletsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const reference = splitRef.current;
-    const wallets = walletsRef.current;
-    if (!reference || !wallets) return;
-    const sync = () => wallets.style.setProperty("--wallet-reference-height", `${reference.getBoundingClientRect().height}px`);
-    sync();
-    const observer = new ResizeObserver(sync);
-    observer.observe(reference);
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <AppShell>
       <h1 className="font-display text-3xl font-bold">Wallet</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Your local currency and USD balances, transfers, activity and crypto receiving addresses</p>
-
       <div className="mt-6 grid gap-4">
         {data.accounts.map((account) => {
           const balanceHidden = Boolean(hiddenBalances[account.id]);
@@ -68,7 +53,7 @@ function Page() {
             <div key={account.id} className="grid min-w-0">
               <div className="col-start-1 row-start-1"><AssistantComposerSizeReference /></div>
               <section
-                className="relative isolate col-start-1 row-start-1 min-w-0 overflow-hidden rounded-[26px] border border-violet-100 bg-white px-5 py-5 text-slate-950 shadow-[0_10px_28px_rgba(91,48,150,0.10)] sm:px-6 sm:py-5"
+                className="relative isolate col-start-1 row-start-1 min-w-0 overflow-hidden rounded-[22px] border border-violet-100 bg-white px-4 py-4 text-slate-950 shadow-[0_8px_22px_rgba(91,48,150,0.09)] sm:px-5 sm:py-4"
                 aria-label={`${account.currency} balance card`}
               >
                 <div aria-hidden="true" className="pointer-events-none absolute -right-12 top-14 h-32 w-64 rounded-full bg-gradient-to-l from-violet-200/75 via-violet-100/45 to-transparent blur-2xl" />
@@ -76,12 +61,12 @@ function Page() {
                 <div className="relative z-10">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="font-display text-base font-semibold tracking-tight">{account.currency} Wallet</h2>
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-base font-semibold text-violet-800">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-semibold text-violet-800">
                       {sym(account.currency)}
                     </span>
                   </div>
-                  <div className="mt-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                    <p className="break-all font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                  <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="break-all font-display text-2xl font-bold tracking-tight sm:text-3xl">
                       {balanceHidden ? masked : fmt(account.currency, account.balance.available)}
                     </p>
                     <button
@@ -95,9 +80,9 @@ function Page() {
                     </button>
                     <p className="text-sm text-slate-500">Available balance</p>
                   </div>
-                  <div className="mt-5 grid grid-cols-2 gap-3 border-t border-violet-100 pt-4">
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-violet-100 pt-3">
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700">
                         <Clock3 className="size-4" />
                       </span>
                       <div className="min-w-0">
@@ -108,7 +93,7 @@ function Page() {
                       </div>
                     </div>
                     <div className="flex min-w-0 items-center gap-2.5 border-l border-violet-100 pl-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-violet-100 bg-violet-50 text-violet-700">
                         <Layers3 className="size-4" />
                       </span>
                       <div className="min-w-0">
@@ -129,25 +114,24 @@ function Page() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Link
           to="/accounts/share"
-          className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:bg-secondary/50"
+          className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-colors hover:bg-secondary/50"
         >
-          <Share2 className="mt-0.5 size-5 shrink-0 text-primary" />
+          <Share2 className="mt-0.5 size-4 shrink-0 text-primary" />
           <span>
-            <span className="block font-display text-lg font-semibold">Share Payment</span>
-            <span className="mt-1 block text-sm text-muted-foreground">
+            <span className="block font-display text-base font-semibold">Share Payment</span>
+            <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
               Send money to several Fin3a users at once, split by percentage. Add people by ID or QR scan.
             </span>
           </span>
         </Link>
         <Link
           to="/accounts/split"
-          ref={splitRef}
-          className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:bg-secondary/50"
+          className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-colors hover:bg-secondary/50"
         >
-          <Users className="mt-0.5 size-5 shrink-0 text-primary" />
+          <Users className="mt-0.5 size-4 shrink-0 text-primary" />
           <span>
-            <span className="block font-display text-lg font-semibold">Split Bill</span>
-            <span className="mt-1 block text-sm text-muted-foreground">
+            <span className="block font-display text-base font-semibold">Split Bill</span>
+            <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
               Share an expense with other Fin3a users and collect their shares from their Fin3a balance.
             </span>
           </span>
@@ -195,8 +179,8 @@ function Page() {
 
       <section className="mt-10">
         <h2 className="font-display text-xl font-semibold">Crypto Addresses</h2>
-        <div ref={walletsRef} className="mt-4 grid items-start gap-4 sm:grid-cols-2">
-          {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-h-[var(--wallet-reference-height)] min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm" aria-label={`${asset.name} wallet card`}>
+        <div className="mt-4 grid items-start gap-4 sm:grid-cols-2">
+          {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-w-0 rounded-xl border border-border bg-card p-3 shadow-sm" aria-label={`${asset.name} wallet card`}>
               <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
               <div className="flex min-w-0 items-center justify-between gap-3">
                 <div className="min-w-0">
