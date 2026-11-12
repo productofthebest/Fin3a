@@ -28,8 +28,8 @@ describe("dynamic fiat wallet country flags", () => {
   });
 
   it("supports every country in the existing country-currency map", () => {
-    for (const country of Object.keys(COUNTRY_CURRENCY)) {
-      expect(fiatWalletFlag(COUNTRY_CURRENCY[country], country)).not.toBe("🌐");
+    for (const [country, currency] of Object.entries(COUNTRY_CURRENCY)) {
+      expect(fiatWalletFlag(currency, country)).not.toBe("🌐");
       expect(fiatWalletFlag("USD", country)).toBe("🇺🇸");
     }
   });
