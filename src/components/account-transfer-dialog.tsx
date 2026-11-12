@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
+  const [banksLoading, setBanksLoading] = useState(false);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [localBeneficiaryName, setLocalBeneficiaryName] = useState("");
   const [localBankCode, setLocalBankCode] = useState("");
@@ -64,10 +65,15 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
     } catch { toast.error("Branches could not be loaded for this bank."); }
   }
   async function loadBanks() {
-    if (banks.length) return;
-    const r = await getNigerianBanks();
-    if (r.error) toast.error(r.error); else setBanks(r.banks);
+    if (banks.length || banksLoading) return;
+    setBanksLoading(true);
+    try {
+      const r = await getNigerianBanks();
+      if (r.error) toast.error(r.error); else setBanks(r.banks);
+    } catch { toast.error("Nigerian banks could not be loaded. Please try again."); }
+    finally { setBanksLoading(false); }
   }
+  useEffect(() => { if (open && countryCode === "NG") void loadBanks(); }, [open, countryCode]);
   async function checkAccount() {
     if (!bankCode) return;
     setBusy(true);
@@ -182,9 +188,12 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
       </section> : null}
       {mode === "bank" && !confirming ? <>
         <p className="text-sm text-muted-foreground">Available: {new Intl.NumberFormat("en", { style: "currency", currency: "NGN", currencyDisplay: "narrowSymbol" }).format(balances.find(a => a.currency === "NGN")?.balance.available ?? 0)}</p>
-        <Label htmlFor="bank-name">Bank</Label>
-        <Input id="bank-name" list="ng-banks" value={bankName} onChange={e => { setBankName(e.target.value); setAccountName(null); }} onFocus={() => void loadBanks()} maxLength={80} placeholder={banks.length ? "Search your bank" : "Loading banks…"} />
-        <datalist id="ng-banks">{banks.map(b => <option key={b.code} value={b.name} />)}</datalist>
+        <Label htmlFor="bank-name">Select your bank</Label>
+        <Select value={bankCode ?? ""} onValueChange={code => { const selected = banks.find(bank => bank.code === code); setBankName(selected?.name ?? ""); setAccountName(null); }}>
+          <SelectTrigger id="bank-name" className="h-12 w-full"><SelectValue placeholder={banksLoading ? "Loading Nigerian banks…" : banks.length ? "Choose a bank" : "Banks unavailable — try again"} /></SelectTrigger>
+          <SelectContent>{banks.map(bank => <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>)}</SelectContent>
+        </Select>
+        {!banksLoading && banks.length === 0 && <Button type="button" variant="outline" className="w-full" onClick={() => void loadBanks()}>Retry loading banks</Button>
         <Label htmlFor="bank-account">Account number</Label>
         <Input id="bank-account" inputMode="numeric" value={accountNumber} onChange={e => { setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10)); setAccountName(null); }} placeholder="10 digits" />
         <Button variant="outline" disabled={busy || !bankCode || accountNumber.length !== 10} onClick={() => void checkAccount()}>{busy ? "Checking…" : "Confirm account name"}</Button>
