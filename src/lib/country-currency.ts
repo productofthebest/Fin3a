@@ -3,6 +3,13 @@ const MAP = "AD:EUR AE:AED AF:AFN AG:XCD AI:XCD AL:ALL AM:AMD AO:AOA AR:ARS AS:U
 
 export const COUNTRY_CURRENCY: Record<string, string> = Object.fromEntries(MAP.split(" ").map((p) => p.split(":") as [string, string]));
 
+/** Country flag for a fiat wallet: the selected country for local currency, US for USD. */
+export function fiatWalletFlag(currency: string, country: string | null | undefined): string {
+  const code = currency.toUpperCase() === "USD" ? "US" : (country ?? "NG").trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return "🌐";
+  return String.fromCodePoint(...Array.from(code, character => 127397 + character.charCodeAt(0)));
+}
+
 export function localCurrency(country: string | null | undefined): string {
   return COUNTRY_CURRENCY[(country ?? "NG").toUpperCase()] ?? "NGN";
 }

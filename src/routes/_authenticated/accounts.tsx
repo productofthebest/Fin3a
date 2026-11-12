@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
 import { AppShell } from "@/components/app-shell";
+import { fiatWalletFlag } from "@/lib/country-currency";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { FLUTTERWAVE_FX_MINIMUM_USD_EQUIVALENT, supportsFlutterwaveFxPair } from "@/lib/flutterwave-capabilities";
@@ -60,7 +61,7 @@ function Page() {
                 <div aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-10 h-28 w-72 -rotate-12 rounded-[100%] border-t border-violet-100 bg-gradient-to-l from-violet-100/75 via-violet-50/45 to-transparent" />
                 <div className="relative z-10">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="font-display text-base font-semibold tracking-tight">{account.currency} Wallet</h2>
+                    <h2 className="flex items-center gap-1.5 font-display text-base font-semibold tracking-tight"><span aria-hidden="true" className="text-base leading-none">{fiatWalletFlag(account.currency, data.country)}</span>{account.currency} Wallet</h2>
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-semibold text-violet-800 sm:size-8">
                       {sym(account.currency)}
                     </span>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountCurrencies, COUNTRY_CURRENCY, selectCountryAccounts } from "@/lib/country-currency";
+import { accountCurrencies, COUNTRY_CURRENCY, fiatWalletFlag, selectCountryAccounts } from "@/lib/country-currency";
 
 describe("local currency plus USD for every supported country", () => {
   it("Nigeria gets NGN and USD", () => expect(accountCurrencies("NG")).toEqual(["NGN", "USD"]));
@@ -13,6 +13,24 @@ describe("local currency plus USD for every supported country", () => {
       const expected = local === "USD" ? ["USD"] : [local, "USD"];
       expect(accountCurrencies(country)).toEqual(expected);
       expect(new Set(accountCurrencies(country)).size).toBe(expected.length);
+    }
+  });
+});
+
+describe("dynamic fiat wallet country flags", () => {
+  it("shows the selected country flag for the local fiat wallet and the US flag for USD", () => {
+    expect(fiatWalletFlag("NGN", "NG")).toBe("🇳🇬");
+    expect(fiatWalletFlag("USD", "NG")).toBe("🇺🇸");
+    expect(fiatWalletFlag("ZAR", "ZA")).toBe("🇿🇦");
+    expect(fiatWalletFlag("GHS", "GH")).toBe("🇬🇭");
+    expect(fiatWalletFlag("GBP", "GB")).toBe("🇬🇧");
+    expect(fiatWalletFlag("USD", "US")).toBe("🇺🇸");
+  });
+
+  it("supports every country in the existing country-currency map", () => {
+    for (const country of Object.keys(COUNTRY_CURRENCY)) {
+      expect(fiatWalletFlag(COUNTRY_CURRENCY[country], country)).not.toBe("🌐");
+      expect(fiatWalletFlag("USD", country)).toBe("🇺🇸");
     }
   });
 });
