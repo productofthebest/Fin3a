@@ -29,7 +29,7 @@ export function withdrawalOptions(
   const isUsUsd = countryCode === "US" && selectedCurrency === "USD";
   const isLocalFiatContext = Boolean(local && local === selectedCurrency);
   const verifiedBankRoute = verifiedBankPayoutRoutes.some(
-    route =>
+    (route) =>
       route.enabled === true &&
       route.country.trim().toUpperCase() === countryCode &&
       route.currency.trim().toUpperCase() === selectedCurrency,
