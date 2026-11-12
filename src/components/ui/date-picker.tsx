@@ -44,17 +44,20 @@ export function DatePicker({ id, name, value, defaultValue = "", min, max, onCha
             <span className="min-w-0 flex-1 truncate">{selectedDate ? format(selectedDate, "PPP") : "Select a date"}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto max-w-[calc(100vw-1.5rem)] rounded-xl p-1.5 shadow-xl" sideOffset={6}>
-          <div className="px-2 pb-1.5 pt-1"><p className="text-xs font-semibold">Choose a date</p><p className="mt-0.5 text-[11px] text-muted-foreground">{selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Select a day from the calendar"}</p></div>
+        <PopoverContent align="start" className="w-auto max-w-[calc(100vw-1rem)] rounded-xl p-1 shadow-xl" sideOffset={4}>
+          <div className="px-1.5 pb-1 pt-0.5">
+            <p className="text-[11px] font-semibold">Choose a date</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">{selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Select a day from the calendar"}</p>
+          </div>
           <Calendar mode="single" selected={selectedDate} onSelect={selectDate}
             disabled={[...(minDate ? [{ before: minDate }] : []), ...(maxDate ? [{ after: maxDate }] : [])]}
             defaultMonth={selectedDate ?? minDate ?? new Date()} captionLayout="dropdown"
             startMonth={minDate ?? new Date(new Date().getFullYear() - 100, 0)}
             endMonth={maxDate ?? new Date(new Date().getFullYear() + 20, 11)}
-            className="rounded-lg p-1 [--cell-size:1.9rem]" />
-          <div className="flex items-center justify-between border-t border-border px-1 pt-1">
-            <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" disabled={!selectedValue} onClick={() => { if (value === undefined) setInternalValue(""); onChange?.(""); setOpen(false); }}>Clear</Button>
-            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => selectDate(new Date())} disabled={(!!minDate && new Date() < minDate) || (!!maxDate && new Date() > maxDate)}>Today</Button>
+            className="rounded-lg p-0.5 [--cell-size:1.3rem] sm:p-1 sm:[--cell-size:1.6rem] [&_.rdp-week]:mt-1 [&_.rdp-month]:gap-1 [&_.rdp-weekday]:text-[10px]" />
+          <div className="flex items-center justify-between border-t border-border px-1 pt-0.5">
+            <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[11px]" disabled={!selectedValue} onClick={() => { if (value === undefined) setInternalValue(""); onChange?.(""); setOpen(false); }}>Clear</Button>
+            <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => selectDate(new Date())} disabled={(!!minDate && new Date() < minDate) || (!!maxDate && new Date() > maxDate)}>Today</Button>
           </div>
         </PopoverContent>
       </Popover>
