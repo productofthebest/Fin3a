@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getNigerianBanks, verifyBankAccount } from "@/lib/bank-transfer.functions";
 import { checkNgnWithdrawal, createNgnWithdrawal, getRecentWithdrawals } from "@/lib/ngn-withdrawal.functions";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [banks, setBanks] = useState<{ code: string; name: string }[]>([]);
+  const [banksLoading, setBanksLoading] = useState(false);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
@@ -29,10 +31,15 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
   const { data: recent } = useQuery({ queryKey: ["ngn-withdrawals"], queryFn: () => getRecentWithdrawals(), staleTime: 15_000 });
 
   async function loadBanks() {
-    if (banks.length) return;
-    const r = await getNigerianBanks();
-    if (r.error) toast.error(r.error); else setBanks(r.banks);
+    if (banks.length || banksLoading) return;
+    setBanksLoading(true);
+    try {
+      const r = await getNigerianBanks();
+      if (r.error) toast.error(r.error); else setBanks(r.banks);
+    } catch { toast.error("Nigerian banks could not be loaded. Please try again."); }
+    finally { setBanksLoading(false); }
   }
+  useEffect(() => { void loadBanks(); }, []);
   async function checkAccount() {
     if (!bankCode) return;
     setBusy(true);
@@ -98,9 +105,12 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
 
   return <div className="space-y-4">
     <div>
-      <Label htmlFor="wd-bank">Bank</Label>
-      <Input id="wd-bank" list="wd-ng-banks" value={bankName} onChange={e => { setBankName(e.target.value); setAccountName(null); }} onFocus={() => void loadBanks()} maxLength={80} placeholder={banks.length ? "Search your bank" : "Loading banks…"} />
-      <datalist id="wd-ng-banks">{banks.map(b => <option key={b.code} value={b.name} />)}</datalist>
+      <Label htmlFor="wd-bank">Select your bank</Label>
+      <Select value={bankCode ?? ""} onValueChange={code => { const selected = banks.find(bank => bank.code === code); setBankName(selected?.name ?? ""); setAccountName(null); }}>
+        <SelectTrigger id="wd-bank" className="h-12 w-full"><SelectValue placeholder={banksLoading ? "Loading Nigerian banks…" : banks.length ? "Choose a bank" : "Banks unavailable — try again"} /></SelectTrigger>
+        <SelectContent>{banks.map(bank => <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>)}</SelectContent>
+      </Select>
+      {!banksLoading && banks.length === 0 && <Button type="button" variant="outline" className="w-full" onClick={() => void loadBanks()}>Retry loading banks</Button>
     </div>
     <div>
       <Label htmlFor="wd-account">Account number</Label>
