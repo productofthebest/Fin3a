@@ -110,7 +110,7 @@ function Page() {
             <Button className="w-full" disabled={checkoutPending || !Number.isFinite(Number(depositAmount)) || Number(depositAmount) <= 0} onClick={async () => {
               setCheckoutPending(true); setCheckoutError(null);
               try {
-                const result = await createFlutterwaveCheckout({ data: { amount: Number(depositAmount), currency } });
+                const result = await createFlutterwaveCheckout({ data: { amount: Number(depositAmount), currency, checkoutMethod: selectedMethod === "apple-pay" ? "apple_pay" : selectedMethod === "google-pay" ? "google_pay" : "card" } });
                 const checkout = new URL(result.checkoutUrl);
                 if (checkout.protocol !== "https:" || checkout.hostname !== "checkout.flutterwave.com") throw new Error("Flutterwave returned an unrecognised checkout address.");
                 window.location.assign(checkout.toString());
