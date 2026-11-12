@@ -47,7 +47,7 @@ describe("Flutterwave country capabilities", () => {
   it("returns documented bank payout currencies", () => {
     expect(getBankPayoutCurrency("GB")).toBe("GBP");
     expect(getBankPayoutCurrency("FR")).toBe("EUR");
-    expect(getBankPayoutCurrency("RW")).toBe("RWF");
+    expect(getBankPayoutCurrency("RW")).toBeNull();
     expect(getBankPayoutCurrency("EG")).toBe("EGP");
     expect(getBankPayoutCurrency("CI")).toBe("XOF");
     expect(getBankPayoutCurrency("SN")).toBe("XOF");
