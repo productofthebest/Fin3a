@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 type DatePickerProps = {
   id?: string; name?: string; value?: string; defaultValue?: string;
-  min?: string; max?: string; onChange?: (value: string) => void;
+  min?: string | undefined; max?: string | undefined; onChange?: (value: string) => void;
   disabled?: boolean; required?: boolean; className?: string; "aria-label"?: string;
 };
 function parseDate(value?: string) {
