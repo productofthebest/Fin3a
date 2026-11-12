@@ -44,7 +44,7 @@ export function DatePicker({ id, name, value, defaultValue = "", min, max, onCha
             <span className="min-w-0 flex-1 truncate">{selectedDate ? format(selectedDate, "PPP") : "Select a date"}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-auto max-w-[calc(100vw-1rem)] rounded-xl p-1 shadow-xl" sideOffset={4}>
+        <PopoverContent align="start" className="w-auto max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-white p-1 shadow-xl" sideOffset={4}>
           <div className="px-1.5 pb-1 pt-0.5">
             <p className="text-[11px] font-semibold">Choose a date</p>
             <p className="mt-0.5 text-[10px] text-muted-foreground">{selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Select a day from the calendar"}</p>
