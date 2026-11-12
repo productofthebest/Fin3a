@@ -54,10 +54,12 @@ function Page() {
   const visibleCollectionMethods = country === "NG"
     ? collectionMethods.filter(method => !hiddenNgnDepositMethods.has(method))
     : collectionMethods;
+  // Google Pay remains implemented but hidden until Flutterwave enables it for this merchant.
+  const googlePayEnabled = import.meta.env.VITE_FLUTTERWAVE_GOOGLE_PAY_ENABLED === "true";
   const paymentCards = [
     ...visibleCollectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: method === "card" ? "Pay with your debit or credit card" : method === "banktransfer" ? "Pay directly from your bank" : "Pay using " + (methodLabel[method] ?? method), Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
     ...(country !== "GH" ? [{ id: "apple-pay", label: "Apple Pay", description: "Continue on Flutterwave; shown only on supported Apple devices and eligible checkout sessions", Icon: Smartphone }] : []),
-    { id: "google-pay", label: "Google Pay", description: "Continue on Flutterwave; shown only where Google Pay and this merchant checkout are eligible", Icon: Smartphone },
+    ...(googlePayEnabled ? [{ id: "google-pay", label: "Google Pay", description: "Continue on Flutterwave where Google Pay is enabled for this merchant and eligible for the customer", Icon: Smartphone }] : []),
   ];
   const selectedCard = paymentCards.find(method => method.id === selectedMethod);
   const selectedEligibility = selectedMethod === "banktransfer" ? getDepositMethodEligibility("bank-transfer", country, currency)
