@@ -56,3 +56,19 @@ export const getCountryBankBranches = createServerFn({ method: "GET" })
       return { branches: [] as { code: string; name: string }[], error: "Branches could not be loaded for this bank." };
     }
   });
+
+
+/** Client-side guard: never leave a bank selector in a loading state if the server request stalls. */
+export async function getNigerianBanksWithTimeout() {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      getNigerianBanks(),
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("BANK_LIST_TIMEOUT")), 15_000);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}

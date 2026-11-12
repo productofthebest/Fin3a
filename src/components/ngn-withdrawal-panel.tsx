@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getNigerianBanks, verifyBankAccount } from "@/lib/bank-transfer.functions";
+import { getNigerianBanksWithTimeout, verifyBankAccount } from "@/lib/bank-transfer.functions";
 import { checkNgnWithdrawal, createNgnWithdrawal, getRecentWithdrawals } from "@/lib/ngn-withdrawal.functions";
 import { useQuery } from "@tanstack/react-query";
 
@@ -34,7 +34,7 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
     if (banks.length || banksLoading) return;
     setBanksLoading(true);
     try {
-      const r = await getNigerianBanks();
+      const r = await getNigerianBanksWithTimeout();
       if (r.error) toast.error(r.error); else setBanks(r.banks);
     } catch { toast.error("Nigerian banks could not be loaded. Please try again."); }
     finally { setBanksLoading(false); }
