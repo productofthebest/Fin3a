@@ -6,6 +6,7 @@ const ROUTES: Record<string, string> = { NG: "NGN", US: "USD", GB: "GBP", GH: "G
 const inputSchema = z.object({
   amount: z.number().finite().positive().max(1_000_000).refine(n => Math.round(n * 100) === n * 100),
   currency: z.enum(["NGN", "USD", "GBP", "GHS", "ZAR"]),
+  checkoutMethod: z.enum(["card", "apple_pay", "google_pay"]),
 });
 
 type IntentRow = { id: string; tx_ref: string; requested_amount: number; currency: string; expires_at: string };
@@ -74,6 +75,7 @@ export const createFlutterwaveCheckout = createServerFn({ method: "POST" })
           country,
           currency: data.currency,
           amount: data.amount,
+          checkout_method: data.checkoutMethod,
           tx_ref: txRef,
           customer: { email, name: customerName },
         }),
