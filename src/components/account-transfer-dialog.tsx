@@ -193,7 +193,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
           <SelectTrigger id="bank-name" className="h-12 w-full"><SelectValue placeholder={banksLoading ? "Loading Nigerian banks…" : banks.length ? "Choose a bank" : "Banks unavailable — try again"} /></SelectTrigger>
           <SelectContent>{banks.map(bank => <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>)}</SelectContent>
         </Select>
-        {!banksLoading && banks.length === 0 && <Button type="button" variant="outline" className="w-full" onClick={() => void loadBanks()}>Retry loading banks</Button>
+        {!banksLoading && banks.length === 0 && <Button type="button" variant="outline" className="w-full" onClick={() => void loadBanks()}>Retry loading banks</Button>}
         <Label htmlFor="bank-account">Account number</Label>
         <Input id="bank-account" inputMode="numeric" value={accountNumber} onChange={e => { setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10)); setAccountName(null); }} placeholder="10 digits" />
         <Button variant="outline" disabled={busy || !bankCode || accountNumber.length !== 10} onClick={() => void checkAccount()}>{busy ? "Checking…" : "Confirm account name"}</Button>
