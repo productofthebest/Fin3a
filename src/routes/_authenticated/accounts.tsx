@@ -171,45 +171,39 @@ function Page() {
           <Button disabled>{availableSwapPairs.length ? "Swap unavailable until FX is enabled" : "Swap unavailable"}</Button>
         </DialogContent>
       </Dialog>
-      {!data.providerConnected ? (
-        <p className="mt-2 text-xs text-muted-foreground">
-          Local-currency deposits and external bank transfers appear when the relevant country and merchant payment routes are enabled. Use Transfer for Fin3a-user payments and supported bank payouts. Crypto receiving addresses are separate below.
-        </p>
-      ) : null}
-
-      <section className="mt-10">
-        <h2 className="font-display text-xl font-semibold">Crypto Addresses</h2>
-        <div className="mt-4 grid items-start gap-4 sm:grid-cols-2">
-          {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-w-0 rounded-xl border border-border bg-card p-3 shadow-sm" aria-label={`${asset.name} wallet card`}>
-              <div className="flex min-w-0 flex-col gap-0.5 text-[11px] leading-[14px]">
-              <div className="flex min-w-0 items-center justify-between gap-3">
+      <section className="mt-3">
+        <h2 className="font-display text-lg font-semibold">Crypto Addresses</h2>
+        <div className="mt-2 grid items-start gap-2 sm:grid-cols-2 sm:gap-3">
+          {data.cryptoAssets.map((asset) => (            <div key={asset.id} className="min-w-0 rounded-lg border border-border bg-card p-2 shadow-sm sm:rounded-xl sm:p-3" aria-label={`${asset.name} wallet card`}>
+              <div className="flex min-w-0 flex-col gap-0.5 text-[10px] leading-3 sm:text-[11px] sm:leading-[14px]">
+              <div className="flex min-w-0 items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="break-words text-xs font-medium">{asset.name}</p>
+                  <p className="break-words text-[11px] font-semibold sm:text-xs">{asset.name}</p>
                   <p className="break-words text-muted-foreground">
                     {asset.symbol} · {asset.network}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-md bg-secondary px-2 py-1 text-xs font-medium">{asset.symbol}</span>
+                <span className="shrink-0 rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium sm:px-2 sm:py-1 sm:text-xs">{asset.symbol}</span>
               </div>
               {asset.address ? (
                 <div>
-                  <p className="break-all rounded-md bg-secondary px-2 py-1 font-mono text-[11px]">{asset.address.address}</p>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    <button type="button" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
+                  <p className="break-all rounded-md bg-secondary px-2 py-1 font-mono text-[10px] leading-3 sm:text-[11px] sm:leading-[14px]">{asset.address.address}</p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    <button type="button" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] hover:bg-secondary sm:px-2 sm:py-1 sm:text-xs">
                       <Copy className="size-3" /> Copy
                     </button>
-                    <button type="button" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
+                    <button type="button" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] hover:bg-secondary sm:px-2 sm:py-1 sm:text-xs">
                       <QrCode className="size-3" /> QR code
                     </button>
                   </div>
                 </div>
               ) : (
-                <p className="rounded-md bg-secondary px-2 py-0.5 text-muted-foreground">
+                <p className="rounded-md bg-secondary px-2 py-1 text-[10px] leading-3 text-muted-foreground sm:text-[11px] sm:leading-[14px]">
                   Provider not connected. Address not available yet.
                 </p>
               )}
               {asset.min_deposit != null ? (
-                <p className="text-muted-foreground">
+                <p className="text-[10px] leading-3 text-muted-foreground sm:text-[11px] sm:leading-[14px]">
                   Minimum deposit: {asset.min_deposit} {asset.symbol}
                 </p>
               ) : null}
