@@ -56,11 +56,12 @@ function Page() {
     : collectionMethods;
   const paymentCards = [
     ...visibleCollectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: method === "card" ? "Pay with your debit or credit card" : method === "banktransfer" ? "Pay directly from your bank" : "Pay using " + (methodLabel[method] ?? method), Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
-
+    ...(country !== "GH" ? [{ id: "apple-pay", label: "Apple Pay", description: "Continue on Flutterwave; shown only on supported Apple devices and eligible checkout sessions", Icon: Smartphone }] : []),
+    { id: "google-pay", label: "Google Pay", description: "Continue on Flutterwave; shown only where Google Pay and this merchant checkout are eligible", Icon: Smartphone },
   ];
   const selectedCard = paymentCards.find(method => method.id === selectedMethod);
   const selectedEligibility = selectedMethod === "banktransfer" ? getDepositMethodEligibility("bank-transfer", country, currency)
-    : selectedMethod === "card" && ["NG", "US", "GB", "GH", "ZA"].includes(country) ? { usable: true, message: "Continue to Flutterwave secure hosted checkout. Your Fin3a wallet is credited only after server-side payment verification." }
+    : ["card", "apple-pay", "google-pay"].includes(selectedMethod ?? "") && ["NG", "US", "GB", "GH", "ZA"].includes(country) ? { usable: true, message: "Fin3a creates a Flutterwave hosted checkout session. Apple Pay and Google Pay are displayed by Flutterwave only when enabled for the merchant and eligible for the customer's device, region and currency. Fin3a cannot force or guarantee either wallet method." }
     : selectedMethod && collectionMethods.includes(selectedMethod)
       ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is listed for this country, but Fin3a has not confirmed an active merchant route and verified payment flow for this method yet. It is not enabled until that confirmation is available." }
       : null;
@@ -102,7 +103,7 @@ function Page() {
           <div className="flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Availability</span><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility?.usable ? "Available" : "Not enabled"}</span></div>
           <p className="text-sm text-muted-foreground">{selectedEligibility?.message}</p>
           <p className="text-xs text-muted-foreground">Country: {country} · Currency: {currency}.{!selectedEligibility?.usable && " This payment method is not enabled until Fin3a confirms that it can accept and verify the payment."}</p>
-          {selectedMethod === "card" && ["NG", "US", "GB", "GH", "ZA"].includes(country) && <section className="space-y-3 border-t border-border pt-4" aria-label="Secure card deposit">
+          {["card", "apple-pay", "google-pay"].includes(selectedMethod ?? "") && ["NG", "US", "GB", "GH", "ZA"].includes(country) && <section className="space-y-3 border-t border-border pt-4" aria-label="Secure card deposit">
             <label htmlFor="deposit-amount" className="block text-sm font-medium">Amount ({currency})</label>
             <input id="deposit-amount" type="number" inputMode="decimal" min="0.01" step="0.01" value={depositAmount} onChange={event => { setDepositAmount(event.target.value); setCheckoutError(null); }} placeholder={"Enter amount in " + currency} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" />
             {checkoutError && <p role="alert" className="text-sm text-destructive">{checkoutError}</p>}
@@ -117,8 +118,8 @@ function Page() {
                 setCheckoutError(error instanceof Error ? error.message : "Secure checkout could not be started. Please try again.");
                 setCheckoutPending(false);
               }
-            }}>{checkoutPending ? "Connecting to secure checkout…" : "Continue to secure card checkout"}</Button>
-            <p className="text-xs text-muted-foreground">Card details are entered on Flutterwave. Fin3a will credit your wallet only after the payment is independently verified.</p>
+            }}>{checkoutPending ? "Connecting to secure checkout…" : selectedMethod === "apple-pay" ? "Continue to Flutterwave for Apple Pay" : selectedMethod === "google-pay" ? "Continue to Flutterwave for Google Pay" : "Continue to secure card checkout"}</Button>
+            <p className="text-xs text-muted-foreground">Payment is completed on Flutterwave. Apple Pay and Google Pay appear only when Flutterwave confirms eligibility in that hosted session. Fin3a credits your wallet only after independent server-side verification.</p>
           </section>}
           {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility?.usable && <section className="space-y-3 border-t border-border pt-4" aria-label="NGN bank transfer top-up"><h2 className="font-display text-lg font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
         </DialogContent>}
