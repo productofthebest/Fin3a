@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { lookupRecipient, sendTransfer, type ResolvedParticipant } from "@/lib/share-split.functions";
 import { canTransfer } from "@/lib/account-transfer";
-import { getNigerianBanks, getCountryTransferBanks, getCountryBankBranches, verifyBankAccount } from "@/lib/bank-transfer.functions";
+import { getNigerianBanksWithTimeout, getCountryTransferBanks, getCountryBankBranches, verifyBankAccount } from "@/lib/bank-transfer.functions";
 import { createNgnWithdrawal } from "@/lib/ngn-withdrawal.functions";
 import { SendToContact } from "@/components/send-to-contact";
 import { accountCurrencies } from "@/lib/country-currency";
@@ -68,7 +68,7 @@ export function AccountTransferDialog({ open, onOpenChange, balances, country }:
     if (banks.length || banksLoading) return;
     setBanksLoading(true);
     try {
-      const r = await getNigerianBanks();
+      const r = await getNigerianBanksWithTimeout();
       if (r.error) toast.error(r.error); else setBanks(r.banks);
     } catch { toast.error("Nigerian banks could not be loaded. Please try again."); }
     finally { setBanksLoading(false); }
