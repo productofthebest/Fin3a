@@ -44,8 +44,8 @@ function Page() {
   const swapTo = selectedSwapPair?.to ?? "USD";
   return (
     <AppShell>
-      <h1 className="font-display text-3xl font-bold">Wallet</h1>
-      <div className="mt-6 grid gap-4">
+      <h1 className="-mt-2 font-display text-3xl font-bold">Wallet</h1>
+      <div className="mt-4 grid gap-4">
         {data.accounts.map((account) => {
           const balanceHidden = Boolean(hiddenBalances[account.id]);
           const masked = "••••••";
