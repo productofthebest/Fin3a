@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ShieldCheck, ArrowLeft, Landmark, CreditCard, WalletCards, Smartphone, ChevronDown } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Landmark, CreditCard, Smartphone, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
-import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
 import { getDepositCollectionMethods, getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
 import { NgnTopupPanel } from "@/components/ngn-topup-panel";
+import { createFlutterwaveCheckout } from "@/lib/flutterwave-collection.functions";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const overview = queryOptions({ queryKey: ["accounts", "overview"], queryFn: () => getAccountsOverview(), staleTime: 30_000 });
@@ -45,23 +45,25 @@ function Page() {
   const { data } = useSuspenseQuery(overview);
   const currency = accountCurrencies(data.country)[0] ?? "NGN";
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [checkoutPending, setCheckoutPending] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const country = (data.country ?? "NG").toUpperCase();
-  const collection = getCollectionCapability(country);
   const collectionMethods = getDepositCollectionMethods(country, currency);
   const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
   const visibleCollectionMethods = country === "NG"
     ? collectionMethods.filter(method => !hiddenNgnDepositMethods.has(method))
     : collectionMethods;
+  // Google Pay remains implemented but hidden until Flutterwave enables it for this merchant.
+  const googlePayEnabled = import.meta.env.VITE_FLUTTERWAVE_GOOGLE_PAY_ENABLED === "true";
   const paymentCards = [
     ...visibleCollectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: method === "card" ? "Pay with your debit or credit card" : method === "banktransfer" ? "Pay directly from your bank" : "Pay using " + (methodLabel[method] ?? method), Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
-    ...(collection?.applePay ? [{ id: "apple-pay", label: "Apple Pay", description: "Pay securely with Apple Pay", Icon: WalletCards }] : []),
-    { id: "google-pay", label: "Google Pay", description: "Availability checked at merchant checkout", Icon: WalletCards },
+    ...(country !== "GH" ? [{ id: "apple-pay", label: "Apple Pay", description: "Continue on Flutterwave; shown only on supported Apple devices and eligible checkout sessions", Icon: Smartphone }] : []),
+    ...(googlePayEnabled ? [{ id: "google-pay", label: "Google Pay", description: "Continue on Flutterwave where Google Pay is enabled for this merchant and eligible for the customer", Icon: Smartphone }] : []),
   ];
   const selectedCard = paymentCards.find(method => method.id === selectedMethod);
   const selectedEligibility = selectedMethod === "banktransfer" ? getDepositMethodEligibility("bank-transfer", country, currency)
-    : selectedMethod === "card" ? getDepositMethodEligibility("debit-card", country, currency)
-    : selectedMethod === "apple-pay" ? getDepositMethodEligibility("apple-pay", country, currency)
-    : selectedMethod === "google-pay" ? getDepositMethodEligibility("google-pay", country, currency)
+    : ["card", "apple-pay", "google-pay"].includes(selectedMethod ?? "") && ["NG", "US", "GB", "GH", "ZA"].includes(country) ? { usable: true, message: "Fin3a creates a Flutterwave hosted checkout session. Apple Pay and Google Pay are displayed by Flutterwave only when enabled for the merchant and eligible for the customer's device, region and currency. Fin3a cannot force or guarantee either wallet method." }
     : selectedMethod && collectionMethods.includes(selectedMethod)
       ? { usable: false, message: (selectedCard?.label ?? selectedMethod) + " is listed for this country, but Fin3a has not confirmed an active merchant route and verified payment flow for this method yet. It is not enabled until that confirmation is available." }
       : null;
@@ -103,12 +105,29 @@ function Page() {
           <div className="flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Availability</span><span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium">{selectedEligibility?.usable ? "Available" : "Not enabled"}</span></div>
           <p className="text-sm text-muted-foreground">{selectedEligibility?.message}</p>
           <p className="text-xs text-muted-foreground">Country: {country} · Currency: {currency}.{!selectedEligibility?.usable && " This payment method is not enabled until Fin3a confirms that it can accept and verify the payment."}</p>
+          {["card", "apple-pay", "google-pay"].includes(selectedMethod ?? "") && ["NG", "US", "GB", "GH", "ZA"].includes(country) && <section className="space-y-3 border-t border-border pt-4" aria-label="Secure card deposit">
+            <label htmlFor="deposit-amount" className="block text-sm font-medium">Amount ({currency})</label>
+            <input id="deposit-amount" type="number" inputMode="decimal" min="0.01" step="0.01" value={depositAmount} onChange={event => { setDepositAmount(event.target.value); setCheckoutError(null); }} placeholder={"Enter amount in " + currency} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm" />
+            {checkoutError && <p role="alert" className="text-sm text-destructive">{checkoutError}</p>}
+            <Button className="w-full" disabled={checkoutPending || !Number.isFinite(Number(depositAmount)) || Number(depositAmount) <= 0} onClick={async () => {
+              setCheckoutPending(true); setCheckoutError(null);
+              try {
+                const result = await createFlutterwaveCheckout({ data: { amount: Number(depositAmount), currency, checkoutMethod: selectedMethod === "apple-pay" ? "apple_pay" : selectedMethod === "google-pay" ? "google_pay" : "card" } });
+                const checkout = new URL(result.checkoutUrl);
+                if (checkout.protocol !== "https:" || checkout.hostname !== "checkout.flutterwave.com") throw new Error("Flutterwave returned an unrecognised checkout address.");
+                window.location.assign(checkout.toString());
+              } catch (error) {
+                setCheckoutError(error instanceof Error ? error.message : "Secure checkout could not be started. Please try again.");
+                setCheckoutPending(false);
+              }
+            }}>{checkoutPending ? "Connecting to secure checkout…" : selectedMethod === "apple-pay" ? "Continue to Flutterwave for Apple Pay" : selectedMethod === "google-pay" ? "Continue to Flutterwave for Google Pay" : "Continue to secure card checkout"}</Button>
+            <p className="text-xs text-muted-foreground">Payment is completed on Flutterwave. Apple Pay and Google Pay appear only when Flutterwave confirms eligibility in that hosted session. Fin3a credits your wallet only after independent server-side verification.</p>
+          </section>}
           {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility?.usable && <section className="space-y-3 border-t border-border pt-4" aria-label="NGN bank transfer top-up"><h2 className="font-display text-lg font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
         </DialogContent>}
       </Dialog>
 
-      {unsupported ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not yet enabled in Fin3a. This payment route is not active for this currency yet.</p><p>Your balance remains available in your wallet; no funds will move through an unverified route.</p></div> : currency !== "NGN" ? <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>Local-currency deposits for this country are not active yet. No funds will move until the merchant route, settlement currency and verified callback are enabled.</p></div> : null}
-      {currency !== "NGN" && <Button className="mt-5 w-full" disabled>Local deposit unavailable</Button>}
+      {unsupported && <div role="status" className="mt-6 space-y-3 text-sm text-muted-foreground"><p>{currency} local-currency deposits are not enabled for this country.</p><p>Your balance remains available; no funds move through an unverified route.</p></div>}
       <p className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">Fin3a only credits your wallet after the payment has been securely verified.</p>
     </main>
   </div>;

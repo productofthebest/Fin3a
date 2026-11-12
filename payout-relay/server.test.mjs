@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const port = 19000 + Math.floor(Math.random() * 1000);
-const env = { ...process.env, PORT: String(port), RELAY_SHARED_TOKEN: "x".repeat(40), FLW_SECRET_KEY: "f".repeat(40), RELAY_ALLOWED_SOURCE_IPS: "", PAYMENT_REDIRECT_URL: "", NODE_OPTIONS: "--import ./test-fetch-mock.mjs" };
+const env = { ...process.env, PORT: String(port), RELAY_SHARED_TOKEN: "x".repeat(40), FLW_SECRET_KEY: "f".repeat(40), RELAY_ALLOWED_SOURCE_IPS: "", PAYMENT_REDIRECT_URL: "https://fin3a.example/deposit/return", NODE_OPTIONS: "--import ./test-fetch-mock.mjs" };
 const child = spawn(process.execPath, ["server.mjs"], { cwd: fileURLToPath(new URL(".", import.meta.url)), env, stdio: "ignore" });
 const base = `http://127.0.0.1:${port}`;
 async function waitReady() {
@@ -21,7 +21,7 @@ const auth = { authorization: `Bearer ${env.RELAY_SHARED_TOKEN}` };
 test("health exposes readiness without leaking configuration", async () => {
   const r = await fetch(base + "/health");
   assert.equal(r.status, 200);
-  assert.deepEqual(await r.json(), { ready: true, payments_ready: false });
+  assert.deepEqual(await r.json(), { ready: true, payments_ready: true });
 });
 test("rejects unauthenticated payout calls", async () => {
   const r = await fetch(base + "/v1/flutterwave/transfers/123");
@@ -124,23 +124,49 @@ test("forwards valid USD, GBP and EUR transfers only after country and metadata 
   }
 });
 
-test("rejects hosted payment collection when redirect is not configured", async () => {
+test("rejects hosted payment collection without an explicit checkout method", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
     body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency: "KES", country: "KE", customer: { email: "test@example.com", name: "Test User" } }),
   });
-  assert.equal(r.status, 503);
+  assert.equal(r.status, 400);
 });
-test("uses provider-supported payment options for GH, CM, CI and ZM country/currency pairs", async () => {
+test("accepts supported country/currency pairs for card checkout", async () => {
   for (const [country, currency] of [["GH", "GHS"], ["CM", "XAF"], ["CI", "XOF"], ["ZM", "ZMW"], ["FR", "EUR"]]) {
     const r = await fetch(base + "/v1/flutterwave/payments", {
       method: "POST", headers: { ...auth, "content-type": "application/json" },
-      body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency, country, customer: { email: "test@example.com", name: "Test User" } }),
+      body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency, country, checkout_method: "card", customer: { email: "test@example.com", name: "Test User" } }),
     });
-    assert.equal(r.status, 503, country + " should pass country/currency validation before the unconfigured checkout gate");
+    assert.equal(r.status, 200, country + " should create hosted checkout");
   }
 });
 
+test("Apple Pay uses the merchant dashboard method without invented payment_options values", async () => {
+  const r = await fetch(base + "/v1/flutterwave/payments", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ tx_ref: "F3I-12345678-1234-1234-1234-123456789012", amount: 100, currency: "USD", country: "US", checkout_method: "apple_pay", customer: { email: "test@example.com", name: "Test User" } }),
+  });
+  assert.equal(r.status, 200);
+  const payload = await r.json();
+  assert.equal(payload.data.received.tx_ref, "F3I-12345678-1234-1234-1234-123456789012");
+  assert.equal(Object.hasOwn(payload.data.received, "payment_options"), false);
+});
+test("Google Pay is rejected until the merchant feature flag is explicitly enabled", async () => {
+  const r = await fetch(base + "/v1/flutterwave/payments", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ tx_ref: "F3I-12345678-1234-1234-1234-123456789012", amount: 100, currency: "USD", country: "US", checkout_method: "google_pay", customer: { email: "test@example.com", name: "Test User" } }),
+  });
+  assert.equal(r.status, 400);
+});
+test("card checkout keeps its explicit country/currency payment options", async () => {
+  const r = await fetch(base + "/v1/flutterwave/payments", {
+    method: "POST", headers: { ...auth, "content-type": "application/json" },
+    body: JSON.stringify({ tx_ref: "F3I-12345678-1234-1234-1234-123456789012", amount: 100, currency: "NGN", country: "NG", checkout_method: "card", customer: { email: "test@example.com", name: "Test User" } }),
+  });
+  assert.equal(r.status, 200);
+  const payload = await r.json();
+  assert.equal(payload.data.received.payment_options, "card");
+});
 test("rejects unsupported country and currency payment combination", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
