@@ -25,5 +25,13 @@ globalThis.fetch = async (input, init) => {
       data: { id: 12345, status: "successful", tx_ref: "F3I-test", amount: 100, currency: "NGN" },
     }), { status: 200, headers: { "content-type": "application/json" } });
   }
+
+  if (url === "https://api.flutterwave.com/v3/payments" && init?.method === "POST") {
+    const payload = JSON.parse(String(init.body || "{}"));
+    return new Response(JSON.stringify({
+      status: "success",
+      data: { link: "https://checkout.flutterwave.com/v3/hosted/pay/test", received: payload },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  }
   return originalFetch(input, init);
 };
