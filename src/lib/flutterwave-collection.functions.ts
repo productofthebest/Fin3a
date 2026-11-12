@@ -80,7 +80,7 @@ export const createFlutterwaveCheckout = createServerFn({ method: "POST" })
       });
       const payload = await response.json().catch(() => null) as CheckoutResponse | null;
       const checkoutUrl = payload?.data?.link;
-      if (!response.ok || payload?.status !== "success" || typeof checkoutUrl !== "string" || !checkoutUrl.startsWith("https://")) {
+      if (!response.ok || payload?.status !== "success" || typeof checkoutUrl !== "string" || (() => { try { const url = new URL(checkoutUrl); return url.protocol !== "https:" || url.hostname !== "checkout.flutterwave.com"; } catch { return true; } })()) {
         throw new Error("CHECKOUT_UNAVAILABLE");
       }
       return { txRef, checkoutUrl, amount: intent.requested_amount, currency: intent.currency, expiresAt: intent.expires_at };
