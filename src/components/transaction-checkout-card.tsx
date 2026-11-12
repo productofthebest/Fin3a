@@ -57,7 +57,7 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="w-[min(15rem,calc(100vw-2rem))] max-h-[90dvh] overflow-y-auto p-3 sm:max-w-none">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><ReceiptText className="size-5" /> Transaction checkout</DialogTitle>
           <DialogDescription>Fin3a transaction confirmation and receipt.</DialogDescription>
