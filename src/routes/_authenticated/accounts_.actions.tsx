@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ShieldCheck, ArrowLeft, Landmark, CreditCard, WalletCards, Smartphone, ChevronDown } from "lucide-react";
+import { ShieldCheck, ArrowLeft, Landmark, CreditCard, Smartphone, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAccountsOverview } from "@/lib/accounts.functions";
 import { pageMeta } from "@/lib/page-meta";
 import { accountCurrencies } from "@/lib/country-currency";
-import { getCollectionCapability } from "@/lib/flutterwave-capabilities";
 import { getDepositCollectionMethods, getDepositMethodEligibility } from "@/lib/deposit-method-eligibility";
 import { NgnTopupPanel } from "@/components/ngn-topup-panel";
 import { createFlutterwaveCheckout } from "@/lib/flutterwave-collection.functions";
@@ -50,7 +49,6 @@ function Page() {
   const [checkoutPending, setCheckoutPending] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const country = (data.country ?? "NG").toUpperCase();
-  const collection = getCollectionCapability(country);
   const collectionMethods = getDepositCollectionMethods(country, currency);
   const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
   const visibleCollectionMethods = country === "NG"
@@ -122,7 +120,6 @@ function Page() {
             }}>{checkoutPending ? "Connecting to secure checkout…" : "Continue to secure card checkout"}</Button>
             <p className="text-xs text-muted-foreground">Card details are entered on Flutterwave. Fin3a will credit your wallet only after the payment is independently verified.</p>
           </section>}
-          {selectedMethod === "apple-pay" || selectedMethod === "google-pay" ? <p className="text-xs text-muted-foreground">This payment method is not displayed until Flutterwave confirms it is available for your merchant account and checkout session.</p> : null}
           {country === "NG" && currency === "NGN" && selectedMethod === "banktransfer" && selectedEligibility?.usable && <section className="space-y-3 border-t border-border pt-4" aria-label="NGN bank transfer top-up"><h2 className="font-display text-lg font-semibold">NGN bank transfer</h2><NgnTopupPanel /></section>}
         </DialogContent>}
       </Dialog>
