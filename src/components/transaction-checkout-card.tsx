@@ -78,12 +78,12 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-auto min-h-[20rem] max-h-[calc(100dvh-2rem)] w-[min(19rem,calc(100vw-2rem))] flex-col gap-2.5 overflow-hidden p-3 sm:max-w-none">
+      <DialogContent className="flex h-auto max-h-[calc(100dvh-1rem)] w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-3 overflow-hidden p-4 sm:max-w-none">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base"><ReceiptText className="size-5" /> Transaction receipt</DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 rounded-xl border border-border bg-card">
-          <div className="border-b border-dashed border-border px-3 py-2.5 text-center">
+        <div className="shrink-0 rounded-xl border border-border bg-card">
+          <div className="border-b border-dashed border-border px-4 py-3 text-center">
             <div className="mx-auto mb-1.5 flex size-7 items-center justify-center rounded-lg bg-secondary font-display text-sm font-bold">F</div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Fin3a receipt</p>
             <p className="mt-1 text-xl font-bold tabular-nums">{amount}</p>
@@ -91,15 +91,15 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
               <StatusIcon className="size-3.5" /> {statusLabel}
             </div>
           </div>
-          <div className="space-y-2 px-3 py-2.5">
-            <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Transaction</span><span className="min-w-0 max-w-[68%] break-words text-right font-medium">{transaction.title}</span></div>
-            <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Date & time</span><span className="min-w-0 text-right font-medium">{date}</span></div>
-            <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Type</span><span className="min-w-0 text-right font-medium capitalize">{transaction.kind.replaceAll("_", " ")}</span></div>
-            {transaction.deletable ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Source</span><span className="font-medium text-primary">Imported</span></div> : null}
-            {transaction.reference ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Reference</span><span className="min-w-0 max-w-[68%] break-all text-right font-medium">{transaction.reference}</span></div> : null}
-            {transaction.detail ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Details</span><span className="min-w-0 max-w-[68%] break-words text-right font-medium">{transaction.detail}</span></div> : null}
-            {transaction.category ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Category</span><span className="min-w-0 text-right font-medium">{transaction.category.name}</span></div> : null}
-            <div className="flex items-start justify-between gap-2 border-t border-border pt-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Transaction ID</span><span className="min-w-0 max-w-[68%] break-all text-right font-mono">{transaction.id}</span></div>
+          <div className="space-y-2.5 px-4 py-3">
+            <div className="flex items-start justify-between gap-3 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Transaction</span><span className="min-w-0 max-w-[70%] break-words text-right font-medium">{transaction.title}</span></div>
+            <div className="flex items-start justify-between gap-3 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Date & time</span><span className="min-w-0 text-right font-medium">{date}</span></div>
+            <div className="flex items-start justify-between gap-3 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Type</span><span className="min-w-0 text-right font-medium capitalize">{transaction.kind.replaceAll("_", " ")}</span></div>
+            {transaction.deletable ? <div className="flex items-start justify-between gap-3 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Source</span><span className="font-medium text-primary">Imported</span></div> : null}
+            {transaction.reference ? <div className="flex items-start justify-between gap-3 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Reference</span><span className="min-w-0 max-w-[70%] break-all text-right font-medium">{transaction.reference}</span></div> : null}
+            {transaction.detail ? <div className="flex items-start justify-between gap-3 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Details</span><span className="min-w-0 max-w-[70%] break-words text-right font-medium">{transaction.detail}</span></div> : null}
+            {transaction.category ? <div className="flex items-start justify-between gap-3 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Category</span><span className="min-w-0 text-right font-medium">{transaction.category.name}</span></div> : null}
+            <div className="flex items-start justify-between gap-3 border-t border-border pt-2.5 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Transaction ID</span><span className="min-w-0 max-w-[70%] break-all text-right font-mono">{transaction.id}</span></div>
           </div>
         </div>
         <Button onClick={downloadReceipt} className="h-9 w-full shrink-0 text-xs"><Download className="mr-2 size-4" /> Download receipt image</Button>
