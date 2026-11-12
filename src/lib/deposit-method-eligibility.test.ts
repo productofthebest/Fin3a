@@ -6,9 +6,9 @@ describe("deposit method eligibility disclosure", () => {
     expect(getDepositCollectionMethods("NG", "NGN")).toEqual(["banktransfer", "card"]);
   });
 
-  it("does not expose the NGN bank-transfer deposit option in the Nigeria deposit selector", () => {
-    const hiddenNgnDepositMethods = new Set(["account", "banktransfer", "internetbanking", "nqr", "opay", "ussd"]);
-    expect(getDepositCollectionMethods("NG", "NGN").filter(method => !hiddenNgnDepositMethods.has(method))).toEqual(["card"]);
+  it("keeps NGN bank transfer visible while hiding the other unsupported Nigeria deposit methods", () => {
+    const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
+    expect(getDepositCollectionMethods("NG", "NGN").filter(method => !hiddenNgnDepositMethods.has(method))).toEqual(["banktransfer", "card"]);
   });
 
   it("does not offer the NGN top-up route to Ghana wallets", () => {
