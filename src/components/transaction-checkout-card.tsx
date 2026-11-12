@@ -1,5 +1,5 @@
 import { Download, CheckCircle2, XCircle, Clock3, ReceiptText } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { ActivityRow } from "@/lib/activity-history";
 import { recordMoney } from "@/lib/record-currencies";
@@ -14,9 +14,21 @@ function statusKind(status: string): "success" | "failed" | "pending" {
   return "pending";
 }
 
-
 function xml(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+}
+
+function wrapText(value: string, maxChars: number) {
+  const words = value.split(/\s+/);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    if (!line) line = word;
+    else if ((line + " " + word).length <= maxChars) line += " " + word;
+    else { lines.push(line); line = word; }
+  }
+  if (line) lines.push(line);
+  return lines.length ? lines : [""];
 }
 
 export function TransactionCheckoutCard({ transaction, open, onOpenChange, country }: Props) {
@@ -27,24 +39,33 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
   const statusLabel = kind === "success" ? "Successful" : kind === "failed" ? "Unsuccessful" : "Pending";
   const StatusIcon = kind === "success" ? CheckCircle2 : kind === "failed" ? XCircle : Clock3;
 
+  const receiptRows: Array<[string, string]> = [
+    ["Transaction", transaction.title],
+    ["Amount", amount],
+    ["Status", statusLabel],
+    ["Date & time", date],
+    ["Transaction type", transaction.kind.replaceAll("_", " ")],
+    ...(transaction.deletable ? [["Source", "Imported transaction"] as [string, string]] : []),
+    ...(transaction.reference ? [["Reference", transaction.reference] as [string, string]] : []),
+    ...(transaction.detail ? [["Details", transaction.detail] as [string, string]] : []),
+    ...(transaction.category ? [["Category", transaction.category.name] as [string, string]] : []),
+    ["Transaction ID", transaction.id],
+  ];
+
   const downloadReceipt = () => {
-    const rows: Array<[string, string]> = [
-      ["Transaction", transaction.title],
-      ["Amount", amount],
-      ["Status", statusLabel],
-      ["Date & time", date],
-      ["Transaction type", transaction.kind.replaceAll("_", " ")],
-      ...(transaction.deletable ? [["Source", "Imported transaction"] as [string, string]] : []),
-      ...(transaction.reference ? [["Reference", transaction.reference] as [string, string]] : []),
-      ...(transaction.detail ? [["Details", transaction.detail] as [string, string]] : []),
-      ...(transaction.category ? [["Category", transaction.category.name] as [string, string]] : []),
-    ];
-    const rowSvg = rows.map(([label, value], index) => {
-      const y = 390 + index * 58;
-      return `<text x="54" y="${y}" fill="#777" font-size="17">${xml(label)}</text><text x="546" y="${y}" fill="#171717" font-size="17" text-anchor="end">${xml(value)}</text><line x1="54" y1="${y + 18}" x2="546" y2="${y + 18}" stroke="#e9e9e9"/>`;
+    let y = 390;
+    const rowSvg = receiptRows.map(([label, value]) => {
+      const labelLines = wrapText(label, 24);
+      const valueLines = wrapText(value, 38);
+      const lineCount = Math.max(labelLines.length, valueLines.length);
+      const labelSvg = labelLines.map((line, index) => `<tspan x="54" dy="${index === 0 ? 0 : 25}">${xml(line)}</tspan>`).join("");
+      const valueSvg = valueLines.map((line, index) => `<tspan x="546" dy="${index === 0 ? 0 : 25}">${xml(line)}</tspan>`).join("");
+      const current = `<text x="54" y="${y}" fill="#777" font-size="16">${labelSvg}</text><text x="546" y="${y}" fill="#171717" font-size="16" text-anchor="end">${valueSvg}</text>`;
+      y += Math.max(48, lineCount * 25 + 20);
+      return current;
     }).join("");
-    const height = 430 + rows.length * 58;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="${height}" viewBox="0 0 600 ${height}"><rect width="600" height="${height}" rx="28" fill="#f7f7f5"/><rect x="18" y="18" width="564" height="${height - 36}" rx="22" fill="#fff" stroke="#e6e2d8"/><text x="54" y="92" fill="#171717" font-family="Arial,sans-serif" font-size="30" font-weight="700">Fin3a</text><text x="54" y="132" fill="#777" font-family="Arial,sans-serif" font-size="16">TRANSACTION RECEIPT</text><rect x="54" y="164" width="492" height="132" rx="18" fill="#f8f6f0"/><text x="300" y="204" text-anchor="middle" fill="#777" font-family="Arial,sans-serif" font-size="16">AMOUNT</text><text x="300" y="254" text-anchor="middle" fill="#171717" font-family="Arial,sans-serif" font-size="34" font-weight="700">${xml(amount)}</text><text x="300" y="278" text-anchor="middle" fill="${kind === "success" ? "#16834a" : kind === "failed" ? "#c43b3b" : "#946b16"}" font-family="Arial,sans-serif" font-size="15" font-weight="700">${statusLabel.toUpperCase()}</text><g font-family="Arial,sans-serif">${rowSvg}</g><text x="300" y="${height - 42}" text-anchor="middle" fill="#999" font-family="Arial,sans-serif" font-size="13">Generated by Fin3a</text></svg>`;
+    const height = y + 70;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="${height}" viewBox="0 0 600 ${height}"><rect width="600" height="${height}" rx="28" fill="#f7f7f5"/><rect x="18" y="18" width="564" height="${height - 36}" rx="22" fill="#fff" stroke="#e6e2d8"/><text x="54" y="92" fill="#171717" font-family="Arial,sans-serif" font-size="30" font-weight="700">Fin3a</text><text x="54" y="132" fill="#777" font-family="Arial,sans-serif" font-size="16">TRANSACTION RECEIPT</text><rect x="54" y="164" width="492" height="132" rx="18" fill="#f8f6f0"/><text x="300" y="204" text-anchor="middle" fill="#777" font-family="Arial,sans-serif" font-size="16">AMOUNT</text><text x="300" y="254" text-anchor="middle" fill="#171717" font-family="Arial,sans-serif" font-size="34" font-weight="700">${xml(amount)}</text><text x="300" y="278" text-anchor="middle" fill="${kind === "success" ? "#16834a" : kind === "failed" ? "#c43b3b" : "#946b16"}" font-family="Arial,sans-serif" font-size="15" font-weight="700">${statusLabel.toUpperCase()}</text><g font-family="Arial,sans-serif">${rowSvg}</g><text x="300" y="${height - 28}" text-anchor="middle" fill="#999" font-family="Arial,sans-serif" font-size="13">Generated by Fin3a</text></svg>`;
     const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
@@ -57,31 +78,31 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[17rem] max-h-[calc(100dvh-2rem)] w-[min(15rem,calc(100vw-2rem))] flex-col gap-2 overflow-hidden p-2.5 sm:max-w-none">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-1.5 text-sm"><ReceiptText className="size-4" /> Transaction receipt</DialogTitle>
+      <DialogContent className="flex h-auto min-h-[20rem] max-h-[calc(100dvh-2rem)] w-[min(19rem,calc(100vw-2rem))] flex-col gap-2.5 overflow-hidden p-3 sm:max-w-none">
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base"><ReceiptText className="size-5" /> Transaction receipt</DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card">
-          <div className="border-b border-dashed border-border px-2.5 py-1.5 text-center">
-            <div className="mx-auto mb-1 flex size-6 items-center justify-center rounded-lg bg-secondary font-display text-xs font-bold">F</div>
+        <div className="min-h-0 flex-1 rounded-xl border border-border bg-card">
+          <div className="border-b border-dashed border-border px-3 py-2.5 text-center">
+            <div className="mx-auto mb-1.5 flex size-7 items-center justify-center rounded-lg bg-secondary font-display text-sm font-bold">F</div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Fin3a receipt</p>
-            <p className="mt-0.5 text-lg font-bold tabular-nums">{amount}</p>
-            <div className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${kind === "success" ? "bg-emerald-500/10 text-emerald-600" : kind === "failed" ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-600"}`}>
+            <p className="mt-1 text-xl font-bold tabular-nums">{amount}</p>
+            <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${kind === "success" ? "bg-emerald-500/10 text-emerald-600" : kind === "failed" ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-600"}`}>
               <StatusIcon className="size-3.5" /> {statusLabel}
             </div>
           </div>
-          <div className="space-y-1 px-2.5 py-1.5">
-            <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Transaction</span><span className="max-w-[65%] text-right font-medium">{transaction.title}</span></div>
-            <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Date & time</span><span className="text-right font-medium">{date}</span></div>
-            <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Type</span><span className="text-right font-medium capitalize">{transaction.kind.replaceAll("_", " ")}</span></div>
-            {transaction.deletable ? <div className="flex items-center justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Source</span><span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Imported</span></div> : null}
-            {transaction.reference ? <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Reference</span><span className="max-w-[65%] break-all text-right font-medium">{transaction.reference}</span></div> : null}
-            {transaction.detail ? <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Details</span><span className="max-w-[65%] text-right font-medium">{transaction.detail}</span></div> : null}
-            {transaction.category ? <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Category</span><span className="text-right font-medium">{transaction.category.name}</span></div> : null}
-            <div className="flex justify-between gap-1.5 border-t border-border pt-1 text-[10px] leading-tight"><span className="text-muted-foreground">Transaction ID</span><span className="max-w-[65%] break-all text-right font-mono text-xs">{transaction.id}</span></div>
+          <div className="space-y-2 px-3 py-2.5">
+            <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Transaction</span><span className="min-w-0 max-w-[68%] break-words text-right font-medium">{transaction.title}</span></div>
+            <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Date & time</span><span className="min-w-0 text-right font-medium">{date}</span></div>
+            <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Type</span><span className="min-w-0 text-right font-medium capitalize">{transaction.kind.replaceAll("_", " ")}</span></div>
+            {transaction.deletable ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Source</span><span className="font-medium text-primary">Imported</span></div> : null}
+            {transaction.reference ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Reference</span><span className="min-w-0 max-w-[68%] break-all text-right font-medium">{transaction.reference}</span></div> : null}
+            {transaction.detail ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Details</span><span className="min-w-0 max-w-[68%] break-words text-right font-medium">{transaction.detail}</span></div> : null}
+            {transaction.category ? <div className="flex items-start justify-between gap-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Category</span><span className="min-w-0 text-right font-medium">{transaction.category.name}</span></div> : null}
+            <div className="flex items-start justify-between gap-2 border-t border-border pt-2 text-xs leading-snug"><span className="shrink-0 text-muted-foreground">Transaction ID</span><span className="min-w-0 max-w-[68%] break-all text-right font-mono">{transaction.id}</span></div>
           </div>
         </div>
-        <Button onClick={downloadReceipt} className="h-8 w-full shrink-0 text-[11px]"><Download className="mr-2 size-4" /> Download receipt image</Button>
+        <Button onClick={downloadReceipt} className="h-9 w-full shrink-0 text-xs"><Download className="mr-2 size-4" /> Download receipt image</Button>
       </DialogContent>
     </Dialog>
   );
