@@ -57,32 +57,31 @@ export function TransactionCheckoutCard({ transaction, open, onOpenChange, count
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[min(15rem,calc(100vw-2rem))] max-h-[90dvh] overflow-y-auto p-3 sm:max-w-none">
+      <DialogContent className="flex h-[17rem] max-h-[calc(100dvh-2rem)] w-[min(15rem,calc(100vw-2rem))] flex-col gap-2 overflow-hidden p-2.5 sm:max-w-none">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><ReceiptText className="size-5" /> Transaction checkout</DialogTitle>
-          <DialogDescription>Fin3a transaction confirmation and receipt.</DialogDescription>
+          <DialogTitle className="flex items-center gap-1.5 text-sm"><ReceiptText className="size-4" /> Transaction receipt</DialogTitle>
         </DialogHeader>
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="border-b border-dashed border-border px-5 py-5 text-center">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-secondary font-display text-lg font-bold">F</div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Fin3a receipt</p>
-            <p className="mt-3 text-3xl font-bold tabular-nums">{amount}</p>
-            <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${kind === "success" ? "bg-emerald-500/10 text-emerald-600" : kind === "failed" ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-600"}`}>
-              <StatusIcon className="size-4" /> {statusLabel}
+        <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card">
+          <div className="border-b border-dashed border-border px-2.5 py-1.5 text-center">
+            <div className="mx-auto mb-1 flex size-6 items-center justify-center rounded-lg bg-secondary font-display text-xs font-bold">F</div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Fin3a receipt</p>
+            <p className="mt-0.5 text-lg font-bold tabular-nums">{amount}</p>
+            <div className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${kind === "success" ? "bg-emerald-500/10 text-emerald-600" : kind === "failed" ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-600"}`}>
+              <StatusIcon className="size-3.5" /> {statusLabel}
             </div>
           </div>
-          <div className="space-y-4 px-5 py-5">
-            <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Transaction</span><span className="max-w-[65%] text-right font-medium">{transaction.title}</span></div>
-            <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Date & time</span><span className="text-right font-medium">{date}</span></div>
-            <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Type</span><span className="text-right font-medium capitalize">{transaction.kind.replaceAll("_", " ")}</span></div>
-            {transaction.deletable ? <div className="flex items-center justify-between gap-4 text-sm"><span className="text-muted-foreground">Source</span><span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Imported</span></div> : null}
-            {transaction.reference ? <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Reference</span><span className="max-w-[65%] break-all text-right font-medium">{transaction.reference}</span></div> : null}
-            {transaction.detail ? <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Details</span><span className="max-w-[65%] text-right font-medium">{transaction.detail}</span></div> : null}
-            {transaction.category ? <div className="flex justify-between gap-4 text-sm"><span className="text-muted-foreground">Category</span><span className="text-right font-medium">{transaction.category.name}</span></div> : null}
-            <div className="flex justify-between gap-4 border-t border-border pt-4 text-sm"><span className="text-muted-foreground">Transaction ID</span><span className="max-w-[65%] break-all text-right font-mono text-xs">{transaction.id}</span></div>
+          <div className="space-y-1 px-2.5 py-1.5">
+            <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Transaction</span><span className="max-w-[65%] text-right font-medium">{transaction.title}</span></div>
+            <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Date & time</span><span className="text-right font-medium">{date}</span></div>
+            <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Type</span><span className="text-right font-medium capitalize">{transaction.kind.replaceAll("_", " ")}</span></div>
+            {transaction.deletable ? <div className="flex items-center justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Source</span><span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Imported</span></div> : null}
+            {transaction.reference ? <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Reference</span><span className="max-w-[65%] break-all text-right font-medium">{transaction.reference}</span></div> : null}
+            {transaction.detail ? <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Details</span><span className="max-w-[65%] text-right font-medium">{transaction.detail}</span></div> : null}
+            {transaction.category ? <div className="flex justify-between gap-1.5 text-[10px] leading-tight"><span className="text-muted-foreground">Category</span><span className="text-right font-medium">{transaction.category.name}</span></div> : null}
+            <div className="flex justify-between gap-1.5 border-t border-border pt-1 text-[10px] leading-tight"><span className="text-muted-foreground">Transaction ID</span><span className="max-w-[65%] break-all text-right font-mono text-xs">{transaction.id}</span></div>
           </div>
         </div>
-        <Button onClick={downloadReceipt} className="w-full"><Download className="mr-2 size-4" /> Download receipt image</Button>
+        <Button onClick={downloadReceipt} className="h-8 w-full shrink-0 text-[11px]"><Download className="mr-2 size-4" /> Download receipt image</Button>
       </DialogContent>
     </Dialog>
   );
