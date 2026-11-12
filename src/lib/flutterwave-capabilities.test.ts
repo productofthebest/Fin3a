@@ -42,13 +42,19 @@ describe("Flutterwave country capabilities", () => {
     expect(getCollectionCapability("ZM")).not.toBeNull();
     expect(getBankPayoutCapability("ZM")).toBeNull();
     expect(getBankPayoutCurrency("ZM")).toBeNull();
+    expect(getCollectionCapability("RW")).not.toBeNull();
+    expect(getBankPayoutCapability("RW")).toBeNull();
+    expect(getBankPayoutCurrency("RW")).toBeNull();
   });
 
   it("returns documented bank payout currencies", () => {
     expect(getBankPayoutCurrency("GB")).toBe("GBP");
     expect(getBankPayoutCurrency("FR")).toBe("EUR");
-    expect(getBankPayoutCurrency("RW")).toBe("RWF");
-    expect(getBankPayoutCurrency("EG")).toBe("EGP");
+    // Rwanda is collection-supported, but bank payouts remain disabled until verified.
+    expect(getBankPayoutCurrency("RW")).toBeNull();
+    // Egypt collection support does not imply an enabled bank-payout route.
+    expect(getCollectionCapability("EG")).not.toBeNull();
+    expect(getBankPayoutCurrency("EG")).toBeNull();
     expect(getBankPayoutCurrency("CI")).toBe("XOF");
     expect(getBankPayoutCurrency("SN")).toBe("XOF");
     expect(getBankPayoutCurrency("SL")).toBeNull();
