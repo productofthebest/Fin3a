@@ -48,7 +48,7 @@ function Page() {
   const country = (data.country ?? "NG").toUpperCase();
   const collection = getCollectionCapability(country);
   const collectionMethods = getDepositCollectionMethods(country, currency);
-  const hiddenNgnDepositMethods = new Set(["account", "internetbanking", "nqr", "opay", "ussd"]);
+  const hiddenNgnDepositMethods = new Set(["account", "banktransfer", "internetbanking", "nqr", "opay", "ussd"]);
   const visibleCollectionMethods = country === "NG"
     ? collectionMethods.filter(method => !hiddenNgnDepositMethods.has(method))
     : collectionMethods;
