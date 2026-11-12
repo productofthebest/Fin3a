@@ -110,7 +110,7 @@ export function NgnWithdrawalPanel({ available }: { available: number }) {
         <SelectTrigger id="wd-bank" className="h-12 w-full"><SelectValue placeholder={banksLoading ? "Loading Nigerian banks…" : banks.length ? "Choose a bank" : "Banks unavailable — try again"} /></SelectTrigger>
         <SelectContent>{banks.map(bank => <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>)}</SelectContent>
       </Select>
-      {!banksLoading && banks.length === 0 && <Button type="button" variant="outline" className="w-full" onClick={() => void loadBanks()}>Retry loading banks</Button>
+      {!banksLoading && banks.length === 0 && <Button type="button" variant="outline" className="w-full" onClick={() => void loadBanks()}>Retry loading banks</Button>}
     </div>
     <div>
       <Label htmlFor="wd-account">Account number</Label>
