@@ -127,7 +127,7 @@ test("forwards valid USD, GBP and EUR transfers only after country and metadata 
 test("rejects hosted payment collection without an explicit checkout method", async () => {
   const r = await fetch(base + "/v1/flutterwave/payments", {
     method: "POST", headers: { ...auth, "content-type": "application/json" },
-    body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency: "KES", country: "KE", checkout_method: "card", customer: { email: "test@example.com", name: "Test User" } }),
+    body: JSON.stringify({ tx_ref: "fin3a-test-123", amount: 100, currency: "KES", country: "KE", customer: { email: "test@example.com", name: "Test User" } }),
   });
   assert.equal(r.status, 400);
 });
