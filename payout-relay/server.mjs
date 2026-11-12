@@ -169,7 +169,8 @@ function validPayment(body) {
   const country = typeof body.country === "string" ? body.country.toUpperCase() : "";
   const currency = typeof body.currency === "string" ? body.currency.toUpperCase() : "";
   const options = PAYMENT_OPTIONS[country]?.[currency];
-  return Boolean(options)
+  const checkoutMethod = body.checkout_method;
+  return Boolean(options) && ["card", "apple_pay", "google_pay"].includes(checkoutMethod)
     && safeText(body.tx_ref, 100)
     && typeof body.customer === "object" && body.customer !== null && !Array.isArray(body.customer)
     && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.customer.email || "")
@@ -223,7 +224,7 @@ const server = http.createServer(async (req, res) => {
           currency: body.currency.toUpperCase(),
           country: body.country.toUpperCase(),
           redirect_url: PAYMENT_REDIRECT_URL,
-          payment_options: PAYMENT_OPTIONS[body.country.toUpperCase()][body.currency.toUpperCase()].join(", "),
+          ...(body.checkout_method === "card" ? { payment_options: PAYMENT_OPTIONS[body.country.toUpperCase()][body.currency.toUpperCase()].join(", ") } : {}),
           customer: {
             email: body.customer.email,
             name: body.customer.name,
