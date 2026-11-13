@@ -1,43 +1,28 @@
-# International withdrawals — audit and phased plan
+# Withdraw and PR #45 reconciliation
 
-## Audit findings (current code, read-only)
+## Verified starting point
+- GitHub main and this project both point to `4d3c239a6bc9396afa677e427c7a0de55e763b41`; the working tree is clean.
+- Signed-in, phone-sized Nigeria Withdraw check: bank selector is enabled and loads 702 entries; account number and amount accept input. No payout was submitted. The final action is intentionally blocked because verified legal-identity matching is not implemented.
+- PR #45 remains open and conflicting at `a61fda81f9b36ae03505467bc597f5037f0afaf2`, with comments but no approving review. Authenticated GitHub API access now works.
 
-1. **Customer UI and API wiring: missing.** Transfer has an "international" option for non-Nigerian users, but its bank and account fields are disabled placeholders ("coming soon"). No server function, route or Flutterwave call exists for international or mobile-money payouts.
-2. **Ledger reservations: NGN only.** `ngn_withdrawals`, `reserve_ngn_withdrawal` and `finish_ngn_withdrawal` (migration 0045) give an atomic hold, idempotency key, release on failure and webhook completion, but they are fixed to NGN, 10-digit NUBAN numbers and Nigerian bank codes. Nothing handles other currencies, mobile money, FX-quoted payouts or reconciliation of partial or reversed settlement.
-3. **Beneficiary validation: missing.** `withdrawalInput` only accepts NGN bank fields. Nothing validates IBAN/SWIFT/sort code/routing numbers, mobile-money MSISDN and network, or recipient address/KYC fields, and nothing ties the destination country and currency to the user's wallet country.
-4. **Capability checks: documentation only.** `flutterwave-capabilities.ts` lists Flutterwave's published payout countries, but its own comments say merchant approval is not verified. No live check confirms your merchant account is enabled for each route.
-5. **Shared blockers (from earlier work):** the `withdrawalsEnabled` lock (fixed-IP relay, IP whitelist, production verification) also blocks all payouts. Non-NGN wallets cannot be funded yet (0048 international deposits is still unapplied), so no balance exists to withdraw.
-6. **Tests:** existing tests cover NGN withdrawals, Flutterwave processing, the webhook and capabilities. There are no tests for international payouts.
+## Scoped repairs
+1. Create `feature/port-pr45-onto-main-international-stack` from the freshly rechecked GitHub main commit, using GitHub API operations. Keep project/main untouched while preparing the branch.
+2. Preserve Nigeria's form and identity restriction. Verify bank selection enables account-name confirmation without sending a payout. Do not remove identity checks or activate payments to make submission appear fixed.
+3. Port only useful PR #45 improvements onto main's existing foundation: USD/GBP/EUR mapping and strict beneficiary validation, deterministic request fingerprints, F3X relay support, additional provider verification tests and an environment gate layered beneath the existing hard-disabled international gate.
+4. Retain exactly one F3X webhook settlement path through `international-withdrawal.server.ts`; never import PR #45's competing settlement stack or migration.
+5. Inspect remaining reservation readers and document necessary follow-up. Confirmed source-level gap: wallet overview and internal transfers read `account_ledger` only; QR and Split Bill delegate to that transfer function; USD swaps also read only that ledger. International holds live in a separate ledger. Keep withdrawals disabled; stop for separate approval before modifying shared money-moving database functions.
+6. Check applied migration identities before any numbering correction. Do not rename applied migrations, recreate objects, backfill, or apply migrations. Record historical numbering conflicts and use the next free identity only if a separately approved future migration is needed.
 
-## Phased plan (no live payouts, no funds moved)
+## Intended files
+- New `src/lib/international-payout-mapper.ts` and its test file.
+- Existing `src/lib/international-withdrawal.server.ts` and `.server.test.ts` only for verified reconciliation improvements.
+- `src/lib/withdrawal-production.ts` and focused gate tests.
+- `src/lib/payout-transport.server.ts`, `payout-relay/server.mjs`, and relay tests.
+- `AGENTS.md`, `roadmap.md`, `docs/master-checklist.md` for decisions, evidence and outstanding safeguards.
+- No NGN payment logic, wallet-card redesign, country eligibility, secrets, production flags or schema changes.
 
-**Phase A — rules and validation (pure code + tests)**
-- Route table: country, currency, method (bank or mobile money), required fields and limits. A route is used only if it is both documented and verified for your merchant account.
-- Per-route beneficiary validators (IBAN, SWIFT, US routing, UK sort code, GH/KE/UG mobile money, etc.) and a check that the destination currency matches the wallet.
-- Unit tests for each validator and for rejection when country and currency don't match.
-
-**Phase B — database (additive migration, needs your approval)**
-- New `international_withdrawals` table plus `reserve_international_withdrawal` and `finish_international_withdrawal`. They lock the row, check the balance per currency, enforce the idempotency key, add a hold to the ledger, release it on failure, and keep the history immutable.
-- Reconciliation states: pending, successful, failed and reversed. A reversal after success creates a new credit entry for Admin review and never edits existing history.
-- The NGN tables and functions stay untouched.
-
-**Phase C — capability verification**
-- Admin-only, read-only check of which routes your merchant account allows, saved with a timestamp. Routes that fail or are unchecked stay hidden from customers.
-
-**Phase D — server and UI wiring (stays locked)**
-- A protected server function built like the NGN flow: lock first, rate limit, validate, reserve, then send through the payout relay. The webhook gains a separate international branch that re-checks each transfer with Flutterwave.
-- The Transfer dialog gets real fields per route, a review screen, the fee and quote shown, and a "temporarily unavailable" state while locked.
-
-**Phase E — verification before activation**
-- Flutterwave sandbox tests from start to finish, plus simulated webhook duplicates and failures. Then your approval, fixed-IP hosting and a small live payout per route.
-
-## Decisions needed from you
-- Which countries and methods come first (e.g. Ghana mobile money, Kenya M-Pesa, US/UK/EU bank).
-- Fees for international payouts.
-- Whether 0048 (funding non-NGN wallets) is applied first, since withdrawals need funded balances.
-
-## Technical details
-- Keep `withdrawalsEnabled` as the single global lock and add a per-route lock `isRouteVerified(country, method)`.
-- Amounts are integer minor units. Currency exponents come from one table (e.g. XOF/XAF/UGX/RWF have 0 decimals).
-- Webhook idempotency key per transfer ID, kept apart from NGN events.
-- Deployment dependencies: payout relay with fixed IP, `FLW_*` verification flags, whitelisted IP, Flutterwave merchant enablement per corridor, beneficiary KYC rules, and the migration approval.
+## Verification and review
+- Run relevant unit/security tests, NGN regressions and relay tests on the isolated branch's source. Report actual results and failures, not presumed success.
+- GitHub CI provides branch build/type/lint results; do not claim those passed until observed.
+- Open a new draft PR for independent review. Do not merge, close #45, deploy, publish or send funds.
+- Report exact changed files, branch/commit/PR, checks and whether preview contains the changes (it will remain on main until explicitly synced).
