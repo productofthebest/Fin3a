@@ -41,8 +41,8 @@ export const createFlutterwaveCheckout = createServerFn({ method: "POST" })
     const email = typeof claims.email === "string" ? claims.email : "";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Add a valid email address to your Fin3a account before depositing.");
     const metadata = claims.user_metadata && typeof claims.user_metadata === "object" ? claims.user_metadata as Record<string, unknown> : {};
-    const candidateName = [metadata.full_name, metadata.name].find(v => typeof v === "string" && v.trim()) as string | undefined;
-    const customerName = (candidateName ?? email.split("@")[0]).trim().slice(0, 120);
+    const candidateName = [metadata["full_name"], metadata["name"]].find(v => typeof v === "string" && v.trim()) as string | undefined;
+    const customerName = (candidateName ?? email.split("@")[0] ?? "").trim().slice(0, 120);
     const txRef = `F3I-${crypto.randomUUID()}`;
     const expiresAt = new Date(Date.now() + 30 * 60_000).toISOString();
 

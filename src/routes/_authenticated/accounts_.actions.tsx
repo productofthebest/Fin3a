@@ -55,7 +55,7 @@ function Page() {
     ? collectionMethods.filter(method => !hiddenNgnDepositMethods.has(method))
     : collectionMethods;
   // Google Pay remains implemented but hidden until Flutterwave enables it for this merchant.
-  const googlePayEnabled = import.meta.env.VITE_FLUTTERWAVE_GOOGLE_PAY_ENABLED === "true";
+  const googlePayEnabled = import.meta.env["VITE_FLUTTERWAVE_GOOGLE_PAY_ENABLED"] === "true";
   const paymentCards = [
     ...visibleCollectionMethods.map(method => ({ id: method, label: methodLabel[method] ?? method, description: method === "card" ? "Pay with your debit or credit card" : method === "banktransfer" ? "Pay directly from your bank" : "Pay using " + (methodLabel[method] ?? method), Icon: method === "banktransfer" || method === "account" || method === "internetbanking" ? Landmark : method === "card" ? CreditCard : Smartphone })),
     ...(country !== "GH" ? [{ id: "apple-pay", label: "Apple Pay", description: "Continue on Flutterwave; shown only on supported Apple devices and eligible checkout sessions", Icon: Smartphone }] : []),
