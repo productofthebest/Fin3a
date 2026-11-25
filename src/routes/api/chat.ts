@@ -158,10 +158,11 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        // Only the last 30 text turns are sent, stripped to plain text.
-        const history = body.messages.slice(-30).map((m) => ({
+        // Browser-supplied history cannot claim assistant/system authority: only the
+        // caller's own user turns are forwarded, stripped to plain text.
+        const history = body.messages.filter((m) => m.role === "user").slice(-30).map((m) => ({
           id: m.id,
-          role: m.role === "system" ? ("user" as const) : m.role,
+          role: "user" as const,
           parts: [{ type: "text" as const, text: textOf(m.parts).slice(0, 8000) }],
         }));
 

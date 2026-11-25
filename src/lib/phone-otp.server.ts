@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
-  OTP_MAX_ATTEMPTS, OTP_TTL_MINUTES, VERIFY_MESSAGES, checkOtp, generateOtp, hashOtp, phoneLoginEmail, sendBlockReason,
+  OTP_MAX_ATTEMPTS, OTP_MAX_PER_PHONE_HOUR, OTP_TTL_MINUTES, VERIFY_MESSAGES, checkOtp, generateOtp, hashOtp, phoneLoginEmail, sendBlockReason,
 } from "./phone-otp";
 
 type Purpose = "signin" | "signup" | "link";
@@ -65,8 +65,8 @@ export async function requestOtp(opts: { phone: string; purpose: Purpose; ip: st
   if (block) throw new Error(block);
 
   const code = generateOtp();
-  // Invalidate older codes for this number, then store only the hash.
-  await supabaseAdmin.from("phone_otps").update({ consumed_at: new Date().toISOString() }).eq("phone", phone).is("consumed_at", null);
+  // Older pending codes stay valid until they expire, so a stranger requesting a
+  // code for someone else's number cannot cancel that person's sign-in.
   const { data: row, error } = await supabaseAdmin.from("phone_otps").insert({
     phone, purpose, ip, user_id: userId ?? null, code_hash: await hashOtp(secret(), phone, code),
     expires_at: new Date(Date.now() + OTP_TTL_MINUTES * 60_000).toISOString(),
@@ -81,14 +81,18 @@ export async function requestOtp(opts: { phone: string; purpose: Purpose; ip: st
 
 export async function verifyOtp(opts: { phone: string; code: string; purpose: Purpose; userId?: string }) {
   const { phone, code, purpose, userId } = opts;
-  const { data: rec } = await supabaseAdmin.from("phone_otps").select("id, code_hash, attempts, expires_at, consumed_at, purpose, user_id")
-    .eq("phone", phone).is("consumed_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  if (rec && (rec.purpose !== purpose || (purpose === "link" && rec.user_id !== userId))) throw new Error(VERIFY_MESSAGES.missing);
-  const outcome = checkOtp(rec, await hashOtp(secret(), phone, code), Date.now());
+  const { data: pending } = await supabaseAdmin.from("phone_otps").select("id, code_hash, attempts, expires_at, consumed_at, purpose, user_id")
+    .eq("phone", phone).is("consumed_at", null).order("created_at", { ascending: false }).limit(OTP_MAX_PER_PHONE_HOUR);
+  const eligible = (pending ?? []).filter((r) => r.purpose === purpose && (purpose !== "link" || r.user_id === userId));
+  const candidate = await hashOtp(secret(), phone, code);
+  // A newer code requested by someone else must not cancel a still-valid code the owner received.
+  const rec = eligible.find((r) => checkOtp(r, candidate, Date.now()) === "ok") ?? eligible[0] ?? null;
+  const outcome = checkOtp(rec, candidate, Date.now());
   if (outcome !== "ok") {
     if (outcome === "wrong" && rec) {
       const attempts = rec.attempts + 1;
-      await supabaseAdmin.from("phone_otps").update({ attempts }).eq("id", rec.id);
+      // Count a wrong guess against every pending code so older codes add no extra guesses.
+      await Promise.all(eligible.map((r) => supabaseAdmin.from("phone_otps").update({ attempts: r.attempts + 1 }).eq("id", r.id)));
       const left = OTP_MAX_ATTEMPTS - attempts;
       throw new Error(left > 0 ? `That code is incorrect. ${left} attempt${left === 1 ? "" : "s"} left.` : VERIFY_MESSAGES.locked);
     }
@@ -98,6 +102,8 @@ export async function verifyOtp(opts: { phone: string; code: string; purpose: Pu
   const { data: consumed } = await supabaseAdmin.from("phone_otps").update({ consumed_at: new Date().toISOString() })
     .eq("id", rec!.id).is("consumed_at", null).select("id");
   if (!consumed?.length) throw new Error(VERIFY_MESSAGES.missing);
+  // The number's owner proved possession, so retire any other pending codes.
+  await supabaseAdmin.from("phone_otps").update({ consumed_at: new Date().toISOString() }).eq("phone", phone).is("consumed_at", null);
 
   if (purpose === "link") {
     const owner = await findPhoneUser(phone);
