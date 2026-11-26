@@ -158,13 +158,29 @@ export const Route = createFileRoute("/api/chat")({
           }
         }
 
-        // Browser-supplied history cannot claim assistant/system authority: only the
-        // caller's own user turns are forwarded, stripped to plain text.
-        const history = body.messages.filter((m) => m.role === "user").slice(-30).map((m) => ({
-          id: m.id,
-          role: "user" as const,
-          parts: [{ type: "text" as const, text: textOf(m.parts).slice(0, 8000) }],
-        }));
+        // History comes from this thread's server-saved rows (RLS-scoped to the caller),
+        // so the assistant keeps its own earlier replies without trusting browser-sent
+        // assistant/system turns. System rows are never forwarded.
+        const { data: saved, error: histErr } = await supabase
+          .from("chat_messages")
+          .select("message_id, role, parts, created_at")
+          .eq("thread_id", thread.id)
+          .in("role", ["user", "assistant"])
+          .order("created_at", { ascending: false })
+          .limit(30);
+        if (histErr) {
+          console.error("load history", histErr);
+          return json(500, "Could not load this conversation.");
+        }
+        const history = (saved ?? [])
+          .slice()
+          .reverse()
+          .map((m) => ({
+            id: m.message_id,
+            role: (m.role === "assistant" ? "assistant" : "user") as "assistant" | "user",
+            parts: [{ type: "text" as const, text: textOf(Array.isArray(m.parts) ? (m.parts as unknown[]) : []).slice(0, 8000) }],
+          }))
+          .filter((m) => m.parts[0]!.text);
 
         const result = streamText({
           ...readOnlyAssistantOptions(),
